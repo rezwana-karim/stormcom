@@ -1,5 +1,5 @@
 # AI Coding Agent Instructions
-Purpose: Immediate UI/UX productivity in this Next.js 16 + NextAuth + Prisma + shadcn-ui multi-tenant e-commerce SaaS.
+Purpose: Immediate UI/UX improvement and productivity in this Next.js 16 + NextAuth + Prisma + shadcn-ui multi-tenant e-commerce SaaS.
 
 ## Architecture
 App Router in `src/app`; root layout `layout.tsx`. Public auth segment `(auth)` with `login`, `signup`, `verify-email`. Protected routes: `dashboard`, `projects`, `team`, `settings` (and `settings/billing`). Auth config `src/lib/auth.ts`; handler `api/auth/[...nextauth]/route.ts`. Current provider: Email magic link (password login planned). JWT sessions; `session.user.id` added in callback (retain). Protection via `middleware.ts` (re-export of `next-auth/middleware`) with `config.matcher`; include `:path*` for new secure paths.
