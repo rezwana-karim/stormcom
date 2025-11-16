@@ -17,9 +17,11 @@ model User {
   email         String?  @unique
   emailVerified DateTime?
   image         String?
+  passwordHash  String?  // For email/password authentication
 
   // Multi-tenancy relations
   memberships   Membership[]
+  projectMembers ProjectMember[]
 
   accounts      Account[]
   sessions      Session[]
@@ -72,6 +74,7 @@ model Organization {
   image       String?
 
   memberships Membership[]
+  projects    Project[]
 
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
@@ -97,4 +100,38 @@ enum Role {
   ADMIN
   MEMBER
   VIEWER
+}
+
+// Project management models
+model Project {
+  id             String          @id @default(cuid())
+  name           String
+  description    String?
+  slug           String          @unique
+  status         String          @default("planning") // planning, active, archived
+  organizationId String
+
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members        ProjectMember[]
+
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([organizationId])
+  @@index([slug])
+}
+
+model ProjectMember {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  role      String   @default("member") // owner, admin, member, viewer
+
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([projectId, userId])
+  @@index([userId])
 }
