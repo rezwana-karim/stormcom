@@ -1,0 +1,19 @@
+﻿{
+    "summary":  {
+                    "totalErrors":  0,
+                    "exitCode":  0,
+                    "timestamp":  "2025-11-18T04:21:54Z",
+                    "command":  "npm run type-check",
+                    "totalWarnings":  0,
+                    "totalLines":  4
+                },
+    "rawOutput":  [
+                      "",
+                      "\u003e stormcom@0.1.0 type-check",
+                      "\u003e tsc --noEmit --incremental",
+                      ""
+                  ],
+    "errors":  [
+
+               ]
+}
