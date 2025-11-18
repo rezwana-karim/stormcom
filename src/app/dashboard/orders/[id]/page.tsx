@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -74,13 +74,13 @@ interface Order {
   orderNumber: string;
   status: string;
   paymentStatus: string;
-  subtotalAmount: number;
+  subtotal: number; // API returns 'subtotal', not 'subtotalAmount'
   taxAmount: number;
   shippingAmount: number;
   discountAmount: number;
   totalAmount: number;
-  shippingAddress: Address;
-  billingAddress: Address;
+  shippingAddress: Address | string; // API returns JSON string
+  billingAddress: Address | string; // API returns JSON string
   shippingMethod: string;
   trackingNumber: string | null;
   trackingUrl: string | null;
@@ -117,6 +117,9 @@ const paymentStatusColors: Record<string, string> = {
 };
 
 export default function OrderDetailPage({ params }: OrderDetailPageProps) {
+  // Unwrap params promise (Next.js 16 requirement)
+  const { id } = use(params);
+  
   const router = useRouter();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
@@ -132,16 +135,25 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
       setLoading(true);
       
       const queryParams = new URLSearchParams({
-        storeId: 'store-1', // TODO: Get from context/session
+        storeId: 'clqm1j4k00000l8dw8z8r8z8r', // Use seeded store CUID
       });
 
-      const response = await fetch(`/api/orders/${params.id}?${queryParams.toString()}`);
+      const response = await fetch(`/api/orders/${id}?${queryParams.toString()}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch order');
       }
 
       const data: Order = await response.json();
+      
+      // Parse addresses if they come as JSON strings
+      if (typeof data.shippingAddress === 'string') {
+        data.shippingAddress = JSON.parse(data.shippingAddress);
+      }
+      if (typeof data.billingAddress === 'string') {
+        data.billingAddress = JSON.parse(data.billingAddress);
+      }
+      
       setOrder(data);
       setNewStatus(data.status);
       setTrackingNumber(data.trackingNumber || '');
@@ -158,7 +170,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
   useEffect(() => {
     fetchOrder();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.id]);
+  }, [id]);
 
   // Handle status update
   const handleStatusUpdate = async () => {
@@ -171,7 +183,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          storeId: 'store-1',
+          storeId: 'clqm1j4k00000l8dw8z8r8z8r', // Use seeded store CUID
           newStatus,
           ...(trackingNumber && { trackingNumber }),
           ...(trackingUrl && { trackingUrl }),
@@ -205,7 +217,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          storeId: 'store-1',
+          storeId: 'clqm1j4k00000l8dw8z8r8z8r', // Use seeded store CUID
           newStatus: order.status,
           trackingNumber,
           trackingUrl,
@@ -237,16 +249,19 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
   };
 
   // Format address
-  const formatAddress = (address: Address) => {
+  const formatAddress = (address: Address | string) => {
+    // Parse if it's a string
+    const addr: Address = typeof address === 'string' ? JSON.parse(address) : address;
+    
     return (
       <div className="text-sm">
-        <p className="font-medium">{`${address.firstName} ${address.lastName}`}</p>
-        <p>{address.address}</p>
-        {address.address2 && <p>{address.address2}</p>}
-        <p>{`${address.city}, ${address.state} ${address.postalCode}`}</p>
-        <p>{address.country}</p>
-        <p className="mt-2 text-muted-foreground">{address.email}</p>
-        <p className="text-muted-foreground">{address.phone}</p>
+        <p className="font-medium">{`${addr.firstName} ${addr.lastName}`}</p>
+        <p>{addr.address}</p>
+        {addr.address2 && <p>{addr.address2}</p>}
+        <p>{`${addr.city}, ${addr.state} ${addr.postalCode}`}</p>
+        <p>{addr.country}</p>
+        <p className="mt-2 text-muted-foreground">{addr.email || ''}</p>
+        <p className="text-muted-foreground">{addr.phone}</p>
       </div>
     );
   };
@@ -358,7 +373,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span>{formatCurrency(order.subtotalAmount)}</span>
+                  <span>{formatCurrency(order.subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Shipping</span>
