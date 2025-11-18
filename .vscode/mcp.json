@@ -1,0 +1,114 @@
+{
+  "servers": {
+    "microsoft/playwright-mcp": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest"
+      ]
+    },
+    "microsoft/markitdown": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "markitdown-mcp==0.0.1a4"
+      ]
+    },
+    "chromedevtools/chrome-devtools-mcp": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "chrome-devtools-mcp@latest",
+        "--browserUrl",
+        "${input:browser_url}",
+        "--headless",
+        "${input:headless}",
+        "--isolated",
+        "${input:isolated}",
+        "--channel",
+        "${input:chrome_channel}"
+      ]
+    },
+    "next-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "next-devtools-mcp@latest"
+      ]
+    },
+    "shadcn": {
+      "command": "npx",
+      "args": [
+        "shadcn@latest",
+        "mcp"
+      ]
+    },
+    "sequentialthinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
+      "type": "stdio"
+    },
+    "memory": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ],
+      "env": {
+        "MEMORY_FILE_PATH": "${input:memory_file_path}"
+      },
+      "type": "stdio"
+    },
+    "github/github-mcp-server": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
+    },
+    "cognitionai/deepwiki": {
+      "type": "http",
+      "url": "https://mcp.deepwiki.com/sse"
+    },
+    "microsoftdocs/mcp": {
+      "type": "http",
+      "url": "https://learn.microsoft.com/api/mcp"
+    }
+  },
+  "inputs": [
+    {
+      "id": "browser_url",
+      "type": "promptString",
+      "description": "Optional: connect to an already-running Chrome (remote debugging / port-forward). Example: http://127.0.0.1:9222",
+      "password": false
+    },
+    {
+      "id": "headless",
+      "type": "promptString",
+      "description": "Run Chrome headless (true/false). Default: false",
+      "password": false,
+      "default": "false"
+    },
+    {
+      "id": "isolated",
+      "type": "promptString",
+      "description": "Use a temporary user-data-dir (true/false). Default: false",
+      "password": false,
+      "default": "false"
+    },
+    {
+      "id": "chrome_channel",
+      "type": "promptString",
+      "description": "Chrome channel: stable | canary | beta | dev (default: stable).",
+      "password": false,
+      "default": "stable"
+    },
+    {
+      "id": "memory_file_path",
+      "type": "promptString",
+      "description": "Path to the memory storage file (optional)",
+      "password": false
+    }
+  ]
+}
