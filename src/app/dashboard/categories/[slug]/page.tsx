@@ -64,7 +64,7 @@ export default async function CategoryDetailPage({
                 <CategoryFormClient
                   category={category}
                   allCategories={allCategories}
-                  storeId={storeId}
+                  _storeId={storeId}
                 />
               </div>
             </div>

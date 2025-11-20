@@ -251,6 +251,7 @@ model Store {
   brands         Brand[]
   orders         Order[]
   customers      Customer[]
+  attributes     ProductAttribute[]
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -412,6 +413,9 @@ model Brand {
 
 model ProductAttribute {
   id        String   @id @default(cuid())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
   name      String
   values    String   // JSON array of possible values
   
@@ -420,6 +424,8 @@ model ProductAttribute {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
+  @@unique([storeId, name])
+  @@index([storeId])
   @@index([name])
 }
 

@@ -289,7 +289,7 @@ export class CategoryService {
             select: { id: true, name: true, slug: true },
           },
         },
-      });
+      }) as CategoryWithRelations | null;
 
       if (!category) break;
 
@@ -526,7 +526,7 @@ export class CategoryService {
   private buildOrderByClause(
     sortBy: string = 'sortOrder',
     sortOrder: string = 'asc'
-  ): Prisma.CategoryOrderByWithRelationInput {
+  ): Prisma.CategoryOrderByWithRelationInput | Prisma.CategoryOrderByWithRelationInput[] {
     const validSortFields = ['name', 'sortOrder', 'createdAt', 'updatedAt'];
     const field = validSortFields.includes(sortBy) ? sortBy : 'sortOrder';
     const order = sortOrder === 'desc' ? 'desc' : 'asc';

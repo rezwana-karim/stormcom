@@ -480,17 +480,18 @@ export class ProductService {
       inventoryStatus = this.calculateInventoryStatus(validatedData.inventoryQty, lowStockThreshold);
     }
 
-    // Prepare update data
+    // Prepare update data (exclude JSON fields like images from direct spread to satisfy Prisma types)
+    const { images: imagesArr, ...rest } = validatedData as any;
     const updateData: Prisma.ProductUpdateInput = {
-      ...validatedData,
+      ...rest,
       inventoryStatus,
     };
 
     // Handle JSON fields
-    if (validatedData.images) {
-      updateData.images = JSON.stringify(validatedData.images);
-      if (!updateData.thumbnailUrl && validatedData.images.length > 0) {
-        updateData.thumbnailUrl = validatedData.images[0];
+    if (imagesArr) {
+      updateData.images = JSON.stringify(imagesArr);
+      if (!updateData.thumbnailUrl && imagesArr.length > 0) {
+        updateData.thumbnailUrl = imagesArr[0];
       }
     }
 
@@ -818,10 +819,13 @@ export class ProductService {
    * Normalize product fields from database format to application format
    * Parses JSON strings for images and metaKeywords
    */
-  private normalizeProductFields(product: ProductWithRelations | null): ProductWithRelations | null {
+  // Accept raw DB product payloads (which may not strictly match ProductWithRelations)
+  // and normalize fields (images JSON, thumbnails). Return a loose any which
+  // callers cast to ProductWithRelations as needed.
+  private normalizeProductFields(product: unknown): unknown {
     if (!product) return product;
 
-    const p = { ...product } as Record<string, unknown>;
+    const p = { ...(product as Record<string, unknown>) } as Record<string, unknown>;
 
     // Normalize images: JSON string -> string[]
     try {
