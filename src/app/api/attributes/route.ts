@@ -61,8 +61,9 @@ export async function GET(request: NextRequest) {
     console.error('GET /api/attributes error:', error);
     
     if (error instanceof z.ZodError) {
+      // ZodError exposes `issues` with validation details
       return NextResponse.json(
-        { error: 'Invalid parameters', details: error.errors },
+        { error: 'Invalid parameters', details: error.issues },
         { status: 400 }
       );
     }
@@ -102,8 +103,9 @@ export async function POST(request: NextRequest) {
     console.error('POST /api/attributes error:', error);
 
     if (error instanceof z.ZodError) {
+      // ZodError exposes `issues` with validation details
       return NextResponse.json(
-        { error: 'Invalid request data', details: error.errors },
+        { error: 'Invalid request data', details: error.issues },
         { status: 400 }
       );
     }

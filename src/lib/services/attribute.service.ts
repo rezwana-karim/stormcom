@@ -2,9 +2,11 @@
 // Attribute Service - Manages product attributes (Color, Size, Material, etc.)
 
 import { prisma } from '@/lib/prisma';
-import type { ProductAttribute } from '@prisma/client';
+import type { ProductAttribute, ProductAttributeValue, Prisma } from '@prisma/client';
 
-export interface AttributeWithValues extends ProductAttribute {
+// ProductAttribute stores `values` as JSON string in DB. Use a runtime type
+// that maps `values` to a string[] while preserving other model fields.
+export interface AttributeWithValues extends Omit<ProductAttribute, 'values'> {
   values: string[];
   _count?: {
     productValues: number;
@@ -58,13 +60,11 @@ export class AttributeService {
     const skip = (page - 1) * perPage;
     const take = Math.min(perPage, 100);
 
-    // Build where clause
-    const where: { name?: { contains: string; mode: 'insensitive' } } = {};
-
+    // Build where clause (use Prisma input type for safe typings)
+    const where: Prisma.ProductAttributeWhereInput = {};
     if (search) {
       where.name = {
         contains: search,
-        mode: 'insensitive' as const,
       };
     }
 
@@ -72,7 +72,7 @@ export class AttributeService {
     const total = await prisma.productAttribute.count({ where });
 
     // Get attributes
-    const attributes = await prisma.productAttribute.findMany({
+    const attributes: ProductAttribute[] = await prisma.productAttribute.findMany({
       where,
       include: {
         _count: {
@@ -260,7 +260,7 @@ export class AttributeService {
       include: {
         attribute: true,
       },
-    });
+    }) as Array<ProductAttributeValue & { attribute: ProductAttribute }>;
 
     // Group by attribute
     const attributesMap = new Map<string, { attribute: ProductAttribute; values: string[] }>();
@@ -330,7 +330,6 @@ export class AttributeService {
       where: {
         name: {
           contains: query,
-          mode: 'insensitive' as const,
         },
       },
       take: limit,

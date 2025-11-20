@@ -33,11 +33,11 @@ interface Category {
 interface CategoryFormClientProps {
   category?: Category;
   allCategories: Category[];
-  storeId: string;
+  _storeId: string;
 }
-
-export function CategoryFormClient({ category, allCategories, storeId }: CategoryFormClientProps) {
+export function CategoryFormClient({ category, allCategories, _storeId }: CategoryFormClientProps) {
   const router = useRouter();
+  void _storeId;
   const [loading, setLoading] = useState(false);
   
   const [formData, setFormData] = useState({

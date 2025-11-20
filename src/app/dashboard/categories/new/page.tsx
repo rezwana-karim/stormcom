@@ -57,7 +57,7 @@ export default async function NewCategoryPage() {
               <div className="px-4 lg:px-6">
                 <CategoryFormClient
                   allCategories={allCategories}
-                  storeId={storeId}
+                  _storeId={storeId}
                 />
               </div>
             </div>

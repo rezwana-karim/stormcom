@@ -17,6 +17,7 @@ import type { NextRequest } from "next/server";
  */
 
 export function proxy(_request: NextRequest) {
+  void _request;
   const response = NextResponse.next();
 
   // Security headers

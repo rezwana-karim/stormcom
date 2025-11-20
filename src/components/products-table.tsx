@@ -3,7 +3,7 @@
 // src/components/products-table.tsx
 // Client component for displaying and managing products
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   Table,
@@ -53,7 +53,7 @@ export function ProductsTable({ storeId }: ProductsTableProps) {
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/products?storeId=${storeId}`);
@@ -66,13 +66,13 @@ export function ProductsTable({ storeId }: ProductsTableProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [storeId]);
 
   useEffect(() => {
     if (storeId) {
       fetchProducts();
     }
-  }, [storeId]);
+  }, [storeId, fetchProducts]);
 
   const handleDeleteClick = (product: Product) => {
     setProductToDelete(product);

@@ -1,50 +1,71 @@
 ﻿{
     "summary":  {
-                    "totalErrors":  2,
+                    "totalErrors":  5,
                     "exitCode":  1,
-                    "timestamp":  "2025-11-19T20:02:45Z",
+                    "timestamp":  "2025-11-20T05:16:53Z",
                     "command":  "npm run type-check",
                     "totalWarnings":  0,
-                    "totalLines":  18
+                    "totalLines":  12
                 },
     "rawOutput":  [
                       "",
                       "\u003e stormcom@0.1.0 type-check",
                       "\u003e tsc --noEmit --incremental",
                       "",
-                      ".next/dev/types/validator.ts(252,31): error TS2344: Type \u0027typeof import(\"F:/codestorm/codestorm/stormcom-ui/stormcom/src/app/api/brands/[slug]/route\")\u0027 does not satisfy the constraint \u0027RouteHandlerConfig\u003c\"/api/brands/[slug]\"\u003e\u0027.",
-                      "  Types of property \u0027GET\u0027 are incompatible.",
-                      "    Type \u0027(request: NextRequest, { params }: { params: { slug: string; }; }) =\u003e Promise\u003cNextResponse\u003cBrandWithRelations\u003e | NextResponse\u003c{ error: string; }\u003e\u003e\u0027 is not assignable to type \u0027(request: NextRequest, context: { params: Promise\u003c{ slug: string; }\u003e; }) =\u003e void | Response | Promise\u003cvoid | Response\u003e\u0027.",
-                      "      Types of parameters \u0027__1\u0027 and \u0027context\u0027 are incompatible.",
-                      "        Type \u0027{ params: Promise\u003c{ slug: string; }\u003e; }\u0027 is not assignable to type \u0027{ params: { slug: string; }; }\u0027.",
-                      "          Types of property \u0027params\u0027 are incompatible.",
-                      "            Property \u0027slug\u0027 is missing in type \u0027Promise\u003c{ slug: string; }\u003e\u0027 but required in type \u0027{ slug: string; }\u0027.",
-                      ".next/dev/types/validator.ts(270,31): error TS2344: Type \u0027typeof import(\"F:/codestorm/codestorm/stormcom-ui/stormcom/src/app/api/categories/[slug]/route\")\u0027 does not satisfy the constraint \u0027RouteHandlerConfig\u003c\"/api/categories/[slug]\"\u003e\u0027.",
-                      "  Types of property \u0027GET\u0027 are incompatible.",
-                      "    Type \u0027(request: NextRequest, { params }: { params: { slug: string; }; }) =\u003e Promise\u003cNextResponse\u003cCategoryWithRelations\u003e | NextResponse\u003c{ error: string; }\u003e\u003e\u0027 is not assignable to type \u0027(request: NextRequest, context: { params: Promise\u003c{ slug: string; }\u003e; }) =\u003e void | Response | Promise\u003cvoid | Response\u003e\u0027.",
-                      "      Types of parameters \u0027__1\u0027 and \u0027context\u0027 are incompatible.",
-                      "        Type \u0027{ params: Promise\u003c{ slug: string; }\u003e; }\u0027 is not assignable to type \u0027{ params: { slug: string; }; }\u0027.",
-                      "          Types of property \u0027params\u0027 are incompatible.",
-                      "            Property \u0027slug\u0027 is missing in type \u0027Promise\u003c{ slug: string; }\u003e\u0027 but required in type \u0027{ slug: string; }\u0027."
+                      "src/components/brand-form-client.tsx(28,42): error TS2339: Property \u0027storeId\u0027 does not exist on type \u0027BrandFormClientProps\u0027.",
+                      "src/components/category-form-client.tsx(38,63): error TS2339: Property \u0027storeId\u0027 does not exist on type \u0027CategoryFormClientProps\u0027.",
+                      "src/lib/services/attribute.service.ts(271,25): error TS2551: Property \u0027attribute\u0027 does not exist on type \u0027{ id: string; createdAt: Date; productId: string; attributeId: string; value: string; }\u0027. Did you mean \u0027attributeId\u0027?",
+                      "src/lib/services/category.service.ts(281,13): error TS7022: \u0027category\u0027 implicitly has type \u0027any\u0027 because it does not have a type annotation and is referenced directly or indirectly in its own initializer.",
+                      "src/lib/services/product.service.ts(484,11): error TS2322: Type \u0027{ inventoryStatus: $Enums.InventoryStatus; id: string; name?: string | undefined; slug?: string | undefined; description?: string | undefined; shortDescription?: string | undefined; ... 20 more ...; isFeatured?: boolean | undefined; }\u0027 is not assignable to type \u0027ProductUpdateInput\u0027.",
+                      "  Types of property \u0027images\u0027 are incompatible.",
+                      "    Type \u0027string[] | undefined\u0027 is not assignable to type \u0027string | StringFieldUpdateOperationsInput | undefined\u0027.",
+                      "      Type \u0027string[]\u0027 is not assignable to type \u0027string | StringFieldUpdateOperationsInput | undefined\u0027."
                   ],
     "errors":  [
                    {
-                       "fullText":  ".next/dev/types/validator.ts(252,31): error TS2344: Type \u0027typeof import(\"F:/codestorm/codestorm/stormcom-ui/stormcom/src/app/api/brands/[slug]/route\")\u0027 does not satisfy the constraint \u0027RouteHandlerConfig\u003c\"/api/brands/[slug]\"\u003e\u0027.",
-                       "file":  ".next/dev/types/validator.ts",
-                       "code":  "TS2344",
-                       "line":  252,
+                       "message":  "Property \u0027storeId\u0027 does not exist on type \u0027BrandFormClientProps\u0027.",
+                       "column":  42,
+                       "line":  28,
+                       "fullText":  "src/components/brand-form-client.tsx(28,42): error TS2339: Property \u0027storeId\u0027 does not exist on type \u0027BrandFormClientProps\u0027.",
+                       "code":  "TS2339",
                        "severity":  "error",
-                       "message":  "Type \u0027typeof import(\"F:/codestorm/codestorm/stormcom-ui/stormcom/src/app/api/brands/[slug]/route\")\u0027 does not satisfy the constraint \u0027RouteHandlerConfig\u003c\"/api/brands/[slug]\"\u003e\u0027. Types of property \u0027GET\u0027 are incompatible. Type \u0027(request: NextRequest, { params }: { params: { slug: string; }; }) =\u003e Promise\u003cNextResponse\u003cBrandWithRelations\u003e | NextResponse\u003c{ error: string; }\u003e\u003e\u0027 is not assignable to type \u0027(request: NextRequest, context: { params: Promise\u003c{ slug: string; }\u003e; }) =\u003e void | Response | Promise\u003cvoid | Response\u003e\u0027. Types of parameters \u0027__1\u0027 and \u0027context\u0027 are incompatible. Type \u0027{ params: Promise\u003c{ slug: string; }\u003e; }\u0027 is not assignable to type \u0027{ params: { slug: string; }; }\u0027. Types of property \u0027params\u0027 are incompatible. Property \u0027slug\u0027 is missing in type \u0027Promise\u003c{ slug: string; }\u003e\u0027 but required in type \u0027{ slug: string; }\u0027.",
-                       "column":  31
+                       "file":  "src/components/brand-form-client.tsx"
                    },
                    {
-                       "fullText":  ".next/dev/types/validator.ts(270,31): error TS2344: Type \u0027typeof import(\"F:/codestorm/codestorm/stormcom-ui/stormcom/src/app/api/categories/[slug]/route\")\u0027 does not satisfy the constraint \u0027RouteHandlerConfig\u003c\"/api/categories/[slug]\"\u003e\u0027.",
-                       "file":  ".next/dev/types/validator.ts",
-                       "code":  "TS2344",
-                       "line":  270,
+                       "message":  "Property \u0027storeId\u0027 does not exist on type \u0027CategoryFormClientProps\u0027.",
+                       "column":  63,
+                       "line":  38,
+                       "fullText":  "src/components/category-form-client.tsx(38,63): error TS2339: Property \u0027storeId\u0027 does not exist on type \u0027CategoryFormClientProps\u0027.",
+                       "code":  "TS2339",
                        "severity":  "error",
-                       "message":  "Type \u0027typeof import(\"F:/codestorm/codestorm/stormcom-ui/stormcom/src/app/api/categories/[slug]/route\")\u0027 does not satisfy the constraint \u0027RouteHandlerConfig\u003c\"/api/categories/[slug]\"\u003e\u0027. Types of property \u0027GET\u0027 are incompatible. Type \u0027(request: NextRequest, { params }: { params: { slug: string; }; }) =\u003e Promise\u003cNextResponse\u003cCategoryWithRelations\u003e | NextResponse\u003c{ error: string; }\u003e\u003e\u0027 is not assignable to type \u0027(request: NextRequest, context: { params: Promise\u003c{ slug: string; }\u003e; }) =\u003e void | Response | Promise\u003cvoid | Response\u003e\u0027. Types of parameters \u0027__1\u0027 and \u0027context\u0027 are incompatible. Type \u0027{ params: Promise\u003c{ slug: string; }\u003e; }\u0027 is not assignable to type \u0027{ params: { slug: string; }; }\u0027. Types of property \u0027params\u0027 are incompatible. Property \u0027slug\u0027 is missing in type \u0027Promise\u003c{ slug: string; }\u003e\u0027 but required in type \u0027{ slug: string; }\u0027.",
-                       "column":  31
+                       "file":  "src/components/category-form-client.tsx"
+                   },
+                   {
+                       "message":  "Property \u0027attribute\u0027 does not exist on type \u0027{ id: string; createdAt: Date; productId: string; attributeId: string; value: string; }\u0027. Did you mean \u0027attributeId\u0027?",
+                       "column":  25,
+                       "line":  271,
+                       "fullText":  "src/lib/services/attribute.service.ts(271,25): error TS2551: Property \u0027attribute\u0027 does not exist on type \u0027{ id: string; createdAt: Date; productId: string; attributeId: string; value: string; }\u0027. Did you mean \u0027attributeId\u0027?",
+                       "code":  "TS2551",
+                       "severity":  "error",
+                       "file":  "src/lib/services/attribute.service.ts"
+                   },
+                   {
+                       "message":  "\u0027category\u0027 implicitly has type \u0027any\u0027 because it does not have a type annotation and is referenced directly or indirectly in its own initializer.",
+                       "column":  13,
+                       "line":  281,
+                       "fullText":  "src/lib/services/category.service.ts(281,13): error TS7022: \u0027category\u0027 implicitly has type \u0027any\u0027 because it does not have a type annotation and is referenced directly or indirectly in its own initializer.",
+                       "code":  "TS7022",
+                       "severity":  "error",
+                       "file":  "src/lib/services/category.service.ts"
+                   },
+                   {
+                       "fullText":  "src/lib/services/product.service.ts(484,11): error TS2322: Type \u0027{ inventoryStatus: $Enums.InventoryStatus; id: string; name?: string | undefined; slug?: string | undefined; description?: string | undefined; shortDescription?: string | undefined; ... 20 more ...; isFeatured?: boolean | undefined; }\u0027 is not assignable to type \u0027ProductUpdateInput\u0027.",
+                       "file":  "src/lib/services/product.service.ts",
+                       "code":  "TS2322",
+                       "line":  484,
+                       "severity":  "error",
+                       "message":  "Type \u0027{ inventoryStatus: $Enums.InventoryStatus; id: string; name?: string | undefined; slug?: string | undefined; description?: string | undefined; shortDescription?: string | undefined; ... 20 more ...; isFeatured?: boolean | undefined; }\u0027 is not assignable to type \u0027ProductUpdateInput\u0027. Types of property \u0027images\u0027 are incompatible. Type \u0027string[] | undefined\u0027 is not assignable to type \u0027string | StringFieldUpdateOperationsInput | undefined\u0027. Type \u0027string[]\u0027 is not assignable to type \u0027string | StringFieldUpdateOperationsInput | undefined\u0027.",
+                       "column":  11
                    }
                ]
 }

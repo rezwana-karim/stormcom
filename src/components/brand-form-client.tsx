@@ -22,11 +22,12 @@ interface Brand {
 
 interface BrandFormClientProps {
   brand?: Brand;
-  storeId: string;
+  _storeId: string;
 }
 
-export function BrandFormClient({ brand, storeId }: BrandFormClientProps) {
+export function BrandFormClient({ brand, _storeId }: BrandFormClientProps) {
   const router = useRouter();
+  void _storeId;
   const [loading, setLoading] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -173,6 +174,7 @@ export function BrandFormClient({ brand, storeId }: BrandFormClientProps) {
             />
             {formData.logoUrl && (
               <div className="mt-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={formData.logoUrl}
                   alt="Brand logo preview"

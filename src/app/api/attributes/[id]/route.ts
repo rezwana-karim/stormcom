@@ -13,10 +13,7 @@ const updateAttributeSchema = z.object({
 });
 
 // GET /api/attributes/[id] - Get attribute by ID
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -26,8 +23,17 @@ export async function GET(
       );
     }
 
+    const id = params?.id ?? request.nextUrl.pathname.split('/').pop();
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Invalid request: missing id' },
+        { status: 400 }
+      );
+    }
+
+    console.log('GET /api/attributes/[id] resolved id:', id);
     const attributeService = AttributeService.getInstance();
-    const attribute = await attributeService.getAttributeById(params.id);
+    const attribute = await attributeService.getAttributeById(id);
 
     if (!attribute) {
       return NextResponse.json(
@@ -37,20 +43,17 @@ export async function GET(
     }
 
     return NextResponse.json({ data: attribute });
-  } catch (error) {
-    console.error(`GET /api/attributes/${params.id} error:`, error);
+  } catch (error: unknown) {
+    console.error(`GET /api/attributes/${params?.id} error:`, error);
     return NextResponse.json(
-      { error: 'Failed to fetch attribute' },
+      { error: 'Failed to fetch attribute', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
 }
 
 // PATCH /api/attributes/[id] - Update attribute
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -63,9 +66,17 @@ export async function PATCH(
     const body = await request.json();
     const validatedData = updateAttributeSchema.parse(body);
 
+    const id = params?.id ?? request.nextUrl.pathname.split('/').pop();
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Invalid request: missing id' },
+        { status: 400 }
+      );
+    }
+
     const attributeService = AttributeService.getInstance();
     const attribute = await attributeService.updateAttribute(
-      params.id,
+      id,
       validatedData
     );
 
@@ -73,12 +84,12 @@ export async function PATCH(
       data: attribute,
       message: 'Attribute updated successfully',
     });
-  } catch (error) {
-    console.error(`PATCH /api/attributes/${params.id} error:`, error);
+  } catch (error: unknown) {
+    console.error(`PATCH /api/attributes/${params?.id} error:`, error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid request data', details: error.errors },
+        { error: 'Invalid request data', details: error.issues },
         { status: 400 }
       );
     }
@@ -106,10 +117,7 @@ export async function PATCH(
 }
 
 // DELETE /api/attributes/[id] - Delete attribute
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -119,14 +127,22 @@ export async function DELETE(
       );
     }
 
+    const id = params?.id ?? request.nextUrl.pathname.split('/').pop();
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Invalid request: missing id' },
+        { status: 400 }
+      );
+    }
+
     const attributeService = AttributeService.getInstance();
-    await attributeService.deleteAttribute(params.id);
+    await attributeService.deleteAttribute(id);
 
     return NextResponse.json({
       message: 'Attribute deleted successfully',
     });
-  } catch (error) {
-    console.error(`DELETE /api/attributes/${params.id} error:`, error);
+  } catch (error: unknown) {
+    console.error(`DELETE /api/attributes/${params?.id} error:`, error);
 
     if (error instanceof Error) {
       if (error.message.includes('not found')) {

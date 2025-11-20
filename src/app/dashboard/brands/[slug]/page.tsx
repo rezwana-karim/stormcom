@@ -55,7 +55,7 @@ export default async function BrandDetailPage({
               <div className="px-4 lg:px-6">
                 <BrandFormClient
                   brand={brand}
-                  storeId={storeId}
+                  _storeId={storeId}
                 />
               </div>
             </div>

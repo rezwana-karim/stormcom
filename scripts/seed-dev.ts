@@ -23,7 +23,7 @@
  * @module scripts/seed-dev
  */
 
-/* eslint-disable no-console */
+// Console logging is intentionally used for seed script output during development
 
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
