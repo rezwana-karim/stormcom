@@ -4,16 +4,19 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/build.js",
     "start": "next start",
     "lint": "eslint",
     "type-check": "tsc --noEmit --incremental",
     "type-check:save": "powershell -ExecutionPolicy Bypass -File ./scripts/collect-type-errors.ps1",
     "lint:save": "powershell -ExecutionPolicy Bypass -File ./scripts/collect-lint-errors.ps1",
     "prisma:generate": "prisma generate --schema=prisma/schema.sqlite.prisma",
+    "prisma:generate:postgres": "prisma generate --schema=prisma/schema.postgres.prisma",
     "prisma:migrate:dev": "prisma migrate dev --schema=prisma/schema.sqlite.prisma",
+    "prisma:migrate:deploy": "prisma migrate deploy --schema=prisma/schema.postgres.prisma",
     "prisma:seed": "node prisma/seed.mjs",
-    "db:seed": "npm run prisma:seed"
+    "db:seed": "npm run prisma:seed",
+    "postinstall": "node scripts/postinstall.js"
   },
   "prisma": {
     "seed": "node prisma/seed.mjs"

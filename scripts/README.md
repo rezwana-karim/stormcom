@@ -2,7 +2,48 @@
 
 This directory contains utility scripts for the StormCom project.
 
-## collect-type-errors.ps1
+## Build and Deployment Scripts
+
+### build.js / build.sh
+
+Intelligent build scripts that detect the database type from `DATABASE_URL` and generate the appropriate Prisma schema before building Next.js.
+
+**Features:**
+- Auto-detects PostgreSQL vs SQLite from `DATABASE_URL`
+- Generates correct Prisma Client for the environment
+- Builds Next.js application
+- Cross-platform support (Node.js and Bash versions)
+
+**Usage:**
+```bash
+npm run build
+```
+
+**Environment Detection:**
+- `postgresql://` or `postgres://` → Uses `schema.postgres.prisma`
+- `file:` → Uses `schema.sqlite.prisma`
+- Unknown → Defaults to PostgreSQL schema
+
+### postinstall.js / postinstall.sh
+
+Runs automatically after `npm install` to generate the appropriate Prisma Client based on environment.
+
+**Features:**
+- Auto-runs on `npm install`
+- Detects database type from `DATABASE_URL`
+- Generates Prisma Client automatically
+- Graceful failure (won't break install if DATABASE_URL is missing)
+
+**Manual Usage:**
+```bash
+node scripts/postinstall.js
+# or
+bash scripts/postinstall.sh
+```
+
+## Development Scripts
+
+### collect-type-errors.ps1
 
 PowerShell script that runs TypeScript type checking and saves all errors to a JSON file.
 
