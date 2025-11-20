@@ -2,8 +2,10 @@
 // Postinstall script for Prisma Client generation (Node.js version for cross-platform)
 // Determines which schema to use based on DATABASE_URL
 
+/* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-unused-vars */
 const { execSync } = require('child_process');
 const path = require('path');
+/* eslint-enable @typescript-eslint/no-require-imports */
 
 console.log('🔄 Running postinstall...');
 
@@ -37,7 +39,7 @@ try {
     cwd: path.join(__dirname, '..'),
   });
   console.log('✅ Prisma Client generated');
-} catch (error) {
+} catch {
   console.log('⚠️  Prisma generation skipped or failed');
   // Don't fail the postinstall
 }

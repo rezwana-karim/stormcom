@@ -73,9 +73,42 @@ export $(cat .env.local | xargs) && npm run prisma:migrate:dev
 npm run dev
 ```
 
+## 🚀 Deployment
+
+### Deploy to Vercel
+
+1. **Prepare Database**: Set up a PostgreSQL database (Vercel Postgres, Supabase, Neon, or Railway)
+
+2. **Configure Environment Variables** in Vercel:
+   - `DATABASE_URL` - PostgreSQL connection string
+   - `NEXTAUTH_SECRET` - Generate with `openssl rand -base64 32`
+   - `NEXTAUTH_URL` - Your production URL
+   - `EMAIL_FROM` - Sender email address
+   - `RESEND_API_KEY` - Email service API key
+
+3. **Deploy**:
+   ```bash
+   # Via GitHub (recommended)
+   # Push to GitHub and import in Vercel dashboard
+   
+   # Or via CLI
+   vercel --prod
+   ```
+
+4. **Run Migrations**:
+   ```bash
+   vercel env pull .env.local
+   npm run prisma:migrate:deploy
+   ```
+
+See [VERCEL_DEPLOYMENT.md](./docs/VERCEL_DEPLOYMENT.md) for detailed instructions.
+
 ## 📚 Documentation
 
-See [TASK.md](./TASK.md) and [.github/copilot-instructions.md](./.github/copilot-instructions.md) for detailed implementation guidance.
+- [Deployment Guide](./docs/VERCEL_DEPLOYMENT.md) - Deploy to Vercel with PostgreSQL
+- [PostgreSQL Migration Guide](./docs/POSTGRESQL_MIGRATION.md) - Migrate from SQLite to PostgreSQL
+- [Development Guide](./TASK.md) - Implementation guidance
+- [Copilot Instructions](./.github/copilot-instructions.md) - Detailed project structure
 
 For Next.js 16 specifics, see official documentation at https://nextjs.org/docs
 

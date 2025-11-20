@@ -2,8 +2,10 @@
 // Build script for Next.js with dynamic Prisma schema selection (Node.js version)
 // This script determines which Prisma schema to use based on DATABASE_URL
 
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { execSync } = require('child_process');
 const path = require('path');
+/* eslint-enable @typescript-eslint/no-require-imports */
 
 console.log('🔧 Starting build process...');
 
