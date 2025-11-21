@@ -10,6 +10,7 @@ A production-ready Next.js 16 SaaS boilerplate with authentication, multi-tenanc
 - ✅ **Turbopack** for blazing fast builds
 - ✅ **React Compiler** for automatic memoization
 - ✅ **Tailwind CSS v4** with shadcn/ui components
+- ✅ **Vercel Analytics** for performance monitoring
 
 ### Authentication & Security
 - ✅ **NextAuth.js v4** with email magic links
@@ -77,12 +78,14 @@ npm run dev
 
 ### Deploy to Vercel
 
-1. **Prepare Database**: Set up a PostgreSQL database (Vercel Postgres, Supabase, Neon, or Railway)
+**🎉 Automatic Database Migration** - The deployment process now handles PostgreSQL migrations automatically!
+
+1. **Prepare Database**: Set up a PostgreSQL database (Vercel Postgres recommended)
 
 2. **Configure Environment Variables** in Vercel:
    - `DATABASE_URL` - PostgreSQL connection string
    - `NEXTAUTH_SECRET` - Generate with `openssl rand -base64 32`
-   - `NEXTAUTH_URL` - Your production URL
+   - `NEXTAUTH_URL` - Your production URL (e.g., `https://your-app.vercel.app`)
    - `EMAIL_FROM` - Sender email address
    - `RESEND_API_KEY` - Email service API key
 
@@ -95,13 +98,16 @@ npm run dev
    vercel --prod
    ```
 
-4. **Run Migrations**:
-   ```bash
-   vercel env pull .env.local
-   npm run prisma:migrate:deploy
-   ```
+4. **That's it!** Database migrations run automatically during build. No manual migration steps required.
 
-See [VERCEL_DEPLOYMENT.md](./docs/VERCEL_DEPLOYMENT.md) for detailed instructions.
+**What happens during deployment:**
+- ✅ Install dependencies
+- ✅ Run PostgreSQL migrations automatically (`scripts/migrate-postgres.js`)
+- ✅ Generate Prisma Client for PostgreSQL
+- ✅ Create all database tables and indexes
+- ✅ Build Next.js application
+
+See [VERCEL_DEPLOYMENT.md](./docs/VERCEL_DEPLOYMENT.md) for detailed instructions and troubleshooting.
 
 ## 📚 Documentation
 
