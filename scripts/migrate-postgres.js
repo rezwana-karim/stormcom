@@ -34,11 +34,16 @@ console.log('✅ PostgreSQL DATABASE_URL detected');
 try {
   // Step 1: Generate Prisma Client from PostgreSQL schema
   console.log('\n📦 Step 1: Generating Prisma Client...');
-  execSync('npx prisma generate --schema=prisma/schema.postgres.prisma', {
-    stdio: 'inherit',
-    cwd: path.join(__dirname, '..'),
-  });
-  console.log('✅ Prisma Client generated successfully');
+  try {
+    execSync('npx prisma generate --schema=prisma/schema.postgres.prisma', {
+      stdio: 'inherit',
+      cwd: path.join(__dirname, '..'),
+    });
+    console.log('✅ Prisma Client generated successfully');
+  } catch (generateError) {
+    console.error('❌ Failed to generate Prisma Client:', generateError.message);
+    throw new Error('Prisma Client generation failed');
+  }
 
   // Step 2: Run Prisma migrate deploy (if using Prisma migrations)
   console.log('\n🔄 Step 2: Running Prisma migrations...');
@@ -59,26 +64,29 @@ try {
     if (fs.existsSync(migrationPath)) {
       console.log('\n📄 Step 3: Running custom SQL migration...');
       
-      // Use psql if available, otherwise use Prisma db execute
+      const tempSqlFile = path.join(__dirname, '..', 'temp-migration.sql');
+      
       try {
         const migrationSql = fs.readFileSync(migrationPath, 'utf8');
         
-        // Use Prisma db execute to run the SQL
-        const tempSqlFile = path.join(__dirname, '..', 'temp-migration.sql');
+        // Write to temp file
         fs.writeFileSync(tempSqlFile, migrationSql);
         
+        // Use Prisma db execute to run the SQL
         execSync(`npx prisma db execute --schema=prisma/schema.postgres.prisma --file=${tempSqlFile}`, {
           stdio: 'inherit',
           cwd: path.join(__dirname, '..'),
         });
         
-        // Clean up temp file
-        fs.unlinkSync(tempSqlFile);
-        
         console.log('✅ Custom SQL migration completed successfully');
       } catch (sqlError) {
         console.error('❌ Error running SQL migration:', sqlError.message);
         throw sqlError;
+      } finally {
+        // Always clean up temp file
+        if (fs.existsSync(tempSqlFile)) {
+          fs.unlinkSync(tempSqlFile);
+        }
       }
     } else {
       console.log('⚠️  No custom migration file found at:', migrationPath);
