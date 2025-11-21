@@ -10,6 +10,7 @@ A production-ready Next.js 16 SaaS boilerplate with authentication, multi-tenanc
 - ✅ **Turbopack** for blazing fast builds
 - ✅ **React Compiler** for automatic memoization
 - ✅ **Tailwind CSS v4** with shadcn/ui components
+- ✅ **Vercel Analytics** for performance monitoring
 
 ### Authentication & Security
 - ✅ **NextAuth.js v4** with email magic links
@@ -77,12 +78,14 @@ npm run dev
 
 ### Deploy to Vercel
 
-1. **Prepare Database**: Set up a PostgreSQL database (Vercel Postgres, Supabase, Neon, or Railway)
+**🎉 Automatic Database Migration** - The deployment process now handles PostgreSQL migrations automatically!
+
+1. **Prepare Database**: Set up a PostgreSQL database (Vercel Postgres recommended)
 
 2. **Configure Environment Variables** in Vercel:
    - `DATABASE_URL` - PostgreSQL connection string
    - `NEXTAUTH_SECRET` - Generate with `openssl rand -base64 32`
-   - `NEXTAUTH_URL` - Your production URL
+   - `NEXTAUTH_URL` - Your production URL (e.g., `https://your-app.vercel.app`)
    - `EMAIL_FROM` - Sender email address
    - `RESEND_API_KEY` - Email service API key
 
@@ -95,17 +98,47 @@ npm run dev
    vercel --prod
    ```
 
-4. **Run Migrations**:
-   ```bash
-   vercel env pull .env.local
-   npm run prisma:migrate:deploy
-   ```
+4. **That's it!** Database migrations run automatically during build. No manual migration steps required.
 
-See [VERCEL_DEPLOYMENT.md](./docs/VERCEL_DEPLOYMENT.md) for detailed instructions.
+**What happens during deployment:**
+- ✅ Install dependencies
+- ✅ Run PostgreSQL migrations automatically (`scripts/migrate-postgres.js`)
+- ✅ Generate Prisma Client for PostgreSQL
+- ✅ Create all database tables and indexes
+- ✅ Build Next.js application
+
+### Optional: Seed Demo Data
+
+**Option 1: Automatic Seeding During Deployment**
+
+To enable automatic seeding of demo data during Vercel deployment:
+
+1. Set `SEED_DATABASE=true` in Vercel environment variables (Project Settings → Environment Variables)
+2. Deploy or redeploy
+3. **Important**: Remove or set `SEED_DATABASE=false` after seeding to prevent accidental future seeding
+
+⚠️ **WARNING**: Seeding deletes all existing data. Only use on fresh databases.
+
+See [Production Seeding Guide](./docs/PRODUCTION_SEEDING.md) for detailed instructions.
+
+**Option 2: Manual Seeding**
+
+To populate your production database with demo data manually:
+
+```bash
+vercel env pull .env.local
+export $(cat .env.local | xargs)
+npm run prisma:seed:production
+```
+
+**Demo Login**: `test@example.com` / `Test123!@#`
+
+See [VERCEL_DEPLOYMENT.md](./docs/VERCEL_DEPLOYMENT.md) for detailed instructions and troubleshooting.
 
 ## 📚 Documentation
 
 - [Deployment Guide](./docs/VERCEL_DEPLOYMENT.md) - Deploy to Vercel with PostgreSQL
+- [Production Seeding](./docs/PRODUCTION_SEEDING.md) - Seed production database with demo data
 - [PostgreSQL Migration Guide](./docs/POSTGRESQL_MIGRATION.md) - Migrate from SQLite to PostgreSQL
 - [Development Guide](./TASK.md) - Implementation guidance
 - [Copilot Instructions](./.github/copilot-instructions.md) - Detailed project structure

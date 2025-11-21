@@ -42,81 +42,62 @@ Go to your Vercel project settings → Environment Variables and add:
 
 **Important**: Add these variables to all environments (Production, Preview, Development) as needed.
 
-### 3. Initialize Database Schema
+### 3. Deploy to Vercel
 
-After deploying, you need to run migrations to set up the database:
+**🎉 Database migrations now run automatically during deployment!**
 
-#### Option 1: Using Vercel CLI (Recommended)
+When you deploy, the following happens automatically:
 
-```bash
-# Install Vercel CLI
-npm install -g vercel
+1. **Install dependencies**: `npm install`
+2. **Run migrations**: `node scripts/migrate-postgres.js`
+   - Detects PostgreSQL from `DATABASE_URL`
+   - Generates Prisma Client for PostgreSQL
+   - Creates all database tables and indexes automatically
+3. **Build application**: Next.js production build
 
-# Login to Vercel
-vercel login
+**No manual migration steps required!** The database schema is created automatically during the first deployment.
 
-# Link your project
-vercel link
-
-# Pull environment variables
-vercel env pull .env.local
-
-# Run migrations
-npm run prisma:migrate:deploy
-```
-
-#### Option 2: Using GitHub Actions (Automated)
-
-Create `.github/workflows/deploy.yml`:
-
-```yaml
-name: Deploy Database Migrations
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  migrate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '20'
-      - run: npm install
-      - run: npx prisma migrate deploy --schema=prisma/schema.postgres.prisma
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-```
-
-### 4. Deploy to Vercel
-
-#### Option A: Via GitHub Integration (Recommended)
+#### Deploy via GitHub Integration (Recommended)
 
 1. Push your code to GitHub
 2. Go to [vercel.com/new](https://vercel.com/new)
 3. Import your GitHub repository
 4. Vercel will auto-detect Next.js configuration
 5. Click "Deploy"
+6. Wait for deployment to complete - migrations run automatically
 
-#### Option B: Via Vercel CLI
+#### Deploy via Vercel CLI
 
 ```bash
 vercel --prod
 ```
 
+### 4. Verify Deployment
+
+Check the Vercel deployment logs to confirm migrations ran successfully:
+- Look for "✅ Prisma Client generated successfully"
+- Look for "✅ Migration completed successfully"
+- Look for "✅ Build completed successfully"
+
 ### 5. Seed Initial Data (Optional)
 
-If you want to populate the database with sample data:
+If you want to populate the database with demo data for testing:
+
+**⚠️ WARNING**: Seeding will delete all existing data in the database!
 
 ```bash
-# Make sure DATABASE_URL points to your production database
+# Using Vercel CLI (recommended)
 vercel env pull .env.local
-npm run prisma:seed
+export $(cat .env.local | xargs)
+npm run prisma:seed:production
 ```
 
-**Warning**: Only run seed in non-production environments or with test data.
+**Demo Account Created:**
+- Email: `test@example.com`
+- Password: `Test123!@#`
+- Organization: Demo Company
+
+For detailed seeding instructions, see [Production Seeding Guide](./PRODUCTION_SEEDING.md).
 
 ## Post-Deployment Checklist
 
@@ -141,6 +122,16 @@ npm run prisma:seed
 - No seeding in production (manual only)
 
 ## Troubleshooting
+
+### Common Deployment Issues
+
+**Error**: `The table 'public.User' does not exist in the current database`
+- **Cause**: Migrations didn't run or failed during build
+- **Solution**: 
+  1. Check build logs in Vercel for migration errors
+  2. Verify `DATABASE_URL` is set correctly in environment variables
+  3. Manually run migrations if needed: `npm run prisma:migrate:postgres`
+  4. Redeploy after fixing environment variables
 
 ### Build Errors
 

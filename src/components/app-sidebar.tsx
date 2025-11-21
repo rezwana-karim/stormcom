@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import {
   IconCamera,
   IconChartBar,
@@ -50,10 +51,32 @@ const data = {
       title: "Products",
       url: "/dashboard/products",
       icon: IconPackage,
+      items: [
+        {
+          title: "All Products",
+          url: "/dashboard/products",
+        },
+        {
+          title: "New Product",
+          url: "/dashboard/products/new",
+        },
+        {
+          title: "Categories",
+          url: "/dashboard/categories",
+        },
+        {
+          title: "Brands",
+          url: "/dashboard/brands",
+        },
+        {
+          title: "Attributes",
+          url: "/dashboard/attributes",
+        },
+      ],
     },
     {
-      title: "Lifecycle",
-      url: "#",
+      title: "Orders",
+      url: "/dashboard/orders",
       icon: IconListDetails,
     },
     {
@@ -166,10 +189,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
-              <a href="#">
+              <Link href="/dashboard">
                 <IconInnerShadowTop className="size-5!" />
-                <span className="text-base font-semibold">Acme Inc.</span>
-              </a>
+                <span className="text-base font-semibold">StormCom</span>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
