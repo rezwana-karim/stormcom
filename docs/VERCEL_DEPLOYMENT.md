@@ -81,15 +81,23 @@ Check the Vercel deployment logs to confirm migrations ran successfully:
 
 ### 5. Seed Initial Data (Optional)
 
-If you want to populate the database with sample data:
+If you want to populate the database with demo data for testing:
+
+**⚠️ WARNING**: Seeding will delete all existing data in the database!
 
 ```bash
-# Make sure DATABASE_URL points to your production database
+# Using Vercel CLI (recommended)
 vercel env pull .env.local
-npm run prisma:seed
+export $(cat .env.local | xargs)
+npm run prisma:seed:production
 ```
 
-**Warning**: Only run seed in non-production environments or with test data.
+**Demo Account Created:**
+- Email: `test@example.com`
+- Password: `Test123!@#`
+- Organization: Demo Company
+
+For detailed seeding instructions, see [Production Seeding Guide](./PRODUCTION_SEEDING.md).
 
 ## Post-Deployment Checklist
 

@@ -46,6 +46,16 @@ Set these in **Settings → Environment Variables** for all environments:
 - [ ] Access dashboard (`/dashboard`)
 - [ ] Check Vercel Analytics is working
 
+## Optional: Seed Demo Data
+
+**⚠️ WARNING**: Only seed on fresh databases. Seeding deletes all existing data!
+
+- [ ] Decide if you want demo data in production
+- [ ] If yes, follow [Production Seeding Guide](./PRODUCTION_SEEDING.md)
+- [ ] Use Vercel CLI to pull environment variables
+- [ ] Run `npm run prisma:seed:production`
+- [ ] Test demo login: `test@example.com` / `Test123!@#`
+
 ## Database Verification
 
 - [ ] Connect to production database

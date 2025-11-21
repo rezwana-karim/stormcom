@@ -107,11 +107,24 @@ npm run dev
 - ✅ Create all database tables and indexes
 - ✅ Build Next.js application
 
+### Optional: Seed Demo Data
+
+To populate your production database with demo data (⚠️ deletes existing data):
+
+```bash
+vercel env pull .env.local
+export $(cat .env.local | xargs)
+npm run prisma:seed:production
+```
+
+**Demo Login**: `test@example.com` / `Test123!@#`
+
 See [VERCEL_DEPLOYMENT.md](./docs/VERCEL_DEPLOYMENT.md) for detailed instructions and troubleshooting.
 
 ## 📚 Documentation
 
 - [Deployment Guide](./docs/VERCEL_DEPLOYMENT.md) - Deploy to Vercel with PostgreSQL
+- [Production Seeding](./docs/PRODUCTION_SEEDING.md) - Seed production database with demo data
 - [PostgreSQL Migration Guide](./docs/POSTGRESQL_MIGRATION.md) - Migrate from SQLite to PostgreSQL
 - [Development Guide](./TASK.md) - Implementation guidance
 - [Copilot Instructions](./.github/copilot-instructions.md) - Detailed project structure

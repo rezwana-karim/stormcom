@@ -16,6 +16,7 @@
     "prisma:migrate:deploy": "prisma migrate deploy --schema=prisma/schema.postgres.prisma",
     "prisma:migrate:postgres": "node scripts/migrate-postgres.js",
     "prisma:seed": "node prisma/seed.mjs",
+    "prisma:seed:production": "node scripts/seed-production.js",
     "db:seed": "npm run prisma:seed",
     "postinstall": "node scripts/postinstall.js"
   },

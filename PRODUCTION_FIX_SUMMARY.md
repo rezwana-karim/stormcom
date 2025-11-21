@@ -140,16 +140,40 @@ If deployment still fails:
 
 ### Files Modified
 1. `src/app/layout.tsx` - Added Vercel Analytics component
-2. `package.json` - Added @vercel/analytics dependency and migration script
+2. `package.json` - Added @vercel/analytics dependency, migration script, and production seeding script
 3. `vercel.json` - Updated build command to run migrations first
-4. `README.md` - Updated deployment instructions
-5. `docs/VERCEL_DEPLOYMENT.md` - Updated with automatic migration process
+4. `README.md` - Updated deployment instructions and added seeding info
+5. `docs/VERCEL_DEPLOYMENT.md` - Updated with automatic migration process and seeding
 
 ### Files Created
 1. `scripts/migrate-postgres.js` - PostgreSQL migration automation script
-2. `prisma/migrations-postgres/init.sql` - PostgreSQL schema definition
-3. `prisma/migrations-postgres/README.md` - Migration documentation
-4. `docs/DEPLOYMENT_CHECKLIST.md` - Deployment verification checklist
+2. `scripts/seed-production.js` - Production database seeding script (NEW)
+3. `prisma/migrations-postgres/init.sql` - PostgreSQL schema definition
+4. `prisma/migrations-postgres/README.md` - Migration documentation
+5. `docs/DEPLOYMENT_CHECKLIST.md` - Deployment verification checklist
+6. `docs/PRODUCTION_SEEDING.md` - Production seeding guide (NEW)
+
+## Optional: Seed Demo Data
+
+After successful deployment, you can optionally seed the database with demo data:
+
+```bash
+# Pull environment variables from Vercel
+vercel env pull .env.local
+
+# Source environment variables
+export $(cat .env.local | xargs)
+
+# Run production seeding (⚠️ WARNING: Deletes all existing data!)
+npm run prisma:seed:production
+```
+
+**Demo Account:**
+- Email: `test@example.com`
+- Password: `Test123!@#`
+- Organization: Demo Company
+
+See [docs/PRODUCTION_SEEDING.md](docs/PRODUCTION_SEEDING.md) for detailed instructions.
 
 ## Key Benefits
 
