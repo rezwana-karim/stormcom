@@ -30,6 +30,46 @@ export type OrderUpdateStatusParams = {
   adminNote?: string;
 };
 
+/**
+ * Order with full details including customer, items, and store
+ * Used by getOrderById, cancelOrder, and refundOrder methods
+ */
+export type OrderWithDetails = Prisma.OrderGetPayload<{
+  include: {
+    customer: true;
+    items: {
+      include: {
+        product: {
+          select: {
+            id: true;
+            name: true;
+            slug: true;
+            thumbnailUrl: true;
+            price: true;
+            sku: true;
+          };
+        };
+        variant: {
+          select: {
+            id: true;
+            name: true;
+            sku: true;
+            price: true;
+          };
+        };
+      };
+    };
+    store: {
+      select: {
+        id: true;
+        name: true;
+        slug: true;
+        email: true;
+      };
+    };
+  };
+}>;
+
 // ============================================================================
 // VALIDATION SCHEMAS
 // ============================================================================
@@ -426,7 +466,7 @@ export class OrderService {
   /**
    * Cancel order and restore inventory
    */
-  async cancelOrder(orderId: string, storeId: string, reason?: string): Promise<Prisma.OrderGetPayload<{ include: { customer: true; items: { include: { product: { select: { id: true; name: true; slug: true; thumbnailUrl: true; price: true; sku: true } }; variant: { select: { id: true; name: true; sku: true; price: true } } } }; store: { select: { id: true; name: true; slug: true } } } }> | null> {
+  async cancelOrder(orderId: string, storeId: string, reason?: string): Promise<OrderWithDetails | null> {
     const order = await prisma.order.findFirst({
       where: {
         id: orderId,
@@ -489,7 +529,7 @@ export class OrderService {
     storeId: string,
     refundAmount?: number,
     reason?: string
-  ): Promise<Prisma.OrderGetPayload<{ include: { customer: true; items: { include: { product: { select: { id: true; name: true; slug: true; thumbnailUrl: true; price: true; sku: true } }; variant: { select: { id: true; name: true; sku: true; price: true } } } }; store: { select: { id: true; name: true; slug: true } } } }> | null> {
+  ): Promise<OrderWithDetails | null> {
     const order = await prisma.order.findFirst({
       where: {
         id: orderId,

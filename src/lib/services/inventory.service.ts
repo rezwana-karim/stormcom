@@ -3,6 +3,7 @@
 // Handles stock tracking, adjustments, low stock alerts, and audit trails
 
 import { prisma } from '@/lib/prisma';
+import { caseInsensitiveStringFilter } from '@/lib/prisma-utils';
 import { InventoryStatus, Prisma } from '@prisma/client';
 
 /**
@@ -101,8 +102,8 @@ export class InventoryService {
     if (search) {
       (where.AND as Prisma.ProductWhereInput[]).push({
         OR: [
-          { name: { contains: search } },
-          { sku: { contains: search } },
+          { name: caseInsensitiveStringFilter(search) },
+          { sku: caseInsensitiveStringFilter(search) },
         ],
       });
     }

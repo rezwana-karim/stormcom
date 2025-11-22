@@ -3,6 +3,7 @@
 // Handles store creation, updates, and multi-tenant store operations
 
 import { prisma } from '@/lib/prisma';
+import { caseInsensitiveStringFilter } from '@/lib/prisma-utils';
 import { Prisma, SubscriptionPlan, SubscriptionStatus } from '@prisma/client';
 import { z } from 'zod';
 
@@ -204,9 +205,9 @@ export class StoreService {
 
     if (search) {
       where.OR = [
-        { name: { contains: search } },
-        { slug: { contains: search } },
-        { email: { contains: search } },
+        { name: caseInsensitiveStringFilter(search) },
+        { slug: caseInsensitiveStringFilter(search) },
+        { email: caseInsensitiveStringFilter(search) },
       ];
     }
 

@@ -8,6 +8,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
+import { caseInsensitiveStringFilter } from '@/lib/prisma-utils';
 import type { Customer, Prisma } from '@prisma/client';
 
 /**
@@ -189,10 +190,10 @@ export class CustomerService {
 
     if (search) {
       where.OR = [
-        { email: { contains: search } },
-        { firstName: { contains: search } },
-        { lastName: { contains: search } },
-        { phone: { contains: search } },
+        { email: caseInsensitiveStringFilter(search) },
+        { firstName: caseInsensitiveStringFilter(search) },
+        { lastName: caseInsensitiveStringFilter(search) },
+        { phone: caseInsensitiveStringFilter(search) },
       ];
     }
 
