@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { StoreService, CreateStoreSchema } from '@/lib/services/store.service';
+import { SubscriptionPlan, SubscriptionStatus } from '@prisma/client';
 import { z } from 'zod';
 
 // GET /api/stores - List stores with pagination and filtering
@@ -49,8 +50,8 @@ export async function GET(request: NextRequest) {
     const result = await storeService.list(
       {
         ...queryInput,
-        subscriptionPlan: queryInput.subscriptionPlan as any,
-        subscriptionStatus: queryInput.subscriptionStatus as any,
+        subscriptionPlan: queryInput.subscriptionPlan as SubscriptionPlan | undefined,
+        subscriptionStatus: queryInput.subscriptionStatus as SubscriptionStatus | undefined,
       },
       session.user.id,
       undefined, // TODO: Add role from session

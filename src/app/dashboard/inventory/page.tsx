@@ -345,7 +345,7 @@ export default function InventoryPage() {
 
             <div className="space-y-2">
               <Label>Adjustment Type</Label>
-              <Select value={adjustmentType} onValueChange={(v) => setAdjustmentType(v as any)}>
+              <Select value={adjustmentType} onValueChange={(v) => setAdjustmentType(v as 'ADD' | 'REMOVE' | 'SET')}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

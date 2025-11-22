@@ -95,6 +95,7 @@ export function StoreFormDialog({ open, onOpenChange, store, onSuccess }: StoreF
   const isEdit = !!store;
 
   const form = useForm<StoreFormValues>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(storeFormSchema) as any,
     defaultValues: {
       name: '',

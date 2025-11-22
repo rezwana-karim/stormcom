@@ -481,7 +481,7 @@ export class ProductService {
     }
 
     // Prepare update data (exclude JSON fields like images from direct spread to satisfy Prisma types)
-    const { images: imagesArr, ...rest } = validatedData as any;
+    const { images: imagesArr, ...rest } = validatedData as UpdateProductData & { images?: string[] };
     const updateData: Prisma.ProductUpdateInput = {
       ...rest,
       inventoryStatus,

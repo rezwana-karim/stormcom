@@ -10,7 +10,7 @@ import { z } from 'zod';
 // GET /api/stores/[id] - Get store by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -22,8 +22,9 @@ export async function GET(
       );
     }
 
+    const { id } = await params;
     const storeService = StoreService.getInstance();
-    const store = await storeService.getById(params.id);
+    const store = await storeService.getById(id);
 
     return NextResponse.json({ data: store });
   } catch (error) {
@@ -41,7 +42,7 @@ export async function GET(
 // PUT /api/stores/[id] - Update store
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -53,11 +54,12 @@ export async function PUT(
       );
     }
 
+    const { id } = await params;
     const body = await request.json();
     const validatedData = UpdateStoreSchema.parse(body);
 
     const storeService = StoreService.getInstance();
-    const store = await storeService.update(params.id, validatedData);
+    const store = await storeService.update(id, validatedData);
 
     return NextResponse.json({
       data: store,
@@ -89,7 +91,7 @@ export async function PUT(
 // DELETE /api/stores/[id] - Delete store (soft delete)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -101,8 +103,9 @@ export async function DELETE(
       );
     }
 
+    const { id } = await params;
     const storeService = StoreService.getInstance();
-    await storeService.delete(params.id);
+    await storeService.delete(id);
 
     return NextResponse.json({
       message: 'Store deleted successfully',

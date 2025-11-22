@@ -426,7 +426,7 @@ export class OrderService {
   /**
    * Cancel order and restore inventory
    */
-  async cancelOrder(orderId: string, storeId: string, reason?: string): Promise<any> {
+  async cancelOrder(orderId: string, storeId: string, reason?: string): Promise<Prisma.OrderGetPayload<{ include: { customer: true; items: { include: { product: { select: { id: true; name: true; slug: true; thumbnailUrl: true; price: true; sku: true } }; variant: { select: { id: true; name: true; sku: true; price: true } } } }; store: { select: { id: true; name: true; slug: true } } } }> | null> {
     const order = await prisma.order.findFirst({
       where: {
         id: orderId,
@@ -489,7 +489,7 @@ export class OrderService {
     storeId: string,
     refundAmount?: number,
     reason?: string
-  ): Promise<any> {
+  ): Promise<Prisma.OrderGetPayload<{ include: { customer: true; items: { include: { product: { select: { id: true; name: true; slug: true; thumbnailUrl: true; price: true; sku: true } }; variant: { select: { id: true; name: true; sku: true; price: true } } } }; store: { select: { id: true; name: true; slug: true } } } }> | null> {
     const order = await prisma.order.findFirst({
       where: {
         id: orderId,
