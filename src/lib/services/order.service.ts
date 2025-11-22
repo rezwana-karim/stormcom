@@ -588,4 +588,88 @@ export class OrderService {
 
     return this.getOrderById(orderId, storeId);
   }
+
+  /**
+   * Get invoice data for PDF generation
+   */
+  async getInvoiceData(orderId: string, storeId?: string) {
+    const order = await prisma.order.findFirst({
+      where: {
+        id: orderId,
+        ...(storeId && { storeId }),
+        deletedAt: null,
+      },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            email: true,
+            phone: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        items: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                sku: true,
+              },
+            },
+            variant: {
+              select: {
+                id: true,
+                name: true,
+                sku: true,
+              },
+            },
+          },
+        },
+        store: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            email: true,
+            address: true,
+            phone: true,
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      return null;
+    }
+
+    // Format invoice data
+    return {
+      orderNumber: order.orderNumber,
+      createdAt: order.createdAt,
+      status: order.status,
+      paymentStatus: order.paymentStatus,
+      paymentMethod: order.paymentMethod,
+      store: order.store,
+      customer: order.customer,
+      billingAddress: order.billingAddress as any,
+      shippingAddress: order.shippingAddress as any,
+      items: order.items.map(item => ({
+        productName: item.product?.name || item.productName || 'Unknown Product',
+        variantName: item.variant?.name || item.variantName || null,
+        sku: item.variant?.sku || item.product?.sku || item.sku || 'N/A',
+        quantity: item.quantity,
+        unitPrice: item.price,
+        lineTotal: item.totalAmount,
+      })),
+      subtotal: order.subtotal,
+      taxAmount: order.taxAmount,
+      shippingAmount: order.shippingAmount,
+      discountAmount: order.discountAmount,
+      totalAmount: order.totalAmount,
+      trackingNumber: order.trackingNumber,
+      trackingUrl: order.trackingUrl,
+    };
+  }
 }

@@ -286,6 +286,104 @@ export class AnalyticsService {
   }
 
   /**
+   * Get customer metrics and analytics
+   */
+  async getCustomerMetrics(
+    storeId: string,
+    dateRange: { startDate: Date; endDate: Date }
+  ) {
+    const { startDate, endDate } = dateRange;
+
+    // Get all customers for the store
+    const totalCustomers = await prisma.customer.count({
+      where: {
+        storeId,
+        deletedAt: null,
+      },
+    });
+
+    // Get new customers in the period
+    const newCustomers = await prisma.customer.count({
+      where: {
+        storeId,
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
+        deletedAt: null,
+      },
+    });
+
+    // Get customers who made orders in this period
+    const customersWithOrders = await prisma.order.findMany({
+      where: {
+        storeId,
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
+        deletedAt: null,
+      },
+      select: {
+        customerId: true,
+      },
+      distinct: ['customerId'],
+    });
+
+    const customerIdsInPeriod = customersWithOrders
+      .map(o => o.customerId)
+      .filter((id): id is string => id !== null);
+
+    // Get returning customers (those who had orders before this period)
+    let returningCustomers = 0;
+    if (customerIdsInPeriod.length > 0) {
+      const customersWithPreviousOrders = await prisma.order.findMany({
+        where: {
+          storeId,
+          customerId: {
+            in: customerIdsInPeriod,
+          },
+          createdAt: {
+            lt: startDate,
+          },
+          deletedAt: null,
+        },
+        select: {
+          customerId: true,
+        },
+        distinct: ['customerId'],
+      });
+      returningCustomers = customersWithPreviousOrders.length;
+    }
+
+    // Calculate retention rate (returning customers / customers from previous period)
+    const previousPeriodCustomers = await prisma.order.findMany({
+      where: {
+        storeId,
+        createdAt: {
+          lt: startDate,
+        },
+        deletedAt: null,
+      },
+      select: {
+        customerId: true,
+      },
+      distinct: ['customerId'],
+    });
+
+    const customerRetentionRate = previousPeriodCustomers.length > 0
+      ? (returningCustomers / previousPeriodCustomers.length) * 100
+      : 0;
+
+    return {
+      totalCustomers,
+      newCustomers,
+      returningCustomers,
+      customerRetentionRate: Math.round(customerRetentionRate * 100) / 100,
+    };
+  }
+
+  /**
    * Get total revenue for a period
    */
   private async getRevenueTotal(
