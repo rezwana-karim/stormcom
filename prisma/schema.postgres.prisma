@@ -256,6 +256,7 @@ model Store {
   customers      Customer[]
   attributes     ProductAttribute[]
   auditLogs      AuditLog[]
+  inventoryLogs  InventoryLog[] @relation("StoreInventoryLogs")
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -595,6 +596,7 @@ model Review {
 model InventoryLog {
   id          String   @id @default(cuid())
   storeId     String
+  store       Store    @relation("StoreInventoryLogs", fields: [storeId], references: [id], onDelete: Cascade)
   productId   String
   product     Product  @relation("InventoryLogs", fields: [productId], references: [id], onDelete: Cascade)
   
