@@ -47,7 +47,11 @@ export async function GET(request: NextRequest) {
 
     const storeService = StoreService.getInstance();
     const result = await storeService.list(
-      queryInput,
+      {
+        ...queryInput,
+        subscriptionPlan: queryInput.subscriptionPlan as any,
+        subscriptionStatus: queryInput.subscriptionStatus as any,
+      },
       session.user.id,
       undefined, // TODO: Add role from session
       undefined  // TODO: Add storeId from session
