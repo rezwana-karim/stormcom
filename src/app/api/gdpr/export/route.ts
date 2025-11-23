@@ -59,11 +59,9 @@ export async function GET(request: NextRequest) {
       accounts: user.accounts.map((account) => ({
         provider: account.provider,
         type: account.type,
-        createdAt: account.createdAt,
       })),
       sessions: user.sessions.map((session) => ({
         expires: session.expires,
-        createdAt: session.createdAt,
       })),
       organizations: user.memberships.map((membership) => ({
         name: membership.organization.name,

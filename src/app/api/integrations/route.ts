@@ -14,8 +14,8 @@ import { z } from 'zod';
 
 const connectIntegrationSchema = z.object({
   type: z.enum(['stripe', 'paypal', 'mailchimp', 'google_analytics', 'facebook_pixel', 'shippo']),
-  credentials: z.record(z.string()),
-  settings: z.record(z.any()).optional(),
+  credentials: z.record(z.string(), z.string()),
+  settings: z.record(z.string(), z.unknown()).optional(),
 });
 
 // Mock integrations

@@ -14,7 +14,7 @@ import { authOptions } from '@/lib/auth';
 import { z } from 'zod';
 
 const updateIntegrationSchema = z.object({
-  settings: z.record(z.any()),
+  settings: z.record(z.string(), z.unknown()),
   active: z.boolean().optional(),
 });
 
