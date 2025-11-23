@@ -59,7 +59,7 @@ interface Store {
 
 interface ListResponse {
   data: Store[];
-  pagination: {
+  meta: {
     total: number;
     page: number;
     limit: number;
@@ -87,43 +87,50 @@ export function StoresList() {
   const [editingStore, setEditingStore] = useState<Store | null>(null);
   const [deletingStore, setDeletingStore] = useState<Store | null>(null);
 
-  const fetchStores = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({
-        page: pagination.page.toString(),
-        limit: pagination.limit.toString(),
-      });
-
-      if (search) params.append('search', search);
-      if (subscriptionPlan) params.append('subscriptionPlan', subscriptionPlan);
-      if (subscriptionStatus) params.append('subscriptionStatus', subscriptionStatus);
-
-      const response = await fetch(`/api/stores?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch stores');
-
-      const result: ListResponse = await response.json();
-      setStores(result.data);
-      setPagination(result.pagination);
-    } catch {
-      toast.error('Failed to load stores');
-    } finally {
-      setLoading(false);
-    }
-  }, [pagination.page, pagination.limit, search, subscriptionPlan, subscriptionStatus]);
-
   useEffect(() => {
+    const fetchStores = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams({
+          page: pagination.page.toString(),
+          limit: pagination.limit.toString(),
+        });
+
+        if (search) params.append('search', search);
+        if (subscriptionPlan) params.append('subscriptionPlan', subscriptionPlan);
+        if (subscriptionStatus) params.append('subscriptionStatus', subscriptionStatus);
+
+        const response = await fetch(`/api/stores?${params}`);
+        if (!response.ok) throw new Error('Failed to fetch stores');
+
+        const result: ListResponse = await response.json();
+        setStores(result.data);
+        // Only update pagination metadata, not page/limit to avoid infinite loop
+        setPagination(prev => ({
+          ...prev,
+          total: result.meta.total,
+          totalPages: result.meta.totalPages,
+        }));
+      } catch {
+        toast.error('Failed to load stores');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchStores();
-  }, [pagination.page, pagination.limit]);
+  }, [pagination.page, pagination.limit, search, subscriptionPlan, subscriptionStatus]);
 
   const handleSearch = () => {
     setPagination(prev => ({ ...prev, page: 1 }));
-    fetchStores();
   };
 
   const handleFilterChange = () => {
     setPagination(prev => ({ ...prev, page: 1 }));
-    fetchStores();
+  };
+
+  const refreshStores = () => {
+    setPagination(prev => ({ ...prev })); // Trigger re-fetch
   };
 
   const getPlanBadgeVariant = (plan: SubscriptionPlan) => {
@@ -164,9 +171,9 @@ export function StoresList() {
         </div>
 
         <Select
-          value={subscriptionPlan}
+          value={subscriptionPlan || "all"}
           onValueChange={(value) => {
-            setSubscriptionPlan(value);
+            setSubscriptionPlan(value === "all" ? "" : value);
             handleFilterChange();
           }}
         >
@@ -174,7 +181,7 @@ export function StoresList() {
             <SelectValue placeholder="Plan" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Plans</SelectItem>
+            <SelectItem value="all">All Plans</SelectItem>
             <SelectItem value="FREE">Free</SelectItem>
             <SelectItem value="STARTER">Starter</SelectItem>
             <SelectItem value="PRO">Pro</SelectItem>
@@ -183,9 +190,9 @@ export function StoresList() {
         </Select>
 
         <Select
-          value={subscriptionStatus}
+          value={subscriptionStatus || "all"}
           onValueChange={(value) => {
-            setSubscriptionStatus(value);
+            setSubscriptionStatus(value === "all" ? "" : value);
             handleFilterChange();
           }}
         >
@@ -193,7 +200,7 @@ export function StoresList() {
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Statuses</SelectItem>
+            <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="ACTIVE">Active</SelectItem>
             <SelectItem value="TRIALING">Trialing</SelectItem>
             <SelectItem value="PAST_DUE">Past Due</SelectItem>
@@ -343,7 +350,7 @@ export function StoresList() {
         onOpenChange={setCreateOpen}
         onSuccess={() => {
           setCreateOpen(false);
-          fetchStores();
+          refreshStores();
         }}
       />
 
@@ -354,7 +361,7 @@ export function StoresList() {
           store={editingStore}
           onSuccess={() => {
             setEditingStore(null);
-            fetchStores();
+            refreshStores();
           }}
         />
       )}
@@ -366,7 +373,7 @@ export function StoresList() {
           store={deletingStore}
           onSuccess={() => {
             setDeletingStore(null);
-            fetchStores();
+            refreshStores();
           }}
         />
       )}
