@@ -7,6 +7,12 @@
 - `ui_ux_improvements.md` – Component & experience enhancements.
 - `feature_roadmap_user_stories.md` – Phased roadmap & user stories.
 - `implementation_plan.md` – Detailed technical execution steps.
+- `threat_model.md` – STRIDE-based multi-tenant security analysis.
+- `performance_scaling.md` – Targets & lever strategy for latency & throughput.
+- `cost_optimization.md` – Cost driver analysis & reduction levers.
+- `marketing_automation.md` – Segmentation, RFM, lifecycle & campaign engine.
+- `permissions_taxonomy.md` – Fine-grained RBAC model & enforcement pattern.
+- `observability_strategy.md` – Metrics, tracing, logging, synthetic monitoring.
 
 ## Key Strategic Themes
 1. Lifecycle Fidelity: Add missing order/payment/fulfillment/return/refund entities.
@@ -68,3 +74,24 @@ CREATE TABLE CollectionProduct (...);
 The platform’s foundation is solid; proposed enhancements enable competitiveness with established commerce SaaS systems while maintaining a clear incremental path. Implementation should emphasize observability and correctness before scaling advanced personalization.
 
 Prepared for continued iteration and refinement. Next step: begin Phase 1 migrations & service layer introduction.
+
+---
+
+## Cross-Link Map
+| Core Theme | Primary Doc | Supporting Docs |
+|------------|-------------|-----------------|
+| Security | `threat_model.md` | `permissions_taxonomy.md`, `observability_strategy.md` |
+| Performance | `performance_scaling.md` | `api_refactor_plan.md`, `ui_ux_improvements.md` |
+| Cost | `cost_optimization.md` | `performance_scaling.md` |
+| Automation & Marketing | `marketing_automation.md` | `business_logic_review.md`, `implementation_plan.md` |
+| RBAC | `permissions_taxonomy.md` | `api_refactor_plan.md`, `ui_ux_improvements.md` |
+| Observability | `observability_strategy.md` | `implementation_plan.md` |
+
+## Extended Executive Snapshot
+Immediate value gates: permissions + inventory reservation + cache tagging deliver security & performance baselines; next leverage promotions & segmentation for merchant conversion uplift. Observability & partition policies secure long-term operational sustainability.
+
+## Addendum Alignment
+All new addendum sections merged into respective docs. Cross-link map above should be maintained whenever new capabilities or ADRs are added.
+
+---
+*Summary updated with cross-links and extended scope documentation listing.*

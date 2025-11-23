@@ -299,3 +299,146 @@ Signature workflow: `signature = HMAC(store.auditSecret, concat(entityType, enti
 
 ## Conclusion
 This evolution introduces modularity, scalability, and analytics readiness while preserving existing operational behaviors. A disciplined, phased migration (additive → dual-write → cutover) minimizes risk and ensures backward compatibility. Event and pricing models position StormCom for future international, multi-channel, and AI-driven recommendation features.
+
+---
+
+# Extended Addendum: Advanced Modeling, Partitioning, Integrity & Read Optimization
+
+## A. Denormalized Read Models & Caching Synergy
+Introduce a `ProductSummary` table to accelerate list & search views:
+```prisma
+model ProductSummary {
+  productId   String @id
+  storeId     String
+  name        String
+  slug        String
+  price       Float
+  featured    Boolean @default(false)
+  inventoryStatus InventoryStatus
+  categorySlug String?
+  brandSlug    String?
+  updatedAt   DateTime @updatedAt
+  cachedAt    DateTime @default(now())
+  @@index([storeId, featured])
+  @@index([storeId, inventoryStatus])
+}
+```
+Populate via background job or trigger on product mutation; pair with Cache Tags (`product:{id}`, `category:{categoryId}`) to reduce origin recomputation.
+
+## B. Reservation vs Adjustment Separation
+`StockReservation` provides *potential* demand; `InventoryAdjustment` records *actual* stock changes. To prevent oversell:
+1. Reserve → Payment success → Apply adjustment (delta negative) → Release reservation.
+2. Expired reservation cleanup job frees stale holds.
+3. Reconciliation formula: `CurrentQty == InitialQty + Σ(Adjustments.delta) - Σ(ActiveReservations.qty)` (must hold invariant).
+
+## C. Hash-Chained Audit Log Pattern
+Extend `AuditLog` with `prevHash` forming a chain:
+```prisma
+model AuditLog {
+  id         String @id @default(cuid())
+  storeId    String?
+  action     String
+  entityType String
+  entityId   String
+  changes    String?
+  correlationId String?
+  requestId  String?
+  actorType  String @default("USER")
+  severity   String @default("info")
+  prevHash   String?
+  hash       String
+  createdAt  DateTime @default(now())
+  @@index([storeId, createdAt])
+}
+```
+`hash = HMAC(secret, concat(id, prevHash, entityType, entityId, action, createdAt))`; tamper evident if chain breaks.
+
+## D. Promotion Rule Indexing & Performance
+Add targeted indexes for rule evaluation:
+```sql
+CREATE INDEX promotion_active_idx ON promotion_rules (store_id) WHERE is_active = true;
+CREATE INDEX promotion_validity_idx ON promotion_rules (store_id, starts_at, ends_at);
+```
+Evaluation pipeline: load active + validity-window filtered rules → pre-filter by simple criteria (subtotal range) → interpret complex JSON conditions (segment membership, product inclusion). Cache compiled predicates for hot rules.
+
+## E. Partitioning Strategy Thresholds (Postgres)
+| Table | Partition Key | Threshold | Action |
+|-------|---------------|-----------|--------|
+| audit_logs | month(created_at) | > 30M rows total | Create monthly partitions |
+| inventory_adjustments | month(created_at) | > 10M rows | Partition for pruning |
+| analytics_events | day(created_at) (rolling window) | > 100M rows | Daily partitions + roll-up |
+
+Use native partitioning or `pg_partman`; maintain parent indexes only where necessary.
+
+## F. Multi-Currency Precision
+Switch monetary fields to `Decimal` type to avoid floating point rounding:
+```prisma
+model ProductPrice {
+  amount    Decimal @db.Decimal(10,2)
+  compareAt Decimal? @db.Decimal(10,2)
+  // ... other fields
+}
+```
+Currency conversion: store FX rates in `CurrencyRate (base, quote, rate Decimal(12,6), fetchedAt)`; apply midday refresh schedule; avoid cascading conversions (always from canonical base currency e.g., USD).
+
+## G. Segmentation & RFM Snapshot Modeling
+RFM snapshot:
+```prisma
+model CustomerRFMSnapshot {
+  id          String @id @default(cuid())
+  customerId  String
+  storeId     String
+  recencyScore    Int
+  frequencyScore  Int
+  monetaryScore   Int
+  compositeScore  Int
+  calculatedAt    DateTime @default(now())
+  @@index([storeId, compositeScore])
+}
+```
+Composite scoring: Weighted formula (e.g., 4*recency + 3*frequency + 3*monetary). Store snapshots to track movement; last snapshot drives segment membership.
+
+## H. DomainEvent Generalization
+```prisma
+model DomainEvent {
+  id           String @id @default(cuid())
+  storeId      String
+  eventType    String // e.g. ORDER_CREATED
+  entityType   String // Order, Product
+  entityId     String
+  payload      String // JSON
+  correlationId String?
+  createdAt    DateTime @default(now())
+  @@index([storeId, eventType, createdAt])
+}
+```
+Use for webhook generation, analytics ingestion, automation triggers (abandoned cart, RFM recalculation).
+
+## I. Automated Consistency Checks
+Nightly job performing:
+1. Inventory reconciliation variance threshold (< 0.5% of SKUs) else alert.
+2. Promotion usage vs limit anomalies.
+3. Hash-chain audit integrity verification.
+4. Partition size & index bloat report (unused index ratio).
+
+## J. Migration Rollback Strategy
+Maintain migration ADR with: intent, forward plan, rollback plan (drop new tables only if no downstream references; maintain data copy in separate schema for safe revert). Use feature flags to decouple schema presence from active code paths.
+
+## K. Read vs Write Workload Isolation (Future)
+Prepare connection tags: primary for writes, read replica for heavy analytics (Prisma supports separate datasources future). Mark queries eligible for replica (e.g., product list, metrics fetch) in repository.
+
+## L. Data Privacy & Encryption Hooks
+Introduce Prisma middleware for encryption:
+```ts
+prisma.$use(async (params, next) => {
+  if (params.model === 'Customer' && params.action === 'create') {
+    params.args.data.emailEncrypted = encrypt(params.args.data.email)
+    delete params.args.data.email
+  }
+  return next(params)
+})
+```
+Keep raw email only in transient memory for verification flows.
+
+---
+*Extended addendum appended to support advanced planning & resilience. Cross-reference implementation roadmap for phase alignment.*

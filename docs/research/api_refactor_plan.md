@@ -247,3 +247,115 @@ type Query {
 
 ## Conclusion
 This refactor plan introduces a robust, layered API foundation balancing developer velocity (tRPC) with external integrability (REST + webhooks) and rich composition (GraphQL). Guardrails (tenant scoping, idempotency, rate limiting, RBAC) ensure operational security while enabling future scaling and advanced personalization.
+
+---
+
+## Extended Addendum: Security, Performance, Cost, Automation, Permissions & Observability
+
+### A. Security Hardening Enhancements
+| Concern | Enhancement | Implementation Notes |
+|---------|-------------|----------------------|
+| Replay Protection | Add `nonce` + `timestamp` headers for payment & refund webhooks | Store processed event IDs (TTL 30d); reject stale (>5m) |
+| Audit Integrity | Hash-chain audit logs (`prevHash`, `hash`) | Compute HMAC with server secret; verify nightly |
+| Scoped Access | Fine-grained permission checks per endpoint | Middleware `requirePermissions([...])` + composite effective scopes cache |
+| Input Validation | Centralize schema validation | Zod schemas reused across REST/tRPC/GraphQL; uniform error envelope |
+| Rate Limit Visibility | Include rate-limit headers (`X-RateLimit-Remaining`) | Surface to clients for adaptive usage |
+| Sensitive Ops MFA | Refund / Permission grant endpoints require MFA token | Future integration; placeholder policy now |
+
+### B. Performance & Caching Extensions
+| Layer | Optimization | Result Target |
+|-------|-------------|---------------|
+| REST Product Listing | Denormalized `ProductSummary` + tag cache | p95 < 250ms cached |
+| tRPC Procedures | Batching + DataLoader | Reduce N+1 DB hits (especially pricing) |
+| GraphQL | Persisted queries + complexity limit | Prevent expensive ad-hoc deep queries |
+| Webhooks | Async queue dispatch (BullMQ) | Remove webhook latency from main request |
+| Search | pg_trgm indices + partial indexes | Fuzzy search p95 < 150ms |
+| Pricing | Cache resolved price matrix per product & segment (private) | Avoid recomputation per request |
+
+Cache Tag Map (Extended):
+```
+product:{id}
+category:{id}
+collection:{id}
+price:{productId}
+promotion:list
+segment:{segmentId}
+```
+
+### C. Cost Optimization Interfaces
+Expose internal metrics endpoint `/internal/metrics` (protected) returning aggregate counts (product SSR renders, cache hits, webhook retries). These feed cost dashboards & auto-scaling decisions.
+
+Add `X-Cache` response header: `HIT|MISS|BYPASS` for REST & GraphQL to measure hit ratio without tracing overhead.
+
+### D. Automation & Eventing Integration
+Introduce `DomainEvent` emission in service boundaries (order.created, inventory.adjusted, customer.segmented). Event bus abstraction:
+```ts
+interface DomainEventEmitter { emit(evt: DomainEventPayload): Promise<void> }
+```
+Initial implementation: write to DB + enqueue webhook jobs; later pluggable to Kafka/Temporal.
+
+### E. Permissions Taxonomy Embed
+Document endpoint → permission mapping inside code (self-documenting):
+```ts
+// permissions-map.ts
+export const endpointPermissions = {
+  'POST /api/v1/orders': ['order.write'],
+  'POST /api/v1/orders/:id/refund': ['order.refund'],
+  'POST /api/v1/products': ['product.write'],
+  'POST /api/v1/products/:id/publish': ['product.publish'],
+  'POST /api/v1/inventory/adjust': ['inventory.adjust'],
+  'POST /api/v1/promotions': ['promo.manage'],
+  'GET /api/v1/analytics/*': ['analytics.view']
+} as const;
+```
+Validation middleware cross-checks request path pattern with mapping and verifies session scopes.
+
+### F. Observability Extension
+Add OpenTelemetry instrumentation at:
+- Request ingress (span: `http.server.request`)
+- Service layer boundary (span: `service.order.create`) with attributes: `storeId`, `orderId`, `correlationId`
+- Database calls (auto via Prisma instrumentation)
+- Webhook dispatch (span: `webhook.delivery.attempt`)
+
+Correlation ID propagation: generate if absent; echo header `X-Correlation-Id` for all responses; embed in logs & audit entries.
+
+Sample Structured Log:
+```json
+{
+  "ts":"2025-11-24T12:34:56.789Z",
+  "level":"info",
+  "cid":"c-123",
+  "storeId":"s-9",
+  "userId":"u-7",
+  "event":"order.created",
+  "durationMs":212,
+  "orderId":"o-555"
+}
+```
+
+### G. API Token Scopes & Idempotency Interaction
+Public integrations restricted by token scopes (subset of permissions). Idempotency table extended with `tokenId` for rate analysis & fairness algorithms later (e.g., dynamic throttling for abusive tokens).
+
+### H. Version Deprecation Workflow
+Deprecate endpoints via `Deprecation` response header and maintain `deprecated_endpoints.json` manifest used by internal monitoring to generate usage reports. Remove only after usage < threshold (e.g., <1% traffic 30d).
+
+### I. Rollout Strategy Additions
+| Phase | Added From Addendum |
+|-------|---------------------|
+| 1 | Hash-chained audit, correlation ID, ProductSummary |
+| 2 | DomainEvent emission, permission middleware |
+| 3 | Persisted GraphQL queries, complexity limits |
+| 4 | Advanced pricing cache, automation triggers |
+| 5 | Partitioning & archival tasks |
+
+### J. Success Metrics (Extended)
+| Metric | Target | Source |
+|--------|--------|--------|
+| Cache Hit Ratio | >65% product/category | `X-Cache` headers aggregation |
+| Webhook Delivery Success | >98% after retry | WebhookDelivery table |
+| Permission Denial Accuracy | <0.5% false negatives | Auth logs vs manual audits |
+| Event Emission Latency | <50ms added overhead | Span timing |
+| Pricing Resolve Latency | p95 < 120ms (complex tiers) | tRPC profiling |
+
+---
+*Extended addendum appended to align API evolution with security, performance, and operational excellence goals.*

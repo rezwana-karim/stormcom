@@ -162,3 +162,91 @@ StormCom achieves:
 
 ## Final Notes
 Maintain disciplined documentation updates per migration. Every new table accompanied by a short ADR (Architecture Decision Record) explaining rationale and alternatives considered.
+
+---
+
+## Extended Addendum: Phase Alignment, Instrumentation, Partitioning & Compliance
+
+### A. Phase Alignment with Addendum Roadmap
+| Phase | Original Focus | Added Enhancements |
+|-------|----------------|--------------------|
+| 1 | Repos + Order Service | Correlation IDs, hash-chained audit, ProductSummary backfill |
+| 2 | Schema Batch 1 | Permission tables + enforcement layer |
+| 3 | Order Lifecycle | DomainEvent emission + webhook subscription scaffold |
+| 4 | Pricing & Promotion | Promotion evaluator performance instrumentation |
+| 5 | Inventory Event Model | Reservation reconciliation nightly job |
+| 6 | Extensibility & Observability | Partition threshold monitoring, OpenTelemetry spans |
+| 7 | RBAC Granularity | Permission matrix UI + audit of grants |
+| 8 | Webhook Worker & Rate Limiting | Backoff policies + delivery latency SLO |
+| 9 | GraphQL Gateway | Persisted queries + complexity limiter |
+| 10 | Internationalization | CurrencyRate refresh & translation fallback |
+| 11 | Recommendation & Search | Embedding generation queue + latency metrics |
+| 12 | Inventory Event Sourcing | Projection verification script + drift alert |
+| 13 | Hardening & Performance | Cache hit ratio monitoring; index bloat audit |
+| 14 | Documentation & DX | Deprecation manifest + usage reports |
+
+### B. Instrumentation Checklist
+| Component | Span Name | Attributes |
+|-----------|-----------|------------|
+| Order Creation | service.order.create | storeId, orderId, paymentAttemptId |
+| Inventory Adjust | service.inventory.adjust | productId, variantId, delta |
+| Promotion Evaluate | service.promotion.evaluate | ruleCount, appliedCount, durationMs |
+| Webhook Dispatch | webhook.delivery.attempt | subscriptionId, eventType, attempt, status |
+| Pricing Resolve | service.pricing.resolve | productId, segmentId, tierCount |
+| GraphQL Resolver | graphql.resolver | fieldName, typename, durationMs |
+
+### C. Partition Threshold Policy
+| Table | Monitor Metric | Threshold | Action |
+|-------|----------------|----------|--------|
+| AuditLog | Row count/month | > 5M | Create monthly partition |
+| InventoryAdjustment | Row count | > 10M | Partition + archive >12m |
+| WebhookDelivery | Failed retries | > 10% last 1h | Investigate endpoints |
+| DomainEvent | Daily volume | Growth > 30% week-over-week | Capacity planning |
+
+Automated partition script runs nightly, logs summary metrics & raises alert if action pending > 48h.
+
+### D. Compliance & Retention Workflow Hooks
+1. RTBF request triggers anonymization service (`customerAnonymizer.run(customerId)`).
+2. Post-anonymization event emitted (`customer.anonymized`) updating segments & metrics.
+3. Archive job moves old partitions to cold storage bucket (object store) while preserving minimal metadata (counts, hash). 
+
+### E. Dual-Write Verification Pattern
+For pricing and inventory transitions:
+```ts
+async function verifyDualWrite() {
+  const mismatches = await prisma.$queryRaw`SELECT p.id FROM Product p LEFT JOIN ProductPrice pr ON pr.productId = p.id WHERE p.storeId = ${storeId} AND pr.isPrimary = true AND p.price != pr.amount`;
+  if (mismatches.length > 0) alert("PRICE_DUAL_WRITE_MISMATCH", mismatches.length);
+}
+```
+Scheduled to run nightly until legacy column removal sign-off.
+
+### F. ADR Template (Concise)
+```
+Title: Introduce InventoryReservation Table
+Date: 2025-11-24
+Context: Oversell risk under concurrent order creation.
+Decision: Add reservation table with expiresAt and reconciliation job.
+Alternatives: MVCC locking only (higher contention), external queue.
+Consequences: Slight storage overhead; clear invariant formula for stock.
+Rollback: Drop table and revert service logic; maintain adjustments only.
+```
+
+### G. Success Metric Expansion
+| Metric | Phase Introduced | Target |
+|--------|------------------|--------|
+| Cache Hit Ratio (Product) | 1 | >65% |
+| Order Create p95 | 3 | <400ms |
+| Webhook Success Rate | 6 | >98% after retry |
+| Promotion Eval p95 | 4 | <120ms |
+| Inventory Drift Incident Count | 5 | 0 per month |
+| Partition Action SLA | 6 | <48h from threshold |
+
+### H. Risk Reassessment Additions
+| Risk | Updated Mitigation |
+|------|--------------------|
+| Hash Chain Break | Immediate integrity alert + isolate affected partition |
+| Promotion Rule Explosion | Pre-compilation & caching + complexity guard |
+| Embedding Generation Backlog | Queue depth metric + auto-scaling worker count |
+
+---
+*Extended addendum integrates phase alignment, instrumentation, partition policy, compliance hooks, and enhanced success metrics.*

@@ -139,6 +139,96 @@ StormCom has a strong foundational base but must expand horizontally (promotions
 
 # Deepened Research Addendum (Architecture, Security, Performance, Growth, Governance)
 
+This addendum extends the initial review with competitor differentiation, security threat modeling (STRIDE), performance & cost optimization, advanced marketing automation patterns, permission taxonomy, data retention & compliance, observability baseline, and proposed model summary. It is intentionally high-density for architectural decision support.
+
+## Executive Highlights
+- Immediate priority: Implement permission system + inventory reservation + cache tagging to mitigate security & performance risks early.
+- Introduce denormalized `ProductSummary` and partition-ready logs before data volume creates index bloat.
+- Marketing automation & segmentation yield direct merchant value; schedule after lifecycle completeness and security hardening.
+
+## Competitor Differentiation Summary (Condensed)
+StormCom can differentiate by embedding segmentation, automation, fine-grained RBAC, and transparent domain event streams earlier than incumbents (Shopify, Saleor, Medusa, CommerceTools, BigCommerce) while maintaining lower operational complexity (single Postgres + Vercel deployment, edge caching strategies).
+
+## Security Threat Model (STRIDE Condensed)
+| Threat | Vector | Impact | Mitigation |
+|--------|--------|--------|-----------|
+| Tenant Spoofing | Forged storeId | Cross-tenant leak | Mandatory server-side scoping + RLS (future) |
+| Inventory Race | Concurrent decrements | Oversell | Reservation + atomic decrement transaction |
+| Discount Abuse | Rapid redemption race | Revenue loss | Concurrency control + usage counters locked |
+| Payment Replay | Reused webhook payload | Double refund | Nonce + timestamp + processed-event ledger |
+| SSRF via Webhook | Internal host target | Internal exposure | Host/IP validation + allowlist + rate limit |
+| Privilege Escalation | Role misconfiguration | Data tamper | Permission taxonomy + audit of grants |
+| Audit Repudiation | Deleted/altered entries | Forensic gap | Append-only hash-chained audit logs |
+
+## Performance & Scaling Levers (Targets)
+| Lever | Target Improvement | Action |
+|-------|--------------------|--------|
+| Edge Cache + Tags | 60–80% TTFB reduction | Implement tag invalidation hooks |
+| RSC Streaming | 20–40% faster initial bytes | Introduce Suspense boundaries |
+| Denormalized Reads | 2–4× faster product list | Create `ProductSummary` table |
+| Image Optimization | 30–60% bandwidth savings | AVIF/WebP + responsive sizes |
+| Reservation Service | Prevent oversell | New `InventoryReservation` table |
+
+## Cost Optimization Quick Wins
+1. Cache dynamic product/category pages (cut redundant SSR).  
+2. Move old audit/inventory logs to partitions (reduce hot index scans).  
+3. Introduce CDN image optimization pipeline (reduce LCP & bandwidth).  
+4. Denormalize frequent aggregates (lower DB CPU).  
+
+## Marketing Automation Data Requirements
+| Feature | Required Fields | Supporting Models |
+|---------|-----------------|------------------|
+| RFM Scoring | lastOrderAt, totalSpent, totalOrders | `CustomerRFMSnapshot` |
+| Abandoned Cart | cart items, lastActivityAt | `Cart`, `CartItem` |
+| Churn Risk | inactivity duration, engagement | `CustomerLifecycleMetrics`, `EmailEvent` |
+| Upsell/Cross-sell | order history, attributes | `RecommendationEvent`, existing product relations |
+
+## Permission Taxonomy (Minimal Set)
+`product.read`, `product.write`, `product.publish`, `inventory.adjust`, `order.fulfill`, `order.refund`, `promo.manage`, `customer.segment.manage`, `webhook.manage`, `analytics.view`, `settings.manage`, `billing.manage`, `admin.superuser`.
+
+## Data Retention & Compliance (Abbreviated)
+| Data | Retention | Action |
+|------|-----------|--------|
+| Audit Logs | 24m (hot 6m) | Partition + archive |
+| Inventory Logs | 12–24m | Archive >12m |
+| Orders | Indefinite | Pseudonymize on RTBF |
+| Email Events | 12m | Aggregate older |
+| PII | 24m inactivity | Anonymize sweep |
+
+## Observability Baseline
+Metrics: order throughput, payment failure %, inventory adjust p95, cache hit ratio.  
+Traces: order creation pipeline (include `storeId`, `orderId`).  
+Logs: structured JSON + correlationId.  
+Synthetic: checkout flow, refund flow, webhook delivery.
+
+## New / Extended Models (Snapshot)
+`ProductSummary`, `InventoryReservation`, `CustomerSegment`, `CustomerRFMSnapshot`, `CustomerLifecycleMetrics`, `Cart`, `CartItem`, `EmailEvent`, `DomainEvent`, `Permission`, `RolePermission`, `ApiToken`.
+
+## Immediate Action Checklist (Phase A)
+1. Implement permission tables & enforcement layer.  
+2. Add cache tags & invalidation for product/category mutations.  
+3. Create reservation logic + adjustments service wrapper.  
+4. Introduce OpenTelemetry instrumentation.  
+5. Build `ProductSummary` migration & backfill task.  
+
+## Risk Matrix (Condensed)
+| Risk | Likelihood | Impact | Mitigation |
+|------|------------|--------|-----------|
+| Oversell | Med | High | Reservation + atomic decrement |
+| Unscoped Query | Low-Med | High | Repo lint + mandatory tenant predicates |
+| Promotion Miscalc | Med | Med | Deterministic rule engine + tests |
+| Audit Tampering | Low | High | Hash chain + append-only storage |
+| Partition Delay | Med | Med | Establish volume thresholds alerts |
+
+## Architectural Decision Priorities
+1. Adopt tag-based caching now (simple invalidation hooks).  
+2. Implement permission system before expanding sensitive endpoints (refunds, webhook manage).  
+3. Denormalize read-heavy product lists prior to marketing feature rollout.  
+4. Lay groundwork for automation engine (event triggers + idempotent tasks).  
+
+---
+*Addendum integrated. Future updates should extend per-phase ADRs and reconcile with implementation roadmap.*
+
 ## 1. Competitor Architectural Patterns & Differentiators
 
 | Competitor | Core Architectural Pattern | Strengths (Relevant) | Weaknesses / Trade‑offs | StormCom Differentiation Opportunities |

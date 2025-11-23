@@ -111,3 +111,75 @@ export function PromotionBuilder({ onSave }: { onSave: (rule: any) => void }) {
 
 ## Conclusion
 Enhancing UI/UX centers on structured component patterns, role-aware navigation, performance perception (streaming + skeletons), and rich merchandising/operational tooling. Normalizing media and pricing data in schema directly unlocks new UI components (gallery, price matrix). Phased adoption ensures minimal disruption while progressively elevating merchant experience.
+
+---
+
+## Extended Addendum: Advanced UX for Performance, Automation, Permissions & Observability
+
+### A. Performance-Oriented UX Patterns
+| Pattern | UX Mechanism | Backend Support |
+|---------|--------------|----------------|
+| Cached Product Cards | Edge cached fragments w/ stale-while-revalidate badge | Cache tags `product:{id}` |
+| Streaming Analytics Dashboard | Skeleton + incremental card hydration | RSC Suspense boundaries + `DailyStoreMetrics` read model |
+| Virtualized Large Tables | Row virtualization + sticky header & inline filtering | Efficient `ProductSummary` queries |
+| Optimistic Inventory Adjust | Immediate badge delta + undo toast | Reservation & adjustment validation service |
+| Promotion Preview Simulation | Inline dynamic discount breakdown in builder | Promotion evaluator endpoint (idempotent) |
+
+### B. Automation Surfacing in UI
+| Automation | UI Exposure | Feedback |
+|-----------|-------------|----------|
+| Abandoned Cart Recovery | Campaign status panel (sent / open / click metrics) | Sparkline + success rate % |
+| RFM Segment Scoring | Segment list with dynamic size & growth trend badge | Color-coded score distribution |
+| Upsell Recommendation | Product detail “Customers also bought” ribbon | Loading shimmer then fade-in |
+| Lifecycle Churn Alerts | Customer list risk badge + filter | Toast on new high-risk threshold crossing |
+
+### C. Permission-Aware Components
+Implement a `Can` component:
+```tsx
+import { usePermissions } from "@/hooks/use-permissions";
+export function Can({ perm, children }: { perm: string; children: React.ReactNode }) {
+  const { has } = usePermissions();
+  if (!has(perm)) return null;
+  return <>{children}</>;
+}
+```
+Usage ensures UI never exposes actions without backend authorization guard.
+
+### D. Observability Hooks in UI
+Embed correlation ID in dev overlay for debugging (visible only in development) and allow copying to clipboard for log search. Provide latency badges on mission-critical actions (order create, refund) measuring client-perceived duration vs target budget.
+
+### E. Accessibility & Internationalization Extension
+| Enhancement | Detail |
+|-------------|--------|
+| Dynamic Locale Switch | Persist locale selection per store; prefetch localized product names |
+| Currency Format Consistency | Display pricing matrix with localized currency & thousands separators |
+| Reduced Motion Option | Disable animation transitions for accessibility preference |
+| High Contrast Mode | Alternate Tailwind theme class toggles (`data-theme="contrast"`) |
+
+### F. Advanced Error UX
+| Scenario | UX Treatment |
+|----------|--------------|
+| Permission Denied | Non-intrusive inline banner explaining required role, link to request access |
+| Promotion Conflict | Inline diff highlighting conflicting rule segments + suggestion chips |
+| Inventory Race Failure | Toast “Adjustment failed due to concurrent change” + auto refresh option |
+| Webhook Retry Exhausted | Badge with tooltip & manual retry action button |
+
+### G. Component Library Expansion Roadmap
+| Component | Purpose | Phase |
+|----------|---------|-------|
+| SegmentDistributionChart | Visual RFM breakdown | Marketing (Phase C) |
+| PermissionMatrix | Bulk role-permission toggling | Security (Phase A/B) |
+| WebhookDeliveryTimeline | Show attempts & status codes | Extensibility (Phase B) |
+| PromotionConflictResolver | Suggest merging / precedence adjustments | Pricing (Phase B) |
+| InventoryReconciliationReport | Show variances & trends | Reliability (Phase D) |
+
+### H. Success Metrics (Extended)
+| Metric | Target |
+|--------|--------|
+| Promotion Builder Completion Time | < 90 seconds median |
+| Abandoned Cart Recovery Page Load | < 800ms interactive |
+| Permission Matrix Render | < 500ms with 200 permissions |
+| Large Product Table Scroll Jank | < 10 dropped frames per 1000 rows |
+
+---
+*Extended addendum integrates cross-cutting performance, automation, and permission-aware UX strategies.*
