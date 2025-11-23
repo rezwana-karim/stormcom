@@ -84,6 +84,7 @@ export function ReviewsList() {
     setLoading(true);
     try {
       const params = new URLSearchParams({
+        storeId: 'default-store', // TODO: Get from user's selected store
         page: pagination.page.toString(),
         limit: pagination.limit.toString(),
         ...(searchQuery && { search: searchQuery }),

@@ -65,7 +65,11 @@ export async function GET(request: NextRequest) {
       sortOrder: query.sortOrder,
     });
 
-    return NextResponse.json(result, { status: 200 });
+    // Transform to match frontend expected format
+    return NextResponse.json({
+      data: result.reviews,
+      meta: result.pagination,
+    }, { status: 200 });
   } catch (error) {
     console.error('Error fetching reviews:', error);
     if (error instanceof z.ZodError) {
