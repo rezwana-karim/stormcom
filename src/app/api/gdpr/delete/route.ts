@@ -63,10 +63,10 @@ export async function POST(request: NextRequest) {
         action: 'DELETE_REQUEST',
         entityType: 'User',
         entityId: targetUserId,
-        changes: {
+        changes: JSON.stringify({
           reason,
           requestedAt: new Date().toISOString(),
-        },
+        }),
       },
     });
 
