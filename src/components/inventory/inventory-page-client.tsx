@@ -68,7 +68,8 @@ export function InventoryPageClient() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [lowStockOnly, setLowStockOnly] = useState(false);
-  const [selectedStore] = useState<string>(''); // setSelectedStore removed - not yet implemented
+  // selectedStore not yet implemented - hardcoded to empty string, uses 'demo-store-id' fallback
+  const selectedStore = '';
   const [adjustDialogOpen, setAdjustDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [adjustmentType, setAdjustmentType] = useState<'ADD' | 'REMOVE' | 'SET'>('ADD');
@@ -80,7 +81,9 @@ export function InventoryPageClient() {
     if (session?.user) {
       fetchInventory();
     }
-  }, [session, search, lowStockOnly, selectedStore]);
+    // selectedStore is not included in dependencies since it's a constant and never changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, search, lowStockOnly]);
 
   const fetchInventory = async () => {
     try {
