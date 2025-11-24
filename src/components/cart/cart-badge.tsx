@@ -7,9 +7,6 @@
 
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart } from 'lucide-react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 
 interface CartBadgeProps {
   storeId: string;
@@ -43,25 +40,16 @@ export function CartBadge({ storeId, className }: CartBadgeProps) {
     return () => clearInterval(interval);
   }, [storeId]);
 
-  if (loading) {
+  if (loading || count === 0) {
     return null;
   }
 
   return (
-    <Link href="/dashboard/cart">
-      <Button variant="ghost" size="sm" className={className}>
-        <div className="relative">
-          <ShoppingCart className="h-5 w-5" />
-          {count > 0 && (
-            <Badge
-              variant="destructive"
-              className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
-            >
-              {count > 99 ? '99+' : count}
-            </Badge>
-          )}
-        </div>
-      </Button>
-    </Link>
+    <Badge
+      variant="destructive"
+      className={className}
+    >
+      {count > 99 ? '99+' : count}
+    </Badge>
   );
 }
