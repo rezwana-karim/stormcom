@@ -7,9 +7,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { CartService } from '@/lib/services/cart.service';
+import { getCartSessionId } from '@/lib/cart-session';
 import { z } from 'zod';
 
 const addToCartSchema = z.object({
+  storeId: z.string().min(1),
   productId: z.string().min(1),
   variantId: z.string().optional(),
   quantity: z.number().int().min(1).default(1),
@@ -19,44 +22,42 @@ const addToCartSchema = z.object({
  * GET /api/cart
  * Get current user's cart
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const searchParams = request.nextUrl.searchParams;
+    const storeId = searchParams.get('storeId');
+
+    if (!storeId) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
+        { error: 'storeId is required' },
+        { status: 400 }
       );
     }
 
-    // Mock cart data
-    const cart = {
-      id: `cart_${session.user.id}`,
-      userId: session.user.id,
-      items: [
-        {
-          id: 'item1',
-          productId: 'prod1',
-          productName: 'Sample Product',
-          variantId: null,
-          quantity: 2,
-          price: 49.99,
-          image: 'https://via.placeholder.com/150',
-        },
-      ],
-      subtotal: 99.98,
-      tax: 8.00,
-      shipping: 10.00,
-      total: 117.98,
-      itemCount: 2,
-      updatedAt: new Date().toISOString(),
-    };
+    const userId = session?.user?.id;
+    const sessionId = !userId ? await getCartSessionId() : undefined;
 
-    return NextResponse.json({ cart }, { status: 200 });
+    const cart = await CartService.getOrCreateCart(storeId, userId, sessionId);
+
+    // Calculate tax and shipping (simplified - you can enhance this)
+    const taxRate = 0.08; // 8% tax
+    const tax = cart.subtotal * taxRate;
+    const shipping = cart.subtotal > 50 ? 0 : 10.0; // Free shipping over $50
+    const total = cart.subtotal + tax + shipping;
+
+    return NextResponse.json({
+      cart: {
+        ...cart,
+        tax,
+        shipping,
+        total,
+      },
+    });
   } catch (error) {
     console.error('Get cart error:', error);
     return NextResponse.json(
-      { error: 'Failed to get cart' },
+      { error: error instanceof Error ? error.message : 'Failed to get cart' },
       { status: 500 }
     );
   }
@@ -69,13 +70,6 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
     const validation = addToCartSchema.safeParse(body);
 
@@ -87,26 +81,26 @@ export async function POST(request: NextRequest) {
     }
 
     const data = validation.data;
+    const userId = session?.user?.id;
+    const sessionId = !userId ? await getCartSessionId() : undefined;
 
-    // Mock add to cart
-    const cartItem = {
-      id: `item_${Date.now()}`,
-      productId: data.productId,
-      variantId: data.variantId,
-      quantity: data.quantity,
-      addedAt: new Date().toISOString(),
-    };
+    const cart = await CartService.addToCart({
+      ...data,
+      userId,
+      sessionId,
+    });
 
-    console.log('Item added to cart (mock):', cartItem);
-
-    return NextResponse.json({ 
-      cartItem, 
-      message: 'Item added to cart' 
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        cart,
+        message: 'Item added to cart successfully',
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Add to cart error:', error);
     return NextResponse.json(
-      { error: 'Failed to add item to cart' },
+      { error: error instanceof Error ? error.message : 'Failed to add item to cart' },
       { status: 500 }
     );
   }
@@ -116,23 +110,29 @@ export async function POST(request: NextRequest) {
  * DELETE /api/cart
  * Clear cart
  */
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const searchParams = request.nextUrl.searchParams;
+    const storeId = searchParams.get('storeId');
+
+    if (!storeId) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
+        { error: 'storeId is required' },
+        { status: 400 }
       );
     }
 
-    console.log('Cart cleared (mock) for user:', session.user.id);
+    const userId = session?.user?.id;
+    const sessionId = !userId ? await getCartSessionId() : undefined;
 
-    return NextResponse.json({ message: 'Cart cleared' }, { status: 200 });
+    await CartService.clearCart(storeId, userId, sessionId);
+
+    return NextResponse.json({ message: 'Cart cleared successfully' });
   } catch (error) {
     console.error('Clear cart error:', error);
     return NextResponse.json(
-      { error: 'Failed to clear cart' },
+      { error: error instanceof Error ? error.message : 'Failed to clear cart' },
       { status: 500 }
     );
   }

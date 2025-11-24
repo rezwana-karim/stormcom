@@ -7,6 +7,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { CartService } from '@/lib/services/cart.service';
+import { getCartSessionId } from '@/lib/cart-session';
 import { z } from 'zod';
 
 const updateCartItemSchema = z.object({
@@ -24,13 +26,6 @@ export async function PATCH(
   try {
     const params = await props.params;
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
     const validation = updateCartItemSchema.safeParse(body);
 
@@ -42,30 +37,24 @@ export async function PATCH(
     }
 
     const data = validation.data;
+    const userId = session?.user?.id;
+    const sessionId = !userId ? await getCartSessionId() : undefined;
 
-    // If quantity is 0, remove item
-    if (data.quantity === 0) {
-      console.log('Cart item removed (mock):', params.id);
-      return NextResponse.json({ message: 'Item removed from cart' }, { status: 200 });
-    }
-
-    // Mock update cart item
-    const updatedItem = {
-      id: params.id,
+    const cart = await CartService.updateCartItem({
+      cartItemId: params.id,
       quantity: data.quantity,
-      updatedAt: new Date().toISOString(),
-    };
+      userId,
+      sessionId,
+    });
 
-    console.log('Cart item updated (mock):', updatedItem);
-
-    return NextResponse.json({ 
-      cartItem: updatedItem, 
-      message: 'Cart item updated' 
-    }, { status: 200 });
+    return NextResponse.json({
+      cart,
+      message: data.quantity === 0 ? 'Item removed from cart' : 'Cart item updated successfully',
+    });
   } catch (error) {
     console.error('Update cart item error:', error);
     return NextResponse.json(
-      { error: 'Failed to update cart item' },
+      { error: error instanceof Error ? error.message : 'Failed to update cart item' },
       { status: 500 }
     );
   }
@@ -82,20 +71,19 @@ export async function DELETE(
   try {
     const params = await props.params;
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const userId = session?.user?.id;
+    const sessionId = !userId ? await getCartSessionId() : undefined;
 
-    console.log('Cart item removed (mock):', params.id);
+    const cart = await CartService.removeCartItem(params.id, userId, sessionId);
 
-    return NextResponse.json({ message: 'Item removed from cart' }, { status: 200 });
+    return NextResponse.json({
+      cart,
+      message: 'Item removed from cart successfully',
+    });
   } catch (error) {
     console.error('Remove cart item error:', error);
     return NextResponse.json(
-      { error: 'Failed to remove cart item' },
+      { error: error instanceof Error ? error.message : 'Failed to remove cart item' },
       { status: 500 }
     );
   }

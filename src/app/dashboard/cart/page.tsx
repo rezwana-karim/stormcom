@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { CartList } from '@/components/cart/cart-list';
+import { CartProvider } from '@/contexts/cart-context';
 import type { Metadata } from 'next';
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
@@ -10,11 +11,15 @@ import {
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar";
+import { Loader2 } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Shopping Cart',
   description: 'View and manage your shopping cart',
 };
+
+// TODO: Get actual storeId from user's organization/store
+const STORE_ID = 'default-store-id';
 
 export default async function CartPage() {
   const session = await getServerSession(authOptions);
@@ -41,9 +46,15 @@ export default async function CartPage() {
                   <div className="flex items-center justify-between space-y-2">
                     <h2 className="text-3xl font-bold tracking-tight">Shopping Cart</h2>
                   </div>
-                  <Suspense fallback={<div>Loading cart...</div>}>
-                    <CartList />
-                  </Suspense>
+                  <CartProvider storeId={STORE_ID}>
+                    <Suspense fallback={
+                      <div className="flex items-center justify-center py-12">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                      </div>
+                    }>
+                      <CartList />
+                    </Suspense>
+                  </CartProvider>
                 </div>
               </div>
             </div>

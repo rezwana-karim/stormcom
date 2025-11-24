@@ -256,6 +256,7 @@ model Store {
   attributes     ProductAttribute[]
   auditLogs      AuditLog[]
   inventoryLogs  InventoryLog[] @relation("StoreInventoryLogs")
+  carts          Cart[]
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -314,6 +315,7 @@ model Product {
   attributes  ProductAttributeValue[]
   reviews     Review[]
   inventoryLogs InventoryLog[] @relation("InventoryLogs")
+  cartItems   CartItem[]
   
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
@@ -350,6 +352,7 @@ model ProductVariant {
   isDefault Boolean  @default(false)
   
   orderItems OrderItem[]
+  cartItems  CartItem[]
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -641,4 +644,64 @@ model AuditLog {
   @@index([userId, createdAt])
   @@index([entityType, entityId, createdAt])
   @@map("audit_logs")
+}
+
+// ============================================================================
+// SHOPPING CART MODELS
+// ============================================================================
+
+// Shopping Cart - Supports both authenticated users and guest sessions
+model Cart {
+  id        String   @id @default(cuid())
+  
+  // Either userId (authenticated) or sessionId (guest) must be set
+  userId    String?  @unique
+  sessionId String?  @unique // For guest carts
+  
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  items     CartItem[]
+  
+  // Metadata
+  lastActivityAt DateTime @default(now())
+  expiresAt      DateTime? // For guest cart cleanup
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([storeId, userId])
+  @@index([storeId, sessionId])
+  @@index([expiresAt]) // For cleanup jobs
+}
+
+// Cart Item - Individual products in cart
+model CartItem {
+  id        String   @id @default(cuid())
+  
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  variantId String?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  
+  quantity  Int      @default(1)
+  
+  // Cache product details at time of adding (for price consistency)
+  price     Float
+  productName String
+  variantName String?
+  sku       String
+  image     String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([cartId, productId, variantId])
+  @@index([cartId])
+  @@index([productId])
+  @@index([variantId])
 }

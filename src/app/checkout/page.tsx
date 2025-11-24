@@ -17,6 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { CartProvider } from '@/contexts/cart-context';
 import { CartReviewStep } from '@/components/checkout/cart-review-step';
 import { ShippingDetailsStep } from '@/components/checkout/shipping-details-step';
 import { PaymentMethodStep } from '@/components/checkout/payment-method-step';
@@ -95,6 +96,41 @@ export default function CheckoutPage() {
     }
   };
 
+  return (
+    <CartProvider storeId="default-store-id">
+      <CheckoutPageContent 
+        currentStep={currentStep}
+        isProcessing={isProcessing}
+        shippingAddress={shippingAddress}
+        handleCartReviewNext={handleCartReviewNext}
+        handleShippingComplete={handleShippingComplete}
+        handlePaymentComplete={handlePaymentComplete}
+        handleBack={handleBack}
+        steps={steps}
+      />
+    </CartProvider>
+  );
+}
+
+function CheckoutPageContent({
+  currentStep,
+  isProcessing,
+  shippingAddress,
+  handleCartReviewNext,
+  handleShippingComplete,
+  handlePaymentComplete,
+  handleBack,
+  steps,
+}: {
+  currentStep: number;
+  isProcessing: boolean;
+  shippingAddress: ShippingAddress | null;
+  handleCartReviewNext: () => void;
+  handleShippingComplete: (address: ShippingAddress) => void;
+  handlePaymentComplete: (orderId: string) => Promise<void>;
+  handleBack: () => void;
+  steps: Array<{ id: number; title: string; icon: React.ElementType; description: string }>;
+}) {
   return (
     <div className="container mx-auto py-10 max-w-6xl">
       <div className="grid gap-8 lg:grid-cols-[1fr_400px]">

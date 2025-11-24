@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -12,119 +12,25 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Minus, Plus, Trash2, ShoppingCart, ArrowRight } from 'lucide-react';
-import { toast } from 'sonner';
+import { Minus, Plus, Trash2, ShoppingCart, ArrowRight, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-
-interface CartItem {
-  id: string;
-  productId: string;
-  productName: string;
-  variantId?: string;
-  quantity: number;
-  price: number;
-  image: string;
-}
-
-interface Cart {
-  id: string;
-  items: CartItem[];
-  subtotal: number;
-  tax: number;
-  shipping: number;
-  total: number;
-  itemCount: number;
-}
-
-const mockCart: Cart = {
-  id: 'cart_123',
-  items: [
-    {
-      id: 'item1',
-      productId: 'prod1',
-      productName: 'Wireless Headphones',
-      quantity: 2,
-      price: 79.99,
-      image: 'https://via.placeholder.com/150',
-    },
-    {
-      id: 'item2',
-      productId: 'prod2',
-      productName: 'Smart Watch',
-      quantity: 1,
-      price: 299.99,
-      image: 'https://via.placeholder.com/150',
-    },
-  ],
-  subtotal: 459.97,
-  tax: 36.80,
-  shipping: 10.00,
-  total: 506.77,
-  itemCount: 3,
-};
+import { useCart } from '@/contexts/cart-context';
+import Image from 'next/image';
 
 export function CartList() {
-  const [cart, setCart] = useState<Cart | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { cart, loading, updateQuantity, removeItem, clearCart } = useCart();
   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
   const router = useRouter();
-
-  useEffect(() => {
-    const fetchCart = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch('/api/cart');
-        if (!response.ok) throw new Error('Failed to fetch cart');
-
-        const data = await response.json();
-        setCart(data.cart);
-      } catch {
-        // Use mock data on error
-        setCart(mockCart);
-        console.log('Using mock cart data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCart();
-  }, []);
 
   const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
     if (newQuantity < 0) return;
 
-    setUpdatingItems(prev => new Set(prev).add(itemId));
+    setUpdatingItems((prev) => new Set(prev).add(itemId));
 
     try {
-      if (newQuantity === 0) {
-        await handleRemoveItem(itemId);
-        return;
-      }
-
-      const response = await fetch(`/api/cart/${itemId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quantity: newQuantity }),
-      });
-
-      if (!response.ok) throw new Error('Failed to update quantity');
-
-      // Update local state
-      setCart(prev => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          items: prev.items.map(item =>
-            item.id === itemId ? { ...item, quantity: newQuantity } : item
-          ),
-        };
-      });
-
-      toast.success('Item quantity updated successfully');
-    } catch {
-      toast.error('Failed to update item quantity');
+      await updateQuantity(itemId, newQuantity);
     } finally {
-      setUpdatingItems(prev => {
+      setUpdatingItems((prev) => {
         const next = new Set(prev);
         next.delete(itemId);
         return next;
@@ -133,29 +39,12 @@ export function CartList() {
   };
 
   const handleRemoveItem = async (itemId: string) => {
-    setUpdatingItems(prev => new Set(prev).add(itemId));
+    setUpdatingItems((prev) => new Set(prev).add(itemId));
 
     try {
-      const response = await fetch(`/api/cart/${itemId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) throw new Error('Failed to remove item');
-
-      // Update local state
-      setCart(prev => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          items: prev.items.filter(item => item.id !== itemId),
-        };
-      });
-
-      toast.success('Item removed from cart');
-    } catch {
-      toast.error('Failed to remove item from cart');
+      await removeItem(itemId);
     } finally {
-      setUpdatingItems(prev => {
+      setUpdatingItems((prev) => {
         const next = new Set(prev);
         next.delete(itemId);
         return next;
@@ -165,28 +54,20 @@ export function CartList() {
 
   const handleClearCart = async () => {
     if (!confirm('Are you sure you want to clear your cart?')) return;
-
-    try {
-      const response = await fetch('/api/cart', {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) throw new Error('Failed to clear cart');
-
-      setCart({ ...mockCart, items: [], itemCount: 0, subtotal: 0, total: 0 });
-
-      toast.success('All items removed from cart');
-    } catch {
-      toast.error('Failed to clear cart');
-    }
+    await clearCart();
   };
 
   const handleCheckout = () => {
-    router.push('/checkout');
+    router.push('/dashboard/checkout');
   };
 
   if (loading) {
-    return <div className="text-center py-8">Loading cart...</div>;
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <span className="ml-2 text-muted-foreground">Loading cart...</span>
+      </div>
+    );
   }
 
   if (!cart || cart.items.length === 0) {
@@ -226,18 +107,36 @@ export function CartList() {
           <Card key={item.id}>
             <CardContent className="p-4">
               <div className="flex gap-4">
-                <img
-                  src={item.image}
-                  alt={item.productName}
-                  className="w-24 h-24 object-cover rounded-md"
-                />
-                <div className="flex-1">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="font-semibold">{item.productName}</h4>
+                <div className="relative w-24 h-24 bg-muted rounded-md overflow-hidden flex-shrink-0">
+                  {item.image ? (
+                    <Image
+                      src={item.image}
+                      alt={item.productName}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
+                      No image
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold truncate">{item.productName}</h4>
+                      {item.variantName && (
+                        <p className="text-sm text-muted-foreground">{item.variantName}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground">SKU: {item.sku}</p>
                       <p className="text-sm text-muted-foreground">
                         ${item.price.toFixed(2)} each
                       </p>
+                      {item.availableStock < 10 && (
+                        <p className="text-xs text-orange-600 mt-1">
+                          Only {item.availableStock} left in stock
+                        </p>
+                      )}
                     </div>
                     <Button
                       variant="ghost"
@@ -255,15 +154,20 @@ export function CartList() {
                         size="icon"
                         className="h-8 w-8"
                         onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                        disabled={updatingItems.has(item.id)}
+                        disabled={updatingItems.has(item.id) || item.quantity <= 1}
                       >
                         <Minus className="h-3 w-3" />
                       </Button>
                       <Input
                         type="number"
-                        min="0"
+                        min="1"
+                        max={item.maxQuantity}
                         value={item.quantity}
-                        onChange={(e) => handleUpdateQuantity(item.id, parseInt(e.target.value) || 0)}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value) || 1;
+                          const quantity = Math.min(Math.max(1, val), item.maxQuantity);
+                          handleUpdateQuantity(item.id, quantity);
+                        }}
                         className="w-16 text-center h-8"
                         disabled={updatingItems.has(item.id)}
                       />
@@ -272,7 +176,9 @@ export function CartList() {
                         size="icon"
                         className="h-8 w-8"
                         onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                        disabled={updatingItems.has(item.id)}
+                        disabled={
+                          updatingItems.has(item.id) || item.quantity >= item.maxQuantity
+                        }
                       >
                         <Plus className="h-3 w-3" />
                       </Button>
@@ -307,8 +213,13 @@ export function CartList() {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Shipping</span>
-              <span>${cart.shipping.toFixed(2)}</span>
+              <span>{cart.shipping === 0 ? 'FREE' : `$${cart.shipping.toFixed(2)}`}</span>
             </div>
+            {cart.subtotal > 0 && cart.subtotal < 50 && (
+              <p className="text-xs text-muted-foreground">
+                Add ${(50 - cart.subtotal).toFixed(2)} more for free shipping
+              </p>
+            )}
             <div className="border-t pt-4">
               <div className="flex items-center justify-between text-lg font-semibold">
                 <span>Total</span>

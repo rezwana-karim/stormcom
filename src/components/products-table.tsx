@@ -27,6 +27,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Edit, Trash2, Package } from 'lucide-react';
 import { toast } from 'sonner';
+import { AddToCartButton } from '@/components/cart/add-to-cart-button';
+import { CartProvider } from '@/contexts/cart-context';
 
 interface Product {
   id: string;
@@ -144,107 +146,119 @@ export function ProductsTable({ storeId }: ProductsTableProps) {
   }
 
   return (
-    <div className="rounded-lg border bg-card">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Product</TableHead>
-            <TableHead>SKU</TableHead>
-            <TableHead>Price</TableHead>
-            <TableHead>Stock</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {products.map((product) => (
-            <TableRow key={product.id}>
-              <TableCell className="font-medium">
-                <Link 
-                  href={`/dashboard/products/${product.id}`}
-                  className="hover:underline"
-                >
-                  {product.name}
-                </Link>
-              </TableCell>
-              <TableCell className="font-mono text-sm">{product.sku}</TableCell>
-              <TableCell>${product.price.toFixed(2)}</TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">{product.inventoryQty}</span>
+    <CartProvider storeId={storeId}>
+      <div className="rounded-lg border bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Product</TableHead>
+              <TableHead>SKU</TableHead>
+              <TableHead>Price</TableHead>
+              <TableHead>Stock</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {products.map((product) => (
+              <TableRow key={product.id}>
+                <TableCell className="font-medium">
+                  <Link 
+                    href={`/dashboard/products/${product.id}`}
+                    className="hover:underline"
+                  >
+                    {product.name}
+                  </Link>
+                </TableCell>
+                <TableCell className="font-mono text-sm">{product.sku}</TableCell>
+                <TableCell>${product.price.toFixed(2)}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">{product.inventoryQty}</span>
+                    <Badge 
+                      variant={
+                        product.inventoryStatus === 'IN_STOCK' ? 'default' :
+                        product.inventoryStatus === 'LOW_STOCK' ? 'secondary' :
+                        'destructive'
+                      }
+                    >
+                      {product.inventoryStatus.replace('_', ' ')}
+                    </Badge>
+                  </div>
+                </TableCell>
+                <TableCell>
                   <Badge 
                     variant={
-                      product.inventoryStatus === 'IN_STOCK' ? 'default' :
-                      product.inventoryStatus === 'LOW_STOCK' ? 'secondary' :
-                      'destructive'
+                      product.status === 'ACTIVE' ? 'default' :
+                      product.status === 'DRAFT' ? 'secondary' :
+                      'outline'
                     }
                   >
-                    {product.inventoryStatus.replace('_', ' ')}
+                    {product.status}
                   </Badge>
-                </div>
-              </TableCell>
-              <TableCell>
-                <Badge 
-                  variant={
-                    product.status === 'ACTIVE' ? 'default' :
-                    product.status === 'DRAFT' ? 'secondary' :
-                    'outline'
-                  }
-                >
-                  {product.status}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                {product.category ? (
-                  <span className="text-sm text-muted-foreground">
-                    {product.category.name}
-                  </span>
-                ) : (
-                  <span className="text-sm text-muted-foreground">—</span>
-                )}
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  <Link href={`/dashboard/products/${product.id}`}>
-                    <Button variant="ghost" size="sm">
-                      <Edit className="h-4 w-4" />
+                </TableCell>
+                <TableCell>
+                  {product.category ? (
+                    <span className="text-sm text-muted-foreground">
+                      {product.category.name}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    {product.status === 'ACTIVE' && product.inventoryStatus !== 'OUT_OF_STOCK' && (
+                      <AddToCartButton
+                        productId={product.id}
+                        size="sm"
+                        variant="outline"
+                        showIcon={true}
+                      >
+                        Add to Cart
+                      </AddToCartButton>
+                    )}
+                    <Link href={`/dashboard/products/${product.id}`}>
+                      <Button variant="ghost" size="sm">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleDeleteClick(product)}
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </Button>
-                  </Link>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => handleDeleteClick(product)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Product</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete &quot;{productToDelete?.name}&quot;? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteConfirm}
-              disabled={deleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleting ? 'Deleting...' : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Product</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete &quot;{productToDelete?.name}&quot;? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteConfirm}
+                disabled={deleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleting ? 'Deleting...' : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </CartProvider>
   );
 }

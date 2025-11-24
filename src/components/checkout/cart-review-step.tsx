@@ -5,23 +5,13 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Loader2, Trash2, Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-
-// TODO: Replace with actual cart data from API or state management
-interface CartItem {
-  id: string;
-  productId: string;
-  productName: string;
-  variantName?: string;
-  price: number;
-  quantity: number;
-  imageUrl?: string;
-  sku: string;
-}
+import { useCart } from '@/contexts/cart-context';
+import { useState } from 'react';
+import Image from 'next/image';
 
 interface CartReviewStepProps {
   onNext: () => void;
@@ -29,85 +19,38 @@ interface CartReviewStepProps {
 }
 
 export function CartReviewStep({ onNext, isProcessing }: CartReviewStepProps) {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isValidating, setIsValidating] = useState(false);
+  const { cart, loading, updateQuantity, removeItem } = useCart();
+  const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    // TODO: Fetch cart data from API
-    // For now, using mock data
-    setTimeout(() => {
-      setCartItems([
-        {
-          id: '1',
-          productId: 'prod-1',
-          productName: 'Wireless Mouse',
-          variantName: 'Black',
-          price: 29.99,
-          quantity: 1,
-          sku: 'WM-001-BLK',
-        },
-        {
-          id: '2',
-          productId: 'prod-2',
-          productName: 'Mechanical Keyboard',
-          variantName: 'Blue Switches',
-          price: 69.99,
-          quantity: 1,
-          sku: 'MK-002-BLU',
-        },
-      ]);
-      setIsLoading(false);
-    }, 500);
-  }, []);
-
-  const handleQuantityChange = (itemId: string, newQuantity: number) => {
+  const handleQuantityChange = async (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
-    
-    setCartItems((items) =>
-      items.map((item) =>
-        item.id === itemId ? { ...item, quantity: newQuantity } : item
-      )
-    );
-  };
 
-  const handleRemoveItem = (itemId: string) => {
-    setCartItems((items) => items.filter((item) => item.id !== itemId));
-  };
-
-  const handleValidateAndProceed = async () => {
-    setIsValidating(true);
-    
+    setUpdatingItems((prev) => new Set(prev).add(itemId));
     try {
-      // TODO: Call POST /api/checkout/validate
-      // const response = await fetch('/api/checkout/validate', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ items: cartItems }),
-      // });
-      
-      // if (!response.ok) {
-      //   throw new Error('Cart validation failed');
-      // }
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      onNext();
-    } catch (error) {
-      console.error('Validation error:', error);
-      // TODO: Show error toast
+      await updateQuantity(itemId, newQuantity);
     } finally {
-      setIsValidating(false);
+      setUpdatingItems((prev) => {
+        const next = new Set(prev);
+        next.delete(itemId);
+        return next;
+      });
     }
   };
 
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+  const handleRemoveItem = async (itemId: string) => {
+    setUpdatingItems((prev) => new Set(prev).add(itemId));
+    try {
+      await removeItem(itemId);
+    } finally {
+      setUpdatingItems((prev) => {
+        const next = new Set(prev);
+        next.delete(itemId);
+        return next;
+      });
+    }
+  };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -115,7 +58,7 @@ export function CartReviewStep({ onNext, isProcessing }: CartReviewStepProps) {
     );
   }
 
-  if (cartItems.length === 0) {
+  if (!cart || cart.items.length === 0) {
     return (
       <div className="py-12 text-center space-y-4">
         <p className="text-muted-foreground">Your cart is empty</p>
@@ -130,17 +73,23 @@ export function CartReviewStep({ onNext, isProcessing }: CartReviewStepProps) {
     <div className="space-y-6">
       {/* Cart Items */}
       <div className="space-y-4">
-        {cartItems.map((item) => (
+        {cart.items.map((item) => (
           <div key={item.id} className="flex gap-4 pb-4 border-b last:border-0">
-            {/* Product Image Placeholder */}
-            <div className="w-20 h-20 bg-muted rounded-md flex items-center justify-center">
-              <span className="text-xs text-muted-foreground">No image</span>
+            {/* Product Image */}
+            <div className="relative w-20 h-20 bg-muted rounded-md overflow-hidden flex-shrink-0">
+              {item.image ? (
+                <Image src={item.image} alt={item.productName} fill className="object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
+                  No image
+                </div>
+              )}
             </div>
 
             {/* Product Details */}
-            <div className="flex-1 space-y-2">
+            <div className="flex-1 space-y-2 min-w-0">
               <div>
-                <h3 className="font-medium">{item.productName}</h3>
+                <h3 className="font-medium truncate">{item.productName}</h3>
                 {item.variantName && (
                   <p className="text-sm text-muted-foreground">{item.variantName}</p>
                 )}
@@ -155,7 +104,7 @@ export function CartReviewStep({ onNext, isProcessing }: CartReviewStepProps) {
                     size="icon"
                     className="h-8 w-8"
                     onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                    disabled={item.quantity <= 1}
+                    disabled={item.quantity <= 1 || updatingItems.has(item.id)}
                   >
                     <Minus className="h-3 w-3" />
                   </Button>
@@ -167,12 +116,15 @@ export function CartReviewStep({ onNext, isProcessing }: CartReviewStepProps) {
                     }
                     className="h-8 w-12 border-0 text-center p-0"
                     min="1"
+                    max={item.maxQuantity}
+                    disabled={updatingItems.has(item.id)}
                   />
                   <Button
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
                     onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                    disabled={item.quantity >= item.maxQuantity || updatingItems.has(item.id)}
                   >
                     <Plus className="h-3 w-3" />
                   </Button>
@@ -182,6 +134,7 @@ export function CartReviewStep({ onNext, isProcessing }: CartReviewStepProps) {
                   size="sm"
                   className="text-destructive"
                   onClick={() => handleRemoveItem(item.id)}
+                  disabled={updatingItems.has(item.id)}
                 >
                   <Trash2 className="h-4 w-4 mr-1" />
                   Remove
@@ -190,7 +143,7 @@ export function CartReviewStep({ onNext, isProcessing }: CartReviewStepProps) {
             </div>
 
             {/* Price */}
-            <div className="text-right">
+            <div className="text-right flex-shrink-0">
               <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
               <p className="text-sm text-muted-foreground">
                 ${item.price.toFixed(2)} each
@@ -205,8 +158,8 @@ export function CartReviewStep({ onNext, isProcessing }: CartReviewStepProps) {
       {/* Subtotal */}
       <div className="space-y-2">
         <div className="flex justify-between text-base">
-          <span>Subtotal ({cartItems.length} items)</span>
-          <span className="font-medium">${subtotal.toFixed(2)}</span>
+          <span>Subtotal ({cart.itemCount} items)</span>
+          <span className="font-medium">${cart.subtotal.toFixed(2)}</span>
         </div>
         <p className="text-xs text-muted-foreground">
           Shipping and taxes calculated at next step
@@ -224,13 +177,13 @@ export function CartReviewStep({ onNext, isProcessing }: CartReviewStepProps) {
         </Button>
         <Button
           className="flex-1"
-          onClick={handleValidateAndProceed}
-          disabled={isValidating || isProcessing}
+          onClick={onNext}
+          disabled={isProcessing || loading}
         >
-          {isValidating ? (
+          {isProcessing ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Validating...
+              Processing...
             </>
           ) : (
             'Proceed to Shipping'
