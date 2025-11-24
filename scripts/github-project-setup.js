@@ -67,42 +67,49 @@ const LABELS = [
   { name: "area: bangladesh", description: "Bangladesh market specific", color: "12b76a" },
 ];
 
-// Milestone definitions
+// Helper function to calculate due dates dynamically
+function calculateDueDate(weeksFromNow) {
+  const date = new Date();
+  date.setDate(date.getDate() + (weeksFromNow * 7));
+  return date.toISOString();
+}
+
+// Milestone definitions with dynamic due dates
 const MILESTONES = [
   {
     title: "Phase 0: Foundation Assessment",
     description: "Codebase audit, schema validation, MVP scope definition",
-    due_on: "2025-12-14T23:59:59Z", // 2 weeks from now
+    due_on: calculateDueDate(2), // 2 weeks from now
   },
   {
     title: "Phase 1: E-Commerce Core (MVP)",
     description: "Product management, storefront, checkout, orders, Stripe payments",
-    due_on: "2026-01-25T23:59:59Z", // 6 weeks after Phase 0
+    due_on: calculateDueDate(8), // 6 weeks after Phase 0
   },
   {
     title: "Phase 1.5: Bangladesh Features",
     description: "bKash integration, Bengali localization, Pathao shipping",
-    due_on: "2026-02-22T23:59:59Z", // 4 weeks after Phase 1
+    due_on: calculateDueDate(12), // 4 weeks after Phase 1
   },
   {
     title: "Phase 2: External Integration",
     description: "WordPress plugin, REST API for external integrations",
-    due_on: "2026-03-22T23:59:59Z", // 4 weeks after Phase 1.5
+    due_on: calculateDueDate(16), // 4 weeks after Phase 1.5
   },
   {
     title: "Phase 3: Multi-Channel Sales",
     description: "Facebook Shop, Instagram Shopping integration",
-    due_on: "2026-05-03T23:59:59Z", // 6 weeks after Phase 2
+    due_on: calculateDueDate(22), // 6 weeks after Phase 2
   },
   {
     title: "Phase 4: Marketing Automation",
     description: "Multi-channel campaigns, SMS/WhatsApp, segmentation, analytics",
-    due_on: "2026-07-05T23:59:59Z", // 9 weeks after Phase 3
+    due_on: calculateDueDate(31), // 9 weeks after Phase 3
   },
   {
     title: "Phase 5: Advanced Reliability",
     description: "Event sourcing, workflow orchestration, fraud detection, predictive models",
-    due_on: "2026-09-06T23:59:59Z", // 9 weeks after Phase 4
+    due_on: calculateDueDate(40), // 9 weeks after Phase 4
   },
 ];
 
@@ -1444,8 +1451,10 @@ async function main() {
       });
       console.log(`✓ Created issue #${result.data.number}: ${issue.title}`);
       
-      // Small delay to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Check rate limit headers and adjust delay accordingly
+      const remaining = parseInt(result.headers['x-ratelimit-remaining'] || '100', 10);
+      const delay = remaining < 10 ? 2000 : remaining < 30 ? 1000 : 200;
+      await new Promise(resolve => setTimeout(resolve, delay));
     } catch (error) {
       console.error(`✗ Failed to create issue: ${issue.title}`, error.message);
     }

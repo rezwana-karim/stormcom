@@ -159,5 +159,5 @@ The following labels should be created in the repository settings:
 
 ---
 
-**Created**: November 24, 2025  
+**Created**: 2024-11-24  
 **Updated By**: GitHub Copilot Coding Agent
