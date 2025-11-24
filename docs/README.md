@@ -4,25 +4,34 @@ Welcome to the StormCom project documentation! This directory contains comprehen
 
 ## 🎉 Latest Updates (2025-11-24)
 
-**Version 1.1 Released** - Enhanced Marketing Automation with Bangladesh Focus
-- Added 7 new issues for multi-channel campaigns (Email, SMS, WhatsApp)
-- SMS gateway integration for Bangladesh providers (SSL Wireless, Banglalink, etc.)
-- WhatsApp Business API with rich media support
-- Campaign builder with 50+ Bangladesh-specific templates
-- bKash/Nagad payment integration for SMS credits
-- Enhanced cart recovery target: 20%+ (from 12%)
-- See **[CHANGELOG.md](./CHANGELOG.md)** for complete details
+**Version 2.0 Released** - Codebase Review & Implementation Roadmap
+- **NEW**: Codebase audit reveals 60-80% foundation already built!
+- **NEW**: Phase 0 added for foundation assessment (critical first step)
+- **NEW**: Phase 1 restructured based on actual codebase state
+- **NEW**: Phase 1.5 added for Bangladesh-specific features (bKash, Bengali, Pathao)
+- **NEW**: Phase 2 added for external website integration (WordPress plugin, REST API)
+- **NEW**: Phase 3 added for multi-channel (Facebook Shop, Instagram)
+- **NEW**: Implementation Status & Roadmap document (40KB comprehensive analysis)
+- **NEW**: External Website Integration Plan (56KB with WordPress plugin code)
+- Total issues increased from 77 to 130 (+53 issues)
+- MVP now clearly defined: 11 weeks (Phase 0 + 1 + 1.5)
+- See **[CHANGELOG.md](./CHANGELOG.md)** for v1.1 history
 
 ## 📚 Quick Navigation
 
 ### 🚀 Start Here
-- **[EXECUTIVE_SUMMARY.md](./EXECUTIVE_SUMMARY.md)** - High-level overview for stakeholders and new team members
-- **[PROJECT_PLAN.md](./PROJECT_PLAN.md)** - Comprehensive 36-week implementation roadmap (updated)
-- **[GITHUB_PROJECT_SETUP_GUIDE.md](./GITHUB_PROJECT_SETUP_GUIDE.md)** - Step-by-step guide to setup GitHub Project #7
-- **[CHANGELOG.md](./CHANGELOG.md)** - Version history and recent updates (NEW)
+- **[IMPLEMENTATION_STATUS_AND_ROADMAP.md](./IMPLEMENTATION_STATUS_AND_ROADMAP.md)** - **READ THIS FIRST!** Current state analysis (NEW)
+- **[EXECUTIVE_SUMMARY.md](./EXECUTIVE_SUMMARY.md)** - High-level overview for stakeholders
+- **[PROJECT_PLAN.md](./PROJECT_PLAN.md)** - Strategic 39-week roadmap (updated)
+- **[GITHUB_PROJECT_SETUP_GUIDE.md](./GITHUB_PROJECT_SETUP_GUIDE.md)** - Step-by-step GitHub Project setup
+- **[CHANGELOG.md](./CHANGELOG.md)** - Version history (v1.0 → v1.1 → v2.0)
 
-### 📋 Implementation
-- **[GITHUB_ISSUES_PLAN.md](./GITHUB_ISSUES_PLAN.md)** - 77+ detailed issues with acceptance criteria, estimates, and dependencies (updated)
+### 📋 Implementation Plans
+- **[GITHUB_ISSUES_PLAN_V2.md](./GITHUB_ISSUES_PLAN_V2.md)** - **130 issues** across 25 epics (NEW - v2.0)
+- **[GITHUB_ISSUES_PLAN.md](./GITHUB_ISSUES_PLAN.md)** - Original 77 issues (v1.1 - deprecated, see v2.0)
+
+### 🔌 Integration Guides
+- **[EXTERNAL_WEBSITE_INTEGRATION_PLAN.md](./EXTERNAL_WEBSITE_INTEGRATION_PLAN.md)** - WordPress plugin, REST API, multi-channel (NEW)
 
 ### 🔬 Research & Analysis
 All research documents are in the [research/](./research/) directory:
@@ -49,10 +58,12 @@ All research documents are in the [research/](./research/) directory:
 
 **StormCom** is a Next.js 16 multi-tenant SaaS e-commerce platform with:
 - **Tech Stack**: Next.js 16.0.3, React 19.2, TypeScript 5, Prisma 6.19.0, NextAuth 4.24, shadcn-ui
-- **Timeline**: 36 weeks (9 months) implementation (updated from 35 weeks)
+- **Timeline**: 39 weeks (9.5 months) total implementation
+- **MVP Timeline**: 11 weeks (2.5 months) - Phase 0 + 1 + 1.5
 - **Team**: 2-3 full-stack engineers + support
-- **Total Effort**: ~273 person-days (updated from 260)
-- **Total Issues**: 77+ across 21 epics (updated from 70+)
+- **Total Effort**: ~329 person-days total (~73 person-days for MVP)
+- **Total Issues**: 130+ across 25 epics
+- **Current State**: 25-30% complete (auth/multi-tenancy foundation strong)
 
 ---
 
@@ -60,7 +71,15 @@ All research documents are in the [research/](./research/) directory:
 
 ```
 docs/
-├── README.md                           # This file
+├── README.md                                  # This file
+├── IMPLEMENTATION_STATUS_AND_ROADMAP.md       # ⭐ Current state analysis (NEW - READ FIRST!)
+├── EXTERNAL_WEBSITE_INTEGRATION_PLAN.md       # ⭐ WordPress plugin & integrations (NEW)
+├── GITHUB_ISSUES_PLAN_V2.md                   # ⭐ 130 issues v2.0 (NEW)
+├── EXECUTIVE_SUMMARY.md                       # High-level overview
+├── PROJECT_PLAN.md                            # 39-week strategic roadmap
+├── GITHUB_ISSUES_PLAN.md                      # Original 77 issues v1.1 (deprecated)
+├── GITHUB_PROJECT_SETUP_GUIDE.md              # Setup instructions
+├── CHANGELOG.md                               # Version history (v1.0 → v1.1 → v2.0)
 ├── EXECUTIVE_SUMMARY.md                # High-level overview
 ├── PROJECT_PLAN.md                     # Comprehensive roadmap
 ├── GITHUB_ISSUES_PLAN.md               # Detailed issues

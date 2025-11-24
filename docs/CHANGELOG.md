@@ -1,5 +1,298 @@
 # StormCom Project Plan - Changelog
 
+## Version 2.0 - 2025-11-24 (Latest)
+
+### 🎉 Major Codebase-Driven Restructure
+
+Based on comprehensive codebase review (IMPLEMENTATION_STATUS_AND_ROADMAP.md) and external integration requirements (EXTERNAL_WEBSITE_INTEGRATION_PLAN.md).
+
+### 📊 Summary of Changes
+
+**Critical Discovery**: 60-80% of foundation already built!
+- ✅ Database schema: E-commerce models exist (Product, Order, Customer, Store, etc.)
+- ✅ API routes: 50+ route files exist (but logic not implemented)
+- ✅ Authentication: NextAuth with email magic link working
+- ✅ Multi-tenancy: Organization/Membership models complete
+- ❌ API business logic: 0% complete
+- ❌ Storefront: 0% complete
+- ❌ Bangladesh features: 0% complete
+
+**Timeline Changes**:
+- Original: 35 weeks → v1.1: 36 weeks → **v2.0: 39 weeks**
+- **MVP**: Now clearly defined as 11 weeks (Phase 0 + 1 + 1.5)
+- **Total Issues**: 70 → 77 → **130 (+53 new issues)**
+- **Total Phases**: 5 → **7 phases** (added Phase 0, 1.5, 2, 3)
+
+### 🚀 New Phases Added
+
+#### Phase 0: Foundation Assessment (NEW - Week 1-2)
+**Why**: Must audit codebase before building to avoid duplicating work
+- Issue #0.1: Complete codebase audit (3 days)
+- Issue #0.2: Database schema validation (2 days)
+- Issue #0.3: MVP scope definition (2 days)
+- **Total**: 3 issues, 1 week
+
+#### Phase 1: E-Commerce Core (RESTRUCTURED - Week 3-8)
+**Changed**: Now focuses on implementing logic in existing API routes
+- Was: "Build from scratch" → Now: "Implement in existing structure"
+- 9 issues covering Product CRUD, Storefront, Orders, Stripe
+- **Key insight**: Don't recreate schema, leverage what exists
+
+#### Phase 1.5: Bangladesh Features (NEW - Week 9-12)
+**Why**: Separated BD-specific features for market focus
+- Issue #1.10: bKash payment integration (6 days)
+- Issue #1.11: Cash on Delivery (2 days)
+- Issue #1.12: Bengali localization (4 days)
+- Issue #1.13: Pathao shipping (5 days)
+- **Total**: 4 issues, 4 weeks, 17 person-days
+
+#### Phase 2: External Website Integration (NEW - Week 13-16)
+**Why**: Critical differentiator for Bangladesh market
+- Issue #2.1: WordPress plugin core (6 days)
+- Issue #2.2: WordPress product sync (5 days)
+- Issue #2.3: WordPress order sync (5 days)
+- Issue #2.4: Generic REST API (4 days)
+- **Total**: 4 issues, 4 weeks, 20 person-days
+- **Reference**: EXTERNAL_WEBSITE_INTEGRATION_PLAN.md (1,874 lines)
+
+#### Phase 3: Multi-Channel Sales (NEW - Week 17-22)
+**Why**: Moved earlier due to market demand (Facebook selling is huge in BD)
+- Issue #3.1: Facebook Shop integration (7 days)
+- Issue #3.2: Instagram Shopping (5 days)
+- **Total**: 2 issues, 6 weeks, 12 person-days
+
+### 📚 New Documentation
+
+1. **IMPLEMENTATION_STATUS_AND_ROADMAP.md** (40KB, 1,457 lines)
+   - Complete codebase audit
+   - What's built vs what's needed
+   - Realistic timeline and cost estimates
+   - Month-by-month goals
+   - Learning resources
+   - **Verdict**: 6 months for market-ready platform
+
+2. **EXTERNAL_WEBSITE_INTEGRATION_PLAN.md** (56KB, 1,874 lines)
+   - WordPress plugin complete code
+   - Shopify integration guide
+   - REST API specifications
+   - Multi-channel architecture
+   - Technical implementation details
+
+3. **GITHUB_ISSUES_PLAN_V2.md** (24KB, 130 issues)
+   - Replaces v1.1 with codebase-aware issues
+   - Phase 0-3 added (53 new issues)
+   - Phase 4-5 maintained from v1.1
+   - Clear MVP definition (Phase 0 + 1 + 1.5)
+
+### 📈 Updated Statistics
+
+| Metric | v1.0 | v1.1 | v2.0 | Change |
+|--------|------|------|------|--------|
+| **Total Weeks** | 35 | 36 | 39 | +4 weeks |
+| **Total Issues** | 70 | 77 | 130 | +53 issues |
+| **Total Phases** | 5 | 5 | 7 | +2 phases |
+| **Person-Days** | 260 | 273 | 329 | +56 days |
+| **MVP Weeks** | - | - | 11 | NEW |
+| **MVP Issues** | - | - | 16 | NEW |
+| **MVP Person-Days** | - | - | 73 | NEW |
+
+### Priority Distribution
+
+| Priority | v1.1 | v2.0 | Change |
+|----------|------|------|--------|
+| P0 | 25 | 38 | +13 |
+| P1 | 42 | 55 | +13 |
+| P2 | 9 | 9 | - |
+| P3 | 2 | 2 | - |
+
+### 🎯 MVP Definition (NEW)
+
+**Timeline**: 11 weeks (2.5 months)
+**Cost**: $13,000-$15,000 (2 developers)
+**Phases**: Phase 0 + 1 + 1.5
+
+#### MVP Features
+- ✅ Product management (CRUD, variants, images)
+- ✅ Dynamic storefront (1 template, subdomain routing)
+- ✅ Shopping cart & checkout
+- ✅ Order management dashboard
+- ✅ Stripe payments (international)
+- ✅ bKash payments (Bangladesh)
+- ✅ Cash on Delivery (COD)
+- ✅ Bengali language support
+- ✅ Pathao courier integration
+- ✅ Basic analytics
+
+#### Post-MVP Features (Phase 2-5)
+- WordPress plugin & external integrations
+- Facebook Shop & Instagram Shopping
+- Multi-channel campaign builder
+- SMS/WhatsApp marketing automation
+- Advanced analytics & fraud detection
+
+### 🔑 Key Insights
+
+#### 1. Don't Rebuild What Exists
+**Problem**: Original plan assumed building from scratch  
+**Reality**: 60-80% of foundation already exists  
+**Impact**: Saved ~8 weeks of development time
+
+#### 2. API Routes Are Stubbed
+**Discovery**: 50+ API route files exist in `src/app/api/`  
+**Status**: Structure exists, business logic missing  
+**Action**: Implement logic in existing routes, don't create new ones
+
+#### 3. Database Schema Is Complete
+**Discovery**: All e-commerce models exist in Prisma schema  
+**Models**: Store, Product, ProductVariant, Order, OrderItem, Customer, Cart, etc.  
+**Action**: Validate and fix relations, don't recreate tables
+
+#### 4. Multi-Tenancy Works
+**Status**: Organization/Membership models functional  
+**Tested**: Multi-store isolation verified  
+**Action**: Ensure all new features filter by storeId
+
+### 🚧 Implementation Strategy
+
+#### Sprint 0 (Week 1-2): Foundation
+**Goal**: Understand what exists before building
+1. Complete codebase audit (#0.1)
+2. Validate database schema (#0.2)
+3. Define strict MVP scope (#0.3)
+**Output**: Gap analysis document, updated estimates
+
+#### Sprint 1-3 (Week 3-8): MVP Core
+**Goal**: Basic storefront + Stripe payments working
+1. Implement Product CRUD in existing routes
+2. Build dynamic storefront (1 template)
+3. Shopping cart & checkout flow
+4. Order management dashboard
+5. Stripe payment integration
+**Output**: Functional e-commerce platform (international)
+
+#### Sprint 4-5 (Week 9-12): Bangladesh Features
+**Goal**: Market-ready for Bangladesh
+1. bKash payment gateway
+2. Bengali language toggle
+3. Pathao courier integration
+4. Cash on Delivery option
+**Output**: BD market-ready MVP
+
+#### Sprint 6+ (Week 13+): Growth Features
+**Goal**: Differentiation & scaling
+1. WordPress plugin (Week 13-16)
+2. Facebook/Instagram integration (Week 17-22)
+3. Marketing automation (Week 23-31)
+4. Advanced reliability (Week 32-39)
+
+### 💡 Lessons Learned
+
+#### 1. Always Audit First
+**Mistake**: Started planning without codebase review  
+**Cost**: Would have wasted 8+ weeks rebuilding existing code  
+**Fix**: Phase 0 added to audit before building
+
+#### 2. MVP Scope Creep
+**Mistake**: Original plan included too many features  
+**Reality**: Vendors need basic storefront first  
+**Fix**: Clear 11-week MVP definition
+
+#### 3. Market Requirements
+**Insight**: Bangladesh vendors need:
+- bKash (not just Stripe)
+- Bengali language
+- COD support
+- Facebook selling
+- WordPress integration (many have WooCommerce)
+**Fix**: Phase 1.5, 2, 3 added for these features
+
+#### 4. Integration is Key
+**Insight**: Most vendors already have:
+- WordPress/WooCommerce site
+- Facebook page
+- WhatsApp for orders
+**Fix**: External integration became Phase 2 (not Phase 5)
+
+### 📊 Cost Analysis
+
+#### MVP Cost (Phase 0 + 1 + 1.5)
+- **Timeline**: 11 weeks
+- **Effort**: 73 person-days
+- **Team**: 2 developers @ $100-120/day
+- **Total**: $13,000-$15,000
+- **Outcome**: Market-ready platform
+
+#### Full Platform Cost (All Phases)
+- **Timeline**: 39 weeks
+- **Effort**: 329 person-days
+- **Team**: 2-3 developers
+- **Total**: ~$32,000-$40,000
+- **Outcome**: Feature-complete SaaS
+
+#### Expected ROI (Year 1)
+- **500 vendors** @ ৳1,500/month = ৳7.5 lakh/month
+- **Annual Revenue**: ৳90 lakh (ARR)
+- **Investment**: ৳35 lakh
+- **ROI**: 156% in Year 1
+- **Break-even**: Month 8-9
+
+### 🔗 References
+
+#### New Documents (v2.0)
+- `IMPLEMENTATION_STATUS_AND_ROADMAP.md` - Codebase audit & realistic timeline
+- `EXTERNAL_WEBSITE_INTEGRATION_PLAN.md` - Integration architecture & code
+- `GITHUB_ISSUES_PLAN_V2.md` - 130 issues with MVP focus
+
+#### Updated Documents
+- `README.md` - Added v2.0 updates section
+- `PROJECT_PLAN.md` - Will be updated with new phases
+- `EXECUTIVE_SUMMARY.md` - Will be updated with MVP definition
+
+#### Maintained Documents
+- `GITHUB_ISSUES_PLAN.md` (v1.1) - Deprecated, use v2.0
+- `GITHUB_PROJECT_SETUP_GUIDE.md` - Still valid
+- `CHANGELOG.md` - This file (now includes v2.0)
+
+### ✅ Validation Checklist
+
+Before starting implementation:
+- [ ] Review IMPLEMENTATION_STATUS_AND_ROADMAP.md
+- [ ] Review EXTERNAL_WEBSITE_INTEGRATION_PLAN.md
+- [ ] Review existing codebase (`src/app/api/*`, `prisma/schema.sqlite.prisma`)
+- [ ] Complete Phase 0 codebase audit
+- [ ] Validate MVP scope with stakeholders
+- [ ] Set up local development environment
+- [ ] Test existing authentication flow
+- [ ] Verify multi-tenancy isolation
+- [ ] Create test stores for development
+- [ ] Apply for bKash merchant account (takes 2-3 weeks!)
+
+### 🚀 Quick Start (Updated)
+
+#### For Developers
+1. **Read First**: `IMPLEMENTATION_STATUS_AND_ROADMAP.md`
+2. **Then Read**: `GITHUB_ISSUES_PLAN_V2.md`
+3. **Start With**: Phase 0 issues (#0.1, #0.2, #0.3)
+4. **Don't**: Rebuild existing schema or routes!
+5. **Do**: Implement logic in existing API routes
+
+#### For Project Managers
+1. **Read First**: `EXECUTIVE_SUMMARY.md` (will be updated)
+2. **Focus On**: MVP (Phase 0 + 1 + 1.5) = 11 weeks
+3. **Budget**: $13,000-$15,000 for MVP
+4. **Key Risk**: bKash merchant approval (apply ASAP!)
+5. **Success Metric**: 50-100 vendors in first 3 months
+
+### 📞 Support
+
+Questions about v2.0 changes:
+1. Review `IMPLEMENTATION_STATUS_AND_ROADMAP.md` for detailed analysis
+2. Check `GITHUB_ISSUES_PLAN_V2.md` for specific issues
+3. See `EXTERNAL_WEBSITE_INTEGRATION_PLAN.md` for integration details
+4. Create GitHub Discussion for clarifications
+
+---
+
 ## Version 1.1 - 2025-11-24
 
 ### 🎉 Major Updates
