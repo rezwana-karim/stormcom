@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import { Loader2, CreditCard, Building2 } from 'lucide-react';
+import { useCart } from '@/contexts/cart-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -27,8 +28,15 @@ export function PaymentMethodStep({
   onBack,
   isProcessing,
 }: PaymentMethodStepProps) {
+  const { cart } = useCart();
   const [paymentMethod, setPaymentMethod] = useState<string>('card');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Calculate totals from cart
+  const subtotal = cart?.subtotal ?? 0;
+  const tax = cart?.tax ?? 0;
+  const shipping = cart?.shipping ?? 0;
+  const total = cart?.total ?? 0;
 
   const handlePlaceOrder = async () => {
     setIsSubmitting(true);
@@ -221,20 +229,20 @@ export function PaymentMethodStep({
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span>Subtotal</span>
-              <span>$99.98</span>
+              <span>${subtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span>Shipping</span>
-              <span>$10.00</span>
+              <span>${shipping.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span>Tax</span>
-              <span>$8.80</span>
+              <span>${tax.toFixed(2)}</span>
             </div>
             <Separator />
             <div className="flex justify-between text-lg font-bold">
               <span>Total</span>
-              <span>$118.78</span>
+              <span>${total.toFixed(2)}</span>
             </div>
           </div>
         </CardContent>

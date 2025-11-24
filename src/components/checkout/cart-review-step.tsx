@@ -144,9 +144,9 @@ export function CartReviewStep({ onNext, isProcessing }: CartReviewStepProps) {
 
             {/* Price */}
             <div className="text-right flex-shrink-0">
-              <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+              <p className="font-medium">${((item.price ?? 0) * item.quantity).toFixed(2)}</p>
               <p className="text-sm text-muted-foreground">
-                ${item.price.toFixed(2)} each
+                ${(item.price ?? 0).toFixed(2)} each
               </p>
             </div>
           </div>
@@ -159,7 +159,7 @@ export function CartReviewStep({ onNext, isProcessing }: CartReviewStepProps) {
       <div className="space-y-2">
         <div className="flex justify-between text-base">
           <span>Subtotal ({cart.itemCount} items)</span>
-          <span className="font-medium">${cart.subtotal.toFixed(2)}</span>
+          <span className="font-medium">${(cart.subtotal ?? 0).toFixed(2)}</span>
         </div>
         <p className="text-xs text-muted-foreground">
           Shipping and taxes calculated at next step

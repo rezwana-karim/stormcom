@@ -15,7 +15,6 @@ export interface CartItem {
   productId: string;
   variantId?: string;
   quantity: number;
-  price: number;
 }
 
 /**
@@ -328,7 +327,26 @@ export class CheckoutService {
   /**
    * Create order with items in transaction
    */
-  async createOrder(input: CreateOrderInput): Promise<CreatedOrder> {
+  async createOrder(input: CreateOrderInput, userId?: string): Promise<CreatedOrder> {
+    // Validate cart ownership if userId provided
+    if (userId && input.customerId && input.customerId !== userId) {
+      throw new Error('Cannot create order for another user');
+    }
+
+    // Verify cart exists and belongs to user
+    if (userId) {
+      const cart = await prisma.cart.findFirst({
+        where: {
+          userId: input.customerId || userId,
+          storeId: input.storeId,
+        },
+      });
+
+      if (!cart) {
+        throw new Error('Cart not found or access denied');
+      }
+    }
+
     // Validate cart first
     const validated = await this.validateCart(input.storeId, input.items);
     if (!validated.isValid) {
@@ -421,6 +439,32 @@ export class CheckoutService {
 
       return { ...newOrder, items: orderItems };
     });
+
+    // Clear cart after successful order
+    if (userId) {
+      await prisma.cartItem.deleteMany({
+        where: {
+          cart: {
+            userId: input.customerId || userId,
+            storeId: input.storeId,
+          },
+        },
+      });
+
+      // Reset cart totals
+      await prisma.cart.update({
+        where: {
+          userId_storeId: {
+            userId: input.customerId || userId,
+            storeId: input.storeId,
+          },
+        },
+        data: {
+          subtotal: 0,
+          lastActivityAt: new Date(),
+        },
+      });
+    }
 
     return {
       id: order.id,

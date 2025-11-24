@@ -28,7 +28,6 @@ const completeCheckoutSchema = z.object({
       productId: z.string().cuid(),
       variantId: z.string().cuid().optional(),
       quantity: z.number().int().positive(),
-      price: z.number().min(0),
     })
   ).min(1),
   shippingAddress: shippingAddressSchema,
@@ -63,8 +62,9 @@ export async function POST(request: NextRequest) {
     const checkoutService = CheckoutService.getInstance();
     const order = await checkoutService.createOrder({
       ...validatedInput,
+      customerId: session.user.id,
       ipAddress,
-    });
+    }, session.user.id);
 
     return NextResponse.json(order, { status: 201 });
   } catch (error) {

@@ -12,7 +12,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, ShoppingCart, Truck, CreditCard } from 'lucide-react';
+import { Check, ShoppingCart, Truck, CreditCard, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -131,6 +131,16 @@ function CheckoutPageContent({
   handleBack: () => void;
   steps: Array<{ id: number; title: string; icon: React.ElementType; description: string }>;
 }) {
+  const { cart, loading } = useCart();
+  
+  // Calculate dynamic values from cart
+  const itemCount = cart?.itemCount ?? 0;
+  const subtotal = cart?.subtotal ?? 0;
+  const tax = cart?.tax ?? 0;
+  const shipping = cart?.shipping ?? 0;
+  const total = cart?.total ?? 0;
+  const showCalculated = currentStep >= 1 && shippingAddress;
+
   return (
     <div className="container mx-auto py-10 max-w-6xl">
       <div className="grid gap-8 lg:grid-cols-[1fr_400px]">
@@ -240,33 +250,36 @@ function CheckoutPageContent({
               <CardTitle>Order Summary</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Cart Items - TODO: Replace with actual cart data */}
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span>2 items</span>
-                  <span className="font-medium">$99.98</span>
+              {loading ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="h-6 w-6 animate-spin" />
                 </div>
-                <Separator />
-                <div className="flex justify-between text-sm">
-                  <span>Shipping</span>
-                  <span className="font-medium">
-                    {currentStep >= 1 && shippingAddress ? '$10.00' : 'Calculated at next step'}
-                  </span>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span>{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
+                    <span className="font-medium">${subtotal.toFixed(2)}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between text-sm">
+                    <span>Shipping</span>
+                    <span className="font-medium">
+                      {showCalculated ? `$${shipping.toFixed(2)}` : 'Calculated at next step'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Tax</span>
+                    <span className="font-medium">
+                      {showCalculated ? `$${tax.toFixed(2)}` : 'Calculated at next step'}
+                    </span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between text-base font-semibold">
+                    <span>Total</span>
+                    <span>${showCalculated ? total.toFixed(2) : subtotal.toFixed(2)}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span>Tax</span>
-                  <span className="font-medium">
-                    {currentStep >= 1 && shippingAddress ? '$8.80' : 'Calculated at next step'}
-                  </span>
-                </div>
-                <Separator />
-                <div className="flex justify-between text-base font-semibold">
-                  <span>Total</span>
-                  <span>
-                    {currentStep >= 1 && shippingAddress ? '$118.78' : '$99.98'}
-                  </span>
-                </div>
-              </div>
+              )}
 
               {/* Promo Code - TODO: Implement promo code functionality */}
               <Button variant="outline" className="w-full">

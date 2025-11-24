@@ -28,7 +28,6 @@ const calculateShippingSchema = z.object({
       productId: z.string().cuid(),
       variantId: z.string().cuid().optional(),
       quantity: z.number().int().positive(),
-      price: z.number().min(0),
     })
   ).min(1),
 });
