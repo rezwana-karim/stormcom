@@ -68,12 +68,12 @@ export function AdminDashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.users.total.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{(stats.users?.total || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">+{stats.users.growth}%</span> from last month
+              <span className="text-green-600">+{stats.users?.growth || 0}%</span> from last month
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              {stats.users.active} active • {stats.users.new} new this month
+              {stats.users?.active || 0} active • {stats.users?.new || 0} new this month
             </p>
           </CardContent>
         </Card>
@@ -84,12 +84,12 @@ export function AdminDashboard() {
             <Store className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.stores.active}</div>
+            <div className="text-2xl font-bold">{(stats.stores?.active || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">+{stats.stores.growth}%</span> from last month
+              <span className="text-green-600">+{stats.stores?.growth || 0}%</span> from last month
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              {stats.stores.total} total stores
+              {stats.stores?.total || 0} total stores
             </p>
           </CardContent>
         </Card>
@@ -100,12 +100,12 @@ export function AdminDashboard() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.products.total.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{(stats.products?.total || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">+{stats.products.growth}%</span> from last month
+              <span className="text-green-600">+{stats.products?.growth || 0}%</span> from last month
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              {stats.products.published} published
+              {stats.products?.published || 0} published
             </p>
           </CardContent>
         </Card>
@@ -116,12 +116,12 @@ export function AdminDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.revenue.total.toLocaleString()}</div>
+            <div className="text-2xl font-bold">${(stats.revenue?.total || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">+{stats.revenue.growth}%</span> from last month
+              <span className="text-green-600">+{stats.revenue?.growth || 0}%</span> from last month
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              ${stats.revenue.monthly.toLocaleString()} this month
+              ${(stats.revenue?.monthly || 0).toLocaleString()} this month
             </p>
           </CardContent>
         </Card>
@@ -140,17 +140,17 @@ export function AdminDashboard() {
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Total Orders</span>
-              <span className="text-2xl font-bold">{stats.orders.total.toLocaleString()}</span>
+              <span className="text-2xl font-bold">{(stats.orders?.total || 0).toLocaleString()}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Pending Orders</span>
-              <Badge variant="secondary">{stats.orders.pending}</Badge>
+              <Badge variant="secondary">{stats.orders?.pending || 0}</Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Growth</span>
               <span className="text-sm text-green-600 font-medium">
                 <TrendingUp className="inline h-4 w-4 mr-1" />
-                +{stats.orders.growth}%
+                +{stats.orders?.growth || 0}%
               </span>
             </div>
           </CardContent>
@@ -167,19 +167,19 @@ export function AdminDashboard() {
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Avg Response Time</span>
-              <span className="text-sm font-mono">{stats.performance.responseTime}ms</span>
+              <span className="text-sm font-mono">{stats.performance?.responseTime || 0}ms</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Uptime</span>
-              <Badge variant="default">{stats.performance.uptime}%</Badge>
+              <Badge variant="default">{stats.performance?.uptime || 0}%</Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Error Rate</span>
-              <span className="text-sm text-green-600">{stats.performance.errorRate}%</span>
+              <span className="text-sm text-green-600">{stats.performance?.errorRate || 0}%</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">API Calls (30d)</span>
-              <span className="text-sm font-mono">{stats.performance.apiCalls.toLocaleString()}</span>
+              <span className="text-sm font-mono">{(stats.performance?.apiCalls || 0).toLocaleString()}</span>
             </div>
           </CardContent>
         </Card>
@@ -196,16 +196,16 @@ export function AdminDashboard() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Used</span>
-                <span className="text-sm">{stats.storage.used} GB / {stats.storage.total} GB</span>
+                <span className="text-sm">{stats.storage?.used || 0} GB / {stats.storage?.total || 100} GB</span>
               </div>
               <div className="w-full bg-secondary rounded-full h-2">
                 <div
                   className="bg-primary h-2 rounded-full transition-all"
-                  style={{ width: `${stats.storage.percentage}%` }}
+                  style={{ width: `${stats.storage?.percentage || 0}%` }}
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                {stats.storage.percentage}% of total capacity used
+                {stats.storage?.percentage || 0}% of total capacity used
               </p>
             </div>
           </CardContent>
@@ -231,7 +231,7 @@ export function AdminDashboard() {
               </div>
               <div className="flex items-start gap-2">
                 <Badge variant="outline">LOW</Badge>
-                <p className="text-sm">Storage usage at {stats.storage.percentage}%</p>
+                <p className="text-sm">Storage usage at {stats.storage?.percentage || 0}%</p>
               </div>
             </div>
           </CardContent>

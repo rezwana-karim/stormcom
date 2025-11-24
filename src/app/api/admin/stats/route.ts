@@ -45,7 +45,6 @@ export async function GET(request: NextRequest) {
         completed: 42156,
         pending: 2345,
         canceled: 1288,
-        revenue: 2345678.90,
         growth: period === '7d' ? 7.5 : period === '30d' ? 15.3 : 32.1,
       },
       products: {
@@ -53,18 +52,25 @@ export async function GET(request: NextRequest) {
         published: 112456,
         draft: 10234,
         outOfStock: 2988,
+        growth: period === '7d' ? 4.2 : period === '30d' ? 15.2 : 31.8,
       },
       revenue: {
         total: 2345678.90,
+        monthly: period === '7d' ? 156789.45 : period === '30d' ? 567890.12 : 1234567.89,
         subscriptions: 567890.12,
         transactions: 1777788.78,
         growth: period === '7d' ? 9.2 : period === '30d' ? 18.6 : 41.3,
       },
       performance: {
-        avgResponseTime: 245, // ms
+        responseTime: 245, // ms
         uptime: 99.97, // %
         apiCalls: 8945623,
         errorRate: 0.12, // %
+      },
+      storage: {
+        used: 45.6,
+        total: 100,
+        percentage: 45.6,
       },
       generatedAt: new Date().toISOString(),
     };

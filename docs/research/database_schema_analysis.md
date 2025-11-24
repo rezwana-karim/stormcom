@@ -507,3 +507,643 @@ This addendum maps proposed schema evolution to the funnel and MACH strategy whi
 | Partition activation SLA post-threshold | < 48h |
 
 *Addendum authored 2025-11-24; append future schema governance decisions below.*
+
+---
+## 2025-11-24 Marketing Automation Schema Extension (V2)
+
+### H. Marketing Automation Required Tables
+
+#### H.1 Core Marketing Models
+
+**Cart & Abandoned Cart Recovery:**
+```prisma
+model Cart {
+  id String @id @default(cuid())
+  storeId String
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customerId String?
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  sessionId String?
+  subtotal Float @default(0)
+  discountAmount Float @default(0)
+  totalAmount Float @default(0)
+  status CartStatus @default(ACTIVE) // ACTIVE, ABANDONED, CONVERTED, EXPIRED
+  abandonedAt DateTime?
+  convertedAt DateTime?
+  orderId String? // Link to converted order
+  expiresAt DateTime?
+  items CartItem[]
+  abandonmentEvents CartAbandonmentEvent[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([storeId, sessionId])
+  @@index([storeId, status, abandonedAt])
+  @@index([customerId, status])
+  @@index([abandonedAt])
+}
+
+model CartItem {
+  id String @id @default(cuid())
+  cartId String
+  cart Cart @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId String?
+  variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  quantity Int
+  price Float
+  subtotal Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([cartId])
+  @@index([productId])
+}
+
+model CartAbandonmentEvent {
+  id String @id @default(cuid())
+  cartId String
+  cart Cart @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  customerId String?
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  cartValue Float
+  itemCount Int
+  abandonedAt DateTime @default(now())
+  recoveryAttempts Int @default(0)
+  lastReminderSentAt DateTime?
+  recoveredAt DateTime?
+  orderId String? // If cart converted to order
+  
+  @@index([cartId])
+  @@index([customerId, abandonedAt])
+  @@index([abandonedAt, recoveredAt])
+}
+
+enum CartStatus { ACTIVE, ABANDONED, CONVERTED, EXPIRED }
+```
+
+**Email Campaign Management:**
+```prisma
+model EmailCampaign {
+  id String @id @default(cuid())
+  storeId String
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name String
+  type CampaignType // PROMOTIONAL, SEASONAL, ABANDONED_CART, WIN_BACK, WELCOME_SERIES, POST_PURCHASE, BIRTHDAY, PRODUCT_LAUNCH
+  status CampaignStatus // DRAFT, SCHEDULED, SENDING, COMPLETED, PAUSED, CANCELED
+  targetAudience String // JSON: segment criteria or segment IDs
+  channels String // JSON array: ["SMS", "EMAIL", "WHATSAPP", "PUSH"]
+  content String // JSON: channel-specific content & templates
+  scheduleType ScheduleType // IMMEDIATE, SCHEDULED, RECURRING
+  scheduledAt DateTime?
+  recurrenceRule String? // Cron expression for recurring campaigns
+  sentCount Int @default(0)
+  deliveredCount Int @default(0)
+  openedCount Int @default(0)
+  clickedCount Int @default(0)
+  convertedCount Int @default(0)
+  revenueGenerated Float @default(0)
+  costSpent Float @default(0)
+  events EmailEvent[]
+  smsLogs SmsLog[]
+  whatsappMessages WhatsAppMessage[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  completedAt DateTime?
+  
+  @@index([storeId, status])
+  @@index([storeId, type, status])
+  @@index([scheduledAt])
+  @@index([status, completedAt])
+}
+
+model EmailEvent {
+  id String @id @default(cuid())
+  campaignId String?
+  campaign EmailCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  customerId String?
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  eventType EmailEventType // SENT, DELIVERED, OPENED, CLICKED, BOUNCED, COMPLAINED, UNSUBSCRIBED
+  channel MessageChannel // SMS, EMAIL, WHATSAPP, PUSH_NOTIFICATION
+  metadata String? // JSON: link clicked, error codes, tracking data
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  
+  @@index([campaignId, eventType])
+  @@index([customerId, createdAt])
+  @@index([eventType, createdAt])
+  @@index([channel, eventType])
+}
+
+model CampaignTemplate {
+  id String @id @default(cuid())
+  storeId String?
+  store Store? @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name String
+  type CampaignType
+  category String // SEASONAL, PROMOTIONAL, AUTOMATION
+  description String?
+  thumbnailUrl String?
+  defaultContent String // JSON: channel-specific default content
+  isSystem Boolean @default(false) // System templates (Eid, Flash Sale) vs custom
+  usageCount Int @default(0)
+  locale String @default("en") // bn, en
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([storeId, category])
+  @@index([type, isSystem, locale])
+  @@index([isSystem, usageCount])
+}
+
+enum CampaignType { PROMOTIONAL, SEASONAL, ABANDONED_CART, WIN_BACK, WELCOME_SERIES, POST_PURCHASE, BIRTHDAY, PRODUCT_LAUNCH, FLASH_SALE }
+enum CampaignStatus { DRAFT, SCHEDULED, SENDING, COMPLETED, PAUSED, CANCELED, FAILED }
+enum ScheduleType { IMMEDIATE, SCHEDULED, RECURRING }
+enum EmailEventType { SENT, DELIVERED, OPENED, CLICKED, BOUNCED, COMPLAINED, UNSUBSCRIBED }
+enum MessageChannel { SMS, EMAIL, WHATSAPP, PUSH_NOTIFICATION }
+```
+
+**Customer Segmentation:**
+```prisma
+model CustomerSegment {
+  id String @id @default(cuid())
+  storeId String
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name String
+  description String?
+  criteria String // JSON: filter conditions (RFM scores, order count, location, product categories, etc.)
+  isSystem Boolean @default(false) // System segments (VIP, New, At Risk) vs custom
+  isDynamic Boolean @default(true) // Auto-refresh vs static snapshot
+  customerCount Int @default(0)
+  lastComputedAt DateTime?
+  members CustomerSegmentMember[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([storeId, isSystem])
+  @@index([storeId, isDynamic])
+  @@index([lastComputedAt])
+}
+
+model CustomerSegmentMember {
+  id String @id @default(cuid())
+  segmentId String
+  segment CustomerSegment @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+  customerId String
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  addedAt DateTime @default(now())
+  computedAt DateTime @default(now())
+  
+  @@unique([segmentId, customerId])
+  @@index([customerId])
+  @@index([segmentId, addedAt])
+}
+
+model CustomerRFMSnapshot {
+  id String @id @default(cuid())
+  storeId String
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customerId String
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  recencyScore Int // 1-5 (5 = most recent purchase)
+  frequencyScore Int // 1-5 (5 = most frequent buyer)
+  monetaryScore Int // 1-5 (5 = highest spender)
+  compositeScore Int // Weighted sum: 4*R + 3*F + 3*M (max 50)
+  daysSinceLastOrder Int
+  orderCount Int
+  totalSpent Float
+  averageOrderValue Float
+  snapshotDate DateTime @default(now())
+  
+  @@unique([storeId, customerId, snapshotDate])
+  @@index([storeId, compositeScore])
+  @@index([compositeScore, snapshotDate])
+  @@index([customerId, snapshotDate])
+}
+
+model CustomerLifecycleMetrics {
+  id String @id @default(cuid())
+  customerId String @unique
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  stage LifecycleStage // NEW, ACTIVE, AT_RISK, CHURNED, REACTIVATED
+  churnRiskScore Float @default(0) // 0-1 probability
+  predictedCLV Float? // Customer Lifetime Value prediction
+  daysSinceLastOrder Int @default(0)
+  averageDaysBetweenOrders Float?
+  nextPurchasePrediction DateTime?
+  lastStageChangeAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([stage, churnRiskScore])
+  @@index([customerId, stage])
+  @@index([churnRiskScore])
+}
+
+enum LifecycleStage { NEW, ACTIVE, AT_RISK, CHURNED, REACTIVATED }
+```
+
+**Marketing Automation:**
+```prisma
+model AutomationWorkflow {
+  id String @id @default(cuid())
+  storeId String
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name String
+  description String?
+  type AutomationType // ABANDONED_CART, WELCOME_SERIES, WIN_BACK, POST_PURCHASE, BIRTHDAY, PRICE_DROP, LOW_STOCK_ALERT
+  isActive Boolean @default(true)
+  triggerConfig String // JSON: event conditions, delays, filters
+  actionConfig String // JSON: message content, channels, discount codes
+  frequencyCap String? // JSON: max executions per customer per period
+  executionCount Int @default(0)
+  successCount Int @default(0)
+  failureCount Int @default(0)
+  revenueGenerated Float @default(0)
+  costSpent Float @default(0)
+  executions AutomationExecution[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([storeId, type, isActive])
+  @@index([isActive, type])
+}
+
+model AutomationExecution {
+  id String @id @default(cuid())
+  workflowId String
+  workflow AutomationWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  customerId String
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  triggerData String // JSON: cart details, order data, customer event data
+  status ExecutionStatus // PENDING, RUNNING, COMPLETED, FAILED, SKIPPED, SUPPRESSED
+  executedAt DateTime?
+  completedAt DateTime?
+  errorMessage String?
+  revenueGenerated Float?
+  costSpent Float?
+  createdAt DateTime @default(now())
+  
+  @@index([workflowId, status])
+  @@index([customerId, createdAt])
+  @@index([status, executedAt])
+  @@index([workflowId, customerId, createdAt])
+}
+
+enum AutomationType { ABANDONED_CART, WELCOME_SERIES, WIN_BACK, POST_PURCHASE, BIRTHDAY, PRICE_DROP, LOW_STOCK_ALERT, ANNIVERSARY }
+enum ExecutionStatus { PENDING, RUNNING, COMPLETED, FAILED, SKIPPED, SUPPRESSED }
+```
+
+**SMS & WhatsApp Integration:**
+```prisma
+model SmsProvider {
+  id String @id @default(cuid())
+  storeId String @unique
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  provider String // SSL_WIRELESS, BANGLALINK, ROBI, GRAMEENPHONE
+  apiKey String
+  apiSecret String
+  senderId String // Sender ID registered with BTRC
+  ratePerSms Float @default(1.0) // BDT per SMS
+  isActive Boolean @default(true)
+  creditBalance Int @default(0)
+  lowCreditThreshold Int @default(100)
+  logs SmsLog[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([storeId, isActive])
+  @@index([isActive, creditBalance])
+}
+
+model SmsLog {
+  id String @id @default(cuid())
+  providerId String
+  provider SmsProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  campaignId String?
+  campaign EmailCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  customerId String?
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  phoneNumber String
+  message String
+  status SmsStatus // QUEUED, SENT, DELIVERED, FAILED, REJECTED
+  cost Float
+  externalId String? // Provider's message ID
+  errorCode String?
+  sentAt DateTime?
+  deliveredAt DateTime?
+  createdAt DateTime @default(now())
+  
+  @@index([providerId, status])
+  @@index([campaignId, status])
+  @@index([customerId, createdAt])
+  @@index([status, sentAt])
+}
+
+model WhatsAppTemplate {
+  id String @id @default(cuid())
+  storeId String
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name String
+  category String // MARKETING, TRANSACTIONAL
+  language String @default("en")
+  content String // Template body with {{placeholders}}
+  headerType String? // TEXT, IMAGE, VIDEO, DOCUMENT
+  headerContent String?
+  buttons String? // JSON array of buttons (CALL_TO_ACTION, QUICK_REPLY)
+  status WhatsAppTemplateStatus // PENDING, APPROVED, REJECTED, DISABLED
+  metaTemplateId String? // Meta's template ID
+  rejectionReason String?
+  approvedAt DateTime?
+  messages WhatsAppMessage[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([storeId, name])
+  @@index([storeId, status])
+  @@index([status, category])
+}
+
+model WhatsAppMessage {
+  id String @id @default(cuid())
+  campaignId String?
+  campaign EmailCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  customerId String
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  templateId String
+  template WhatsAppTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  phoneNumber String
+  variables String? // JSON object for template placeholders
+  status WhatsAppMessageStatus // QUEUED, SENT, DELIVERED, READ, FAILED
+  externalId String? // Meta's message ID
+  cost Float @default(0.50) // BDT per WhatsApp message
+  errorCode String?
+  sentAt DateTime?
+  deliveredAt DateTime?
+  readAt DateTime?
+  createdAt DateTime @default(now())
+  
+  @@index([campaignId, status])
+  @@index([customerId, status])
+  @@index([status, sentAt])
+  @@index([templateId])
+}
+
+enum SmsStatus { QUEUED, SENT, DELIVERED, FAILED, REJECTED }
+enum WhatsAppTemplateStatus { PENDING, APPROVED, REJECTED, DISABLED }
+enum WhatsAppMessageStatus { QUEUED, SENT, DELIVERED, READ, FAILED, REPLIED }
+```
+
+#### H.2 Schema Evolution Impact Analysis
+
+| New Table | Estimated Rows (10K customers) | Storage Impact | Query Patterns | Index Strategy |
+|-----------|-------------------------------|----------------|----------------|----------------|
+| **Cart** | ~2,000 active, ~500 abandoned/day | ~200MB/year | Lookup by sessionId, customerId; filter by status+abandonedAt | Composite: (storeId, status, abandonedAt) |
+| **CartItem** | ~8,000 items (4 items/cart avg) | ~150MB/year | Join with Cart; product lookup | Composite: (cartId), (productId) |
+| **EmailCampaign** | ~120 campaigns/year | ~10MB/year | List by store+status; schedule lookup | Composite: (storeId, status), (scheduledAt) |
+| **EmailEvent** | ~1.2M events/year (10 campaigns, 10K customers, 12 events/campaign) | ~1.5GB/year | Group by campaignId+eventType; customer timeline | Composite: (campaignId, eventType), (customerId, createdAt) |
+| **CustomerSegment** | ~50 segments/store | ~5MB/year | List by store; lookup by system status | Composite: (storeId, isSystem) |
+| **CustomerSegmentMember** | ~200K memberships (20 segments × 10K customers) | ~80MB/year | Lookup by customerId; segment membership checks | Composite: (customerId), (segmentId, customerId) UNIQUE |
+| **CustomerRFMSnapshot** | ~120K snapshots/year (10K customers × 12 monthly) | ~150MB/year | Latest snapshot per customer; time-series analysis | Composite: (storeId, customerId, snapshotDate) UNIQUE |
+| **AutomationWorkflow** | ~20 workflows/store | ~2MB/year | List by store+type+active | Composite: (storeId, type, isActive) |
+| **AutomationExecution** | ~500K executions/year (abandoned cart primary) | ~800MB/year | Group by workflow+status; customer history | Composite: (workflowId, status), (customerId, createdAt) |
+| **SmsLog** | ~480K logs/year (4 campaigns/month, 10K customers) | ~600MB/year | Campaign analytics; delivery rate tracking | Composite: (campaignId, status), (providerId, status) |
+| **WhatsAppMessage** | ~240K messages/year (2 campaigns/month, 10K customers) | ~400MB/year | Similar to SmsLog | Composite: (campaignId, status), (customerId, status) |
+
+**Total Storage Impact**: ~4.9GB/year for 10,000 customers with marketing automation
+**Scaling Factor**: Linear with customer count (×10 customers = ×10 storage)
+
+#### H.3 Data Lifecycle & Archival Strategy
+
+| Table | Hot Retention | Archive Strategy | Purge Policy |
+|-------|---------------|------------------|--------------|
+| **EmailEvent** | 6 months | Compress to Parquet, move to S3/R2 | Purge raw logs after 24 months |
+| **SmsLog** | 12 months | Aggregate daily stats, archive raw logs | Purge raw logs after 36 months |
+| **WhatsAppMessage** | 12 months | Aggregate daily stats, archive raw logs | Purge raw logs after 36 months |
+| **AutomationExecution** | 6 months | Archive completed executions | Purge after 24 months |
+| **CartAbandonmentEvent** | 3 months | Archive recovered/expired carts | Purge after 12 months |
+| **CustomerRFMSnapshot** | All (time-series) | Keep in database (indexed by date) | Never purge (analysis data) |
+
+**Archival Job Schedule**: Monthly archival cron job (runs 1st of month at 2 AM BDT)
+
+#### H.4 Performance Optimization Patterns
+
+**Denormalized Campaign Metrics (Cache Pattern):**
+```prisma
+// Instead of COUNT(*) on EmailEvent every time
+model EmailCampaign {
+  sentCount Int @default(0)  // Updated on EmailEvent INSERT
+  deliveredCount Int @default(0)  // Updated on webhook
+  openedCount Int @default(0)
+  clickedCount Int @default(0)
+  convertedCount Int @default(0)
+  revenueGenerated Float @default(0)
+}
+```
+
+**Incremental RFM Computation (Batch Job Optimization):**
+```sql
+-- Nightly job computes only changed customers
+INSERT INTO CustomerRFMSnapshot (
+  storeId, customerId, recencyScore, frequencyScore, monetaryScore, compositeScore, ...
+)
+SELECT ... FROM Customer
+WHERE lastOrderAt >= NOW() - INTERVAL '2 days'  -- Only recent changes
+ON CONFLICT (storeId, customerId, snapshotDate) DO UPDATE SET ...
+```
+
+**Segment Membership Differential Update:**
+```sql
+-- Instead of full recompute, compute diff
+WITH NewMembers AS (
+  SELECT segmentId, customerId FROM <segment criteria>
+  EXCEPT
+  SELECT segmentId, customerId FROM CustomerSegmentMember
+)
+INSERT INTO CustomerSegmentMember (segmentId, customerId, addedAt)
+SELECT * FROM NewMembers;
+```
+
+#### H.5 Multi-Tenancy & Data Isolation
+
+**Critical Scoping Rules:**
+```prisma
+// EVERY query MUST include storeId filter
+const carts = await prisma.cart.findMany({
+  where: {
+    storeId: currentStore.id,  // ✅ ALWAYS required
+    status: 'ABANDONED'
+  }
+});
+
+// BAD - missing storeId (data leak risk)
+const campaigns = await prisma.emailCampaign.findMany({
+  where: { status: 'COMPLETED' }  // ❌ Crosses tenant boundaries
+});
+```
+
+**Repository Pattern Enforcement:**
+```typescript
+// Base repository enforces storeId automatically
+class MarketingRepository extends BaseRepository {
+  async findCampaigns(filters: Filters) {
+    return prisma.emailCampaign.findMany({
+      where: {
+        storeId: this.currentStoreId,  // Injected by base class
+        ...filters
+      }
+    });
+  }
+}
+```
+
+#### H.6 Integration Points with Existing Schema
+
+| Existing Table | New Relationship | Purpose |
+|---------------|------------------|---------|
+| **Customer** | → CartAbandonmentEvent, EmailEvent, CustomerRFMSnapshot | Link marketing activities to customer profiles |
+| **Order** | → Cart.orderId, AutomationExecution.revenueGenerated | Track conversion from campaigns to revenue |
+| **Product** | → CartItem.productId | Abandoned cart product tracking |
+| **Store** | → EmailCampaign, CustomerSegment, SmsProvider | Multi-tenant isolation & ownership |
+
+**Required Schema Additions to Existing Tables:**
+```prisma
+// Add to Customer model
+model Customer {
+  // ... existing fields
+  
+  // Marketing opt-in fields
+  marketingOptIn Boolean @default(false)
+  marketingOptInAt DateTime?
+  smsOptIn Boolean @default(false)
+  whatsappOptIn Boolean @default(false)
+  
+  // Unsubscribe tracking
+  unsubscribedAt DateTime?
+  unsubscribeReason String?
+  
+  // Lifecycle metrics
+  lifecycleStage LifecycleStage @default(NEW)
+  rfmScore Int? // Latest composite RFM score
+  
+  // New relations
+  carts Cart[]
+  abandonmentEvents CartAbandonmentEvent[]
+  emailEvents EmailEvent[]
+  rfmSnapshots CustomerRFMSnapshot[]
+  lifecycleMetrics CustomerLifecycleMetrics?
+  segmentMemberships CustomerSegmentMember[]
+  automationExecutions AutomationExecution[]
+  smsLogs SmsLog[]
+  whatsappMessages WhatsAppMessage[]
+}
+
+// Add to Store model
+model Store {
+  // ... existing fields
+  
+  // Marketing configuration
+  marketingEnabled Boolean @default(false)
+  defaultSenderId String? // Default SMS sender ID
+  emailFromName String?
+  emailFromAddress String?
+  
+  // Budget & limits
+  monthlyMarketingBudget Float? // BDT
+  marketingBudgetSpent Float @default(0)
+  
+  // New relations
+  emailCampaigns EmailCampaign[]
+  customerSegments CustomerSegment[]
+  rfmSnapshots CustomerRFMSnapshot[]
+  automationWorkflows AutomationWorkflow[]
+  smsProvider SmsProvider?
+  whatsappTemplates WhatsAppTemplate[]
+  campaignTemplates CampaignTemplate[]
+}
+```
+
+#### H.7 Migration Strategy
+
+**Phase 1: Foundation (Week 1-2)**
+- Add Cart, CartItem, CartAbandonmentEvent tables
+- Add EmailCampaign, EmailEvent tables
+- Add Customer marketing fields (marketingOptIn, etc.)
+- Backfill existing customers with default opt-in status
+
+**Phase 2: Segmentation (Week 3-4)**
+- Add CustomerSegment, CustomerSegmentMember tables
+- Add CustomerRFMSnapshot, CustomerLifecycleMetrics tables
+- Run initial RFM computation job for existing customers
+- Create system segments (VIP, New, At Risk, Hibernating)
+
+**Phase 3: Multi-Channel (Week 5-6)**
+- Add SmsProvider, SmsLog tables
+- Add WhatsAppTemplate, WhatsAppMessage tables
+- Add CampaignTemplate table
+- Seed Bangladesh seasonal templates (Eid, Pohela Boishakh)
+
+**Phase 4: Automation (Week 7-8)**
+- Add AutomationWorkflow, AutomationExecution tables
+- Migrate EmailCampaign to support automation triggers
+- Implement abandoned cart detection job
+- Deploy first automation workflow
+
+**Migration Script Example:**
+```typescript
+// prisma/migrations/XXXXXX_add_marketing_automation/migration.sql
+-- Phase 1: Cart tables
+CREATE TABLE "Cart" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "storeId" TEXT NOT NULL,
+  "customerId" TEXT,
+  "sessionId" TEXT,
+  "subtotal" REAL NOT NULL DEFAULT 0,
+  "status" TEXT NOT NULL DEFAULT 'ACTIVE',
+  "abandonedAt" TIMESTAMP,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP NOT NULL,
+  FOREIGN KEY ("storeId") REFERENCES "Store"("id") ON DELETE CASCADE,
+  FOREIGN KEY ("customerId") REFERENCES "Customer"("id") ON DELETE SET NULL
+);
+
+CREATE INDEX "Cart_storeId_status_abandonedAt_idx" ON "Cart"("storeId", "status", "abandonedAt");
+CREATE UNIQUE INDEX "Cart_storeId_sessionId_key" ON "Cart"("storeId", "sessionId");
+
+-- Phase 2: Email Campaign tables
+CREATE TABLE "EmailCampaign" (
+  ...
+);
+
+-- Backfill existing customers with opt-in status
+UPDATE "Customer" SET "marketingOptIn" = true, "marketingOptInAt" = "createdAt" WHERE "acceptsMarketing" = true;
+```
+
+#### H.8 Cost-Benefit Analysis
+
+**Implementation Cost:**
+- Development: 8 weeks × ৳2,00,000/week = ৳16,00,000
+- Infrastructure: ৳70,000 (4 months trial) = ৳2,80,000
+- **Total**: ৳18,80,000
+
+**Expected Monthly Revenue Impact:**
+- Abandoned cart recovery: 200 orders/month × ৳2,500 avg = ৳5,00,000
+- Segmented campaigns: 150 orders/month × ৳2,500 avg = ৳3,75,000
+- Automated workflows: 100 orders/month × ৳2,500 avg = ৳2,50,000
+- **Total**: ৳11,25,000/month
+
+**Payback Period:**
+```
+৳18,80,000 / ৳11,25,000 = 1.67 months (~7 weeks)
+```
+
+**ROI (12 months):**
+```
+Revenue: ৳11,25,000 × 12 = ৳1,35,00,000
+Cost: ৳18,80,000 (one-time) + ৳3,50,000 (infrastructure) = ৳22,30,000
+Net Profit: ৳1,12,70,000
+ROI: 505% (5:1)
+```
+
+*Marketing automation schema analysis completed 2025-11-24. Provides comprehensive data model for Bangladesh-focused multi-channel marketing platform.*
