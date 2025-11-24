@@ -655,8 +655,8 @@ model Cart {
   id        String   @id @default(cuid())
   
   // Either userId (authenticated) or sessionId (guest) must be set
-  userId    String?  @unique
-  sessionId String?  @unique // For guest carts
+  userId    String?
+  sessionId String? // For guest carts
   
   storeId   String
   store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
@@ -670,6 +670,8 @@ model Cart {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
+  @@unique([userId, storeId])
+  @@unique([sessionId, storeId])
   @@index([storeId, userId])
   @@index([storeId, sessionId])
   @@index([expiresAt]) // For cleanup jobs
