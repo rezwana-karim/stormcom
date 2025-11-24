@@ -134,3 +134,51 @@ Hash chain ensures forensic integrity of permission change timeline.
 
 ---
 *Permission taxonomy establishes scalable RBAC foundation; future extensions can layer ABAC or policy engine without redesign.*
+
+---
+## 2025-11-24 Cross-Reference & RBAC Expansion Addendum
+Links permission strategy to funnel outcomes, MACH guidance, and cost/security efficiency.
+
+### A. Funnel Linkage
+| Permission Scope | Funnel Stage Impact | Example Action |
+|------------------|---------------------|----------------|
+| promo.manage | Conversion | Create promotion driving discount adoption |
+| customer.segment.manage | Loyalty | Configure segment for retention campaign |
+| analytics.export | Measurement | Export cohort data for optimization |
+| order.refund | Loyalty / Trust | Process refund promptly |
+| inventory.adjust | Conversion (availability) | Maintain accurate stock preventing oversell |
+
+### B. MACH Principle Reinforcement
+| Principle | RBAC Contribution |
+|----------|-------------------|
+| API-first | Clear scopes for external token access |
+| Microservices-ready | Permission codes map cleanly to future service boundaries |
+| Cloud-native | Low-overhead in-memory permission resolution |
+| Headless | Storefront tokens restricted to read-only catalog scopes |
+
+### C. Cost & Governance Safeguards
+| Safeguard | Description |
+|----------|-------------|
+| Permission manifest checksum | Detect drift between DB and code list |
+| High-risk scope MFA (refund.issue, admin.superuser) | Prevent fraudulent elevated operations |
+| Token scope limiter | Enforce subset-of-role invariant |
+| Permission grant anomaly alert | Notify on sudden grant spikes |
+
+### D. Success Metrics Extension
+| Metric | Target |
+|--------|-------|
+| Permission resolution median time | < 0.5ms |
+| High-risk permission misuse incidents | 0 |
+| Drift discrepancies per audit | 0 |
+| Token scope elevation attempts blocked | 100% |
+
+### E. Immediate Actions
+1. Implement permission manifest export & checksum verification.
+2. Add MFA requirement stub for high-risk operations.
+3. Introduce anomaly detection on grant events (rate over baseline).
+4. Create automated report of unused permissions per 30 days.
+
+### F. Alignment Statement
+RBAC evolution secures multi-tenant integrity and enables safe rapid feature rollout (promotions, segmentation) while minimizing overhead and supporting future microservice extraction.
+
+*Addendum authored 2025-11-24.*

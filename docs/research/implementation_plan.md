@@ -250,3 +250,61 @@ Rollback: Drop table and revert service logic; maintain adjustments only.
 
 ---
 *Extended addendum integrates phase alignment, instrumentation, partition policy, compliance hooks, and enhanced success metrics.*
+
+---
+## 2025-11-24 Cross-Reference & Execution Guardrail Addendum
+This addendum reconciles the implementation plan with funnel priorities, MACH aims, and cost governance while introducing operational guardrails.
+
+### A. Funnel & Phase Correlation
+| Implementation Step | Funnel Impact | Measurement |
+|---------------------|---------------|------------|
+| Order lifecycle tables | Conversion trust | Fulfillment latency, refund turnaround |
+| Promotions & pricing foundation | Conversion uplift | Promotion adoption %, AOV |
+| Segmentation & analytics events | Loyalty / Measurement | Repeat purchase rate, churn metrics |
+| Cache tags + ProductSummary | Consideration / Conversion | Product list p95 latency |
+
+### B. MACH Reinforcement Matrix
+| Step | MACH Principle Boost | Note |
+|------|----------------------|------|
+| Service layer foundation | Microservices-ready | Clear domain boundaries |
+| REST + GraphQL expansion | API-first / Headless | Composable storefront support |
+| Cache tagging & read models | Cloud-native | Efficient resource usage |
+| DomainEvent emission | Microservices-ready / API-first | Future external consumers |
+
+### C. Operational Guardrails
+| Guardrail | Description | Enforced By |
+|----------|-------------|-------------|
+| Tenant predicate lint | Detect missing `storeId` filters | Static analysis script |
+| Migration ADR requirement | Document each schema change | CI check for ADR presence |
+| Dual-write verification | Nightly mismatch alert | Cron job + metrics |
+| Promotion rule complexity limit | Cap evaluation overhead | Validation logic |
+| Segment creation quota | Prevent combinatorial explosion | Admin UI & server check |
+
+### D. Additional Success Metrics
+| Metric | Target |
+|--------|-------|
+| Order creation p95 | < 400ms |
+| Product list p95 (cached) | < 250ms |
+| Promotion evaluation p95 | < 120ms |
+| Inventory reconciliation incidents | 0 |
+| Webhook delivery success | > 98% |
+
+### E. Updated Immediate Action Stack (Sprint 0)
+1. Repository + tenant lint rule.
+2. Cache tags + ProductSummary migration.
+3. CorrelationId middleware + structured logger.
+4. PaymentAttempt & Refund tables + service wiring.
+5. Basic DiscountCode validation endpoint.
+
+### F. Cost Governance Hooks
+| Hook | Purpose |
+|------|--------|
+| Tag invalidation counter | Detect thrash potential |
+| Promotion rule eval histogram | Capacity planning |
+| Segment population change metric | Guard against runaway growth |
+| Read model refresh duration | Optimize backfill & incremental update |
+
+### G. Alignment Statement
+These guardrails ensure iterative delivery remains secure, observable, and cost-aware while directly supporting funnel acceleration (conversion & retention). The addendum intentionally shifts performance & observability earlier in execution to de-risk subsequent complexity layers.
+
+*Addendum authored 2025-11-24; future revisions appended below.*

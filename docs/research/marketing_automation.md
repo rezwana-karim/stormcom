@@ -129,3 +129,59 @@
 
 ---
 *Marketing automation foundation prioritizes reliable data collection (RFM, segments) before complex predictive modeling.*
+
+---
+## 2025-11-24 Cross-Reference & Optimization Addendum
+Aligns marketing automation roadmap with funnel stages, MACH strategy, and cost safeguards.
+
+### A. Funnel Mapping
+| Automation Feature | Funnel Stage | KPI |
+|--------------------|-------------|-----|
+| Abandoned Cart Recovery | Conversion | Recovery rate |
+| Churn Risk Win-back | Loyalty | Reactivation % |
+| RFM Segmentation | Loyalty | Repeat purchase rate |
+| Post-Purchase Upsell | Consideration / Loyalty | Upsell conversion |
+| VIP Milestone Rewards | Loyalty | VIP retention rate |
+
+### B. MACH Alignment
+| Aspect | Alignment |
+|--------|----------|
+| API-first | Campaign CRUD & segment endpoints support external orchestration |
+| Headless | Recommendation API consumed by multiple frontends |
+| Cloud-native | Batch jobs scheduled; heavy tasks offloaded |
+| Microservices-ready | Segmentation & recommendation logic separable later |
+
+### C. Cost & Rate Control Enhancements
+| Control | Purpose |
+|---------|--------|
+| Email frequency cap per customer | Prevent fatigue & cost waste |
+| Trigger idempotency keys | Avoid duplicate sends on race conditions |
+| Priority queue (high-value carts first) | Optimize ROI on limited send budget |
+| Segment differential computation | Reduce full snapshot cost |
+
+### D. Data Quality Guardrails
+| Guardrail | Description |
+|----------|-------------|
+| RFM snapshot completeness check | Ensure all active customers scored |
+| Segment drift alert | Population swings > X% flagged |
+| Template variable validation | Catch missing placeholders pre-send |
+
+### E. Success Metrics Extension
+| Metric | Target |
+|--------|-------|
+| Time to configure new campaign | < 5 minutes |
+| Email open rate (avg) | > 30% |
+| Email click rate (avg) | > 6% |
+| Segment evaluation latency (batch) | < 10m for 100K customers |
+
+### F. Immediate Implementation Actions
+1. Introduce Cart & CartItem models.
+2. Build RFM snapshot job & segment diff engine.
+3. Implement abandoned cart trigger with suppression logic.
+4. Add EmailEvent ingestion & analytics dashboard baseline.
+5. Ship recommendation rule-based engine (embeddings later).
+
+### G. Alignment Statement
+Marketing automation is staged to deliver measurable conversion & retention uplift with guarded cost exposure and robust data integrity checks before scaling to predictive models.
+
+*Addendum authored 2025-11-24.*

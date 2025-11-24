@@ -95,3 +95,58 @@ All new addendum sections merged into respective docs. Cross-link map above shou
 
 ---
 *Summary updated with cross-links and extended scope documentation listing.*
+
+---
+## 2025-11-24 Consolidated Cross-Reference Addendum
+This summary is extended to explicitly tie documents to funnel optimization, MACH architecture adherence, and cost-effective deployment strategy.
+
+### A. Funnel Coverage Matrix
+| Document | Primary Funnel Stage(s) | Key Outcome |
+|----------|-------------------------|-------------|
+| business_logic_review | Consideration / Conversion / Loyalty | Domain gap prioritization |
+| database_schema_analysis | Conversion / Loyalty / Measurement | Schema evolution enabling lifecycle & analytics |
+| api_refactor_plan | Conversion / Measurement | Reliable + observable API surface |
+| marketing_automation | Conversion / Loyalty | Retention & recovery flows |
+| performance_scaling | Awareness / Consideration / Conversion | Latency & throughput targets |
+| cost_optimization | All (support) | Spend governance enabling sustainable scale |
+| permissions_taxonomy | All (support) | Secure least privilege for operations |
+| observability_strategy | Measurement / Conversion | Holistic instrumentation |
+| implementation_plan | All staged | Execution guardrails |
+
+### B. MACH Alignment Snapshot
+| Document | MACH Focus |
+|----------|------------|
+| api_refactor_plan | API-first, microservices-ready layering |
+| database_schema_analysis | Cloud-native partition & denormalized read models |
+| performance_scaling | Cloud-native caching & edge strategies |
+| observability_strategy | Cloud-native metrics & tracing foundation |
+| permissions_taxonomy | API-first scope governance |
+| implementation_plan | Microservices-ready progression |
+
+### C. Deployment Economy Tie-In
+Early emphasis on cache tags, denormalized read models, and minimal infra (no early Redis / search cluster) reduces baseline compute & storage costs while preserving headroom for advanced features.
+
+### D. Consolidated Immediate KPI Targets (Rollup)
+| KPI | Target |
+|-----|-------|
+| Product list p95 latency | <250ms |
+| Order create p95 latency | <400ms |
+| Cache hit ratio | >65% |
+| Promotion adoption | >20% orders |
+| Abandoned cart recovery | >12% |
+| Webhook success | >98% (post retry) |
+| Recommendation CTR | >8% |
+
+### E. Governance & Integrity Checklist
+| Area | Control |
+|------|--------|
+| Tenant isolation | Repository predicate enforcement |
+| Pricing dual-write | Nightly mismatch job |
+| Audit tamper | Hash chain + verification |
+| Inventory correctness | Reservation + reconciliation |
+| Permission drift | Manifest checksum audit |
+
+### F. Alignment Statement
+All research artifacts cohere around delivering a performant, secure, extensible commerce platform aligned with 2025 funnel dynamics and MACH architecture while maintaining strict cost discipline and incremental risk mitigation.
+
+*Addendum authored 2025-11-24; future high-level deltas appended below.*

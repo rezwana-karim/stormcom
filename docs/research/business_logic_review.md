@@ -503,3 +503,60 @@ This addendum operationalizes earlier gaps with concrete models, performance tar
 
 The outlined roadmap provides a pragmatic, staged approach ensuring merchant value increments while protecting system integrity and minimizing refactor risk.
 
+---
+## 2025-11-24 Cross-Reference & Operational Alignment Addendum
+This section cross-maps business logic maturity with funnel acceleration goals and MACH architecture guidance.
+
+### A. Funnel Impact Mapping
+| Domain Enhancement | Funnel Stage | Outcome Metric |
+|--------------------|-------------|---------------|
+| Collections & Bundles | Consideration / Conversion | AOV uplift, product discovery CTR |
+| Promotion Engine | Conversion | Promotion adoption %, discount ROI |
+| Segmentation + RFM | Loyalty | Repeat purchase rate, churn reduction |
+| Abandoned Cart Workflow | Conversion | Recovery % |
+| Recommendations | Consideration | Suggested product CTR |
+| Analytics Events & Attribution | Measurement | Cohort retention, channel ROI |
+
+### B. MACH Principles Intersection
+| Domain Layer | Current Strength | Gap | Action |
+|--------------|------------------|-----|-------|
+| Microservices (logical) | Service abstraction planned | Limited boundary checks | Formal service interface & domain events |
+| API-first | REST endpoints emerging | Missing public spec & version root | Publish `/api/v1` OpenAPI + changelog |
+| Cloud-native | Stateless Next.js functions | Missing adaptive scaling metrics | Emit cost + latency metrics (DailyStoreMetrics) |
+| Headless | App Router + potential GraphQL | No storefront schema | Implement minimal product/collection GraphQL queries |
+
+### C. Cost-Efficient Evolution Guardrails
+| Pattern | Avoid Premature | Use Instead |
+|--------|-----------------|------------|
+| Per-tenant DB | Added complexity | Row-level multi-tenancy w/ partition triggers |
+| Full microservices | Operational overhead | Modular service layer + events |
+| Dedicated search cluster | Cost & ops | pg_trgm + partial indexes initially |
+| Complex ML recommendations | Engineering lift | Rule-based + embeddings stored in Postgres |
+
+### D. Implementation Risk Updates
+| Risk | Newly Surfaced Impact | Mitigation |
+|------|----------------------|-----------|
+| Dual-write pricing mismatch | Incorrect totals → merchant trust loss | Nightly reconciliation + alert threshold |
+| Segment criteria explosion | Performance degradation | Segment creation quotas + indexed criteria fields |
+| Promotion stacking abuse | Margin erosion | Deterministic evaluation ordering + `isStackable` checks |
+
+### E. Success Metrics Extension
+| Metric | Target |
+|--------|-------|
+| Collections contribution to GMV | >15% within 60d of launch |
+| Segmented order share | >25% of orders using segment/tier pricing |
+| Abandoned cart recovery rate | >12% |
+| Recommendation CTR | >8% |
+
+### F. Immediate Actions Checklist
+1. Migrate DiscountCode & PromotionRule tables.
+2. Build ProductSummary denormalization job.
+3. Implement StockReservation & reconciliation script.
+4. Add Permission + RolePermission models; refactor service auth checks.
+5. Introduce AnalyticsEvent ingestion for order/product lifecycle.
+
+### G. Alignment Statement
+Business logic evolution directly increases funnel efficiency while staying within a lean MACH-aligned architecture. Each enhancement is tied to measureable KPIs to validate ROI and prevent scope drift.
+
+*Addendum authored 2025-11-24; append future deltas below.*
+

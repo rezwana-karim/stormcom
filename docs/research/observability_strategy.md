@@ -129,3 +129,67 @@ Results logged to `SyntheticResult` table & metrics emitted for pass/fail.
 
 ---
 *Observability ensures rapid detection & diagnosis, informing scaling and optimization decisions across the commerce lifecycle.*
+
+---
+## 2025-11-24 Cross-Reference & Observability Expansion Addendum
+Links observability pillars to funnel, MACH, and cost optimization strategies.
+
+### A. Funnel Visibility Mapping
+| Funnel Stage | Critical Spans / Metrics |
+|--------------|-------------------------|
+| Awareness | Product list cache hit ratio, TTFB |
+| Consideration | Recommendation resolver latency, promotion evaluation latency |
+| Conversion | order_create_duration, payment_failure_rate, inventory_adjust_duration |
+| Loyalty | Segment rebuild latency, churn win-back trigger success |
+| Measurement | analytics_event_ingest_rate, webhook_delivery_success |
+
+### B. MACH Principle Reinforcement
+| Pillar | Observability Action |
+|--------|---------------------|
+| Microservices-ready | DomainEvent spans; service boundary tracing |
+| API-first | Endpoint latency histogram & versioned usage metrics |
+| Cloud-native | Autoscaling advisory metrics (cold vs warm invocation ratio) |
+| Headless | GraphQL resolver duration & complexity tracking |
+
+### C. Expanded Metrics Set
+| Metric | Type | Purpose |
+|--------|------|---------|
+| promotion_eval_cpu_ms | Histogram | Capacity planning for rule engine |
+| segment_rebuild_duration_ms | Histogram | Optimize batch segmentation |
+| abandoned_cart_trigger_count | Counter | Campaign effectiveness & volume |
+| cache_invalidation_events_total | Counter | Detect churn / thrash patterns |
+| recommendation_resolver_p95 | Gauge | Personalization performance |
+
+### D. Cost-Aware Sampling Adjustments
+| Condition | Sampling Strategy |
+|-----------|------------------|
+| High volume normal ops | Reduce to 10–15% head sampling |
+| Error spikes | Elevate to 100% error traces |
+| Performance tuning window | Temporarily raise to 50% for target endpoints |
+
+### E. Alert Enhancements
+| Alert | Added Dimension |
+|-------|----------------|
+| Cache Degradation | Invalidation rate anomaly |
+| Promotion Latency | p95 latency + eval count threshold |
+| Segment Drift | Size change % beyond expected band |
+| DomainEvent Lag | Emission to webhook delivery time > SLA |
+
+### F. Synthetic Coverage Additions
+| Scenario | New Check |
+|----------|-----------|
+| Promotion application | Validate discount accuracy & latency |
+| Abandoned cart recovery | Simulate cart inactivity & ensure trigger |
+| Segment entry flow | Create order driving RFM threshold crossing |
+
+### G. Success Metrics Extension
+| Metric | Target |
+|--------|-------|
+| Trace sampling cost overhead | <5% CPU |
+| DomainEvent to webhook latency p95 | < 1s |
+| Recommendation resolver p95 | < 150ms |
+
+### H. Alignment Statement
+Enhanced observability ensures every funnel-impacting subsystem (pricing, promotion, recommendation, segmentation) is measurable and optimizable early, reducing blind spots and supporting cost governance.
+
+*Addendum authored 2025-11-24.*

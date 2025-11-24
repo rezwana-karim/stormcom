@@ -183,3 +183,61 @@ Embed correlation ID in dev overlay for debugging (visible only in development) 
 
 ---
 *Extended addendum integrates cross-cutting performance, automation, and permission-aware UX strategies.*
+
+---
+## 2025-11-24 Cross-Reference & UX Alignment Addendum
+Adds funnel, MACH, and cost-effect lenses to UI/UX strategy.
+
+### A. Funnel-Oriented UX Components
+| Component | Funnel Stage | Metric |
+|-----------|--------------|--------|
+| Collections grid & bundle cards | Consideration / Conversion | Collection GMV share, bundle conversion |
+| Promotion banner & preview UI | Conversion | Promotion CTR |
+| Abandoned cart recovery panel | Conversion | Recovery rate |
+| Segment insights dashboard | Loyalty | Repeat purchase uplift |
+| Recommendation ribbon | Consideration | Recommendation CTR |
+| Refund/return timeline | Loyalty / Trust | Resolution turnaround |
+
+### B. MACH Alignment
+| Principle | UX Implementation |
+|----------|------------------|
+| Headless | Shared component patterns for any channel (admin/storefront) |
+| API-first | UI wired to typed service + REST/GraphQL contract |
+| Cloud-native | Streaming dashboards & cached fragments reduce server load |
+| Microservices-ready | Clear domain UI modules (Inventory, Promotions, Segmentation) |
+
+### C. Performance & Cost Safeguards
+| Safeguard | Description |
+|----------|-------------|
+| Debounced promotion preview simulation | Prevent rapid server recompute |
+| Virtualized large tables | Minimize DOM & render cost |
+| Image responsive loader + AVIF | Lower bandwidth & faster LCP |
+| Role-aware lazy loading | Avoid fetching inaccessible data |
+
+### D. Accessibility & Internationalization Extensions
+| Item | Enhancement |
+|------|------------|
+| Currency display | Intl.NumberFormat with store currency & locale |
+| Locale switch | Server component route param + dynamic `<html lang>` |
+| Reduced motion | Global preference toggle stored per user |
+| Screen reader promotion context | ARIA live region for applied discount summary |
+
+### E. Success Metrics Extension
+| Metric | Target |
+|--------|-------|
+| Dashboard initial interactive < | 1s |
+| Promotion builder completion median | < 90s |
+| Inventory adjust undo usage | <10% (indicates correctness) |
+| Recommendation ribbon LCP impact | <100ms added |
+
+### F. Immediate UX Backlog
+1. Implement ProductImage gallery with blur placeholders.
+2. Add segment insights dashboard (RFM distribution chart).
+3. Promotion preview panel with discount breakdown component.
+4. Refund timeline component integrated into order detail.
+5. Command palette for rapid navigation & actions.
+
+### G. Alignment Statement
+The UI/UX strategy now explicitly accelerates key funnel stages while reinforcing performance, accessibility, and cost efficiency—ensuring merchant and shopper experiences scale sustainably.
+
+*Addendum authored 2025-11-24.*

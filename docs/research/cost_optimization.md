@@ -86,3 +86,64 @@ Monthly cost optimization report sections:
 
 ---
 *Cost optimization remains iterative; early structural wins reduce baseline spend before advanced dynamic strategies.*
+
+---
+## 2025-11-24 Cross-Reference & Deployment Economy Addendum
+This addendum aligns cost levers with funnel acceleration and MACH guidance while adding concrete instrumentation & guardrail recommendations.
+
+### A. Funnel-Centric Cost Impact
+| Enhancement | Cost Consideration | Net Effect |
+|-------------|--------------------|-----------|
+| Collections & Promotions | More dynamic invalidations | Use tag invalidation (cheap) vs full recompute |
+| Segmentation/RFM | Batch compute overhead | Nightly scheduled job with incremental diffing |
+| Abandoned Cart Emails | Increased external email cost | Rate limit + suppression logic based on predicted value |
+| Recommendations | CPU for similarity calc | Cache embedding vectors; recompute off-peak |
+
+### B. MACH Principle Cost Lens
+| Pillar | Cost Strategy |
+|--------|--------------|
+| Microservices | Delay physical decomposition until organic latency or team scaling requires it |
+| API-first | Generate OpenAPI schema automatically to prevent manual doc maintenance cost |
+| Cloud-native | Autoscale serverless; track warm vs cold invocation ratio |
+| Headless | GraphQL persisted queries to lower over-fetch and response size |
+
+### C. Expanded Instrumentation Targets
+| Metric | Purpose | Collection Method |
+|--------|---------|------------------|
+| Promotion invalidation count | Measure cache churn | Tag invalidation logger |
+| RFM snapshot duration | Optimize batch performance | Job span metrics |
+| Abandoned cart send suppression rate | Prevent spam cost | Campaign execution report |
+| Embedding generation CPU time | Plan scaling | Worker span aggregation |
+
+### D. Guardrail Enhancements
+| Guardrail | Description |
+|----------|-------------|
+| Promotion Rule Complexity Limit | Cap JSON condition depth/size to avoid evaluation blowouts |
+| Segment Count Quota | Prevent exponential segment proliferation |
+| Email Daily Cap per Customer | Avoid negative brand impact & cost waste |
+| Dynamic Feature Cost Checklist | New feature PR must include estimated compute/storage delta |
+
+### E. Cost Failure Scenarios & Mitigations
+| Scenario | Symptom | Mitigation |
+|----------|---------|-----------|
+| Cache Thrash | Hit ratio drops <50% | Investigate invalidation patterns; introduce debounce on rapid updates |
+| Promotion Rule Storm | Spikes in evaluation latency | Precompile & shard evaluation by predicate type |
+| Email Spend Surge | Sudden high volume sends | Adaptive throttling + prioritization (recover high-value carts first) |
+| DB Storage Balloon | Audit/analytics raw tables > thresholds | Trigger archival early; compress & move to cold storage |
+
+### F. Deployment Optimization Checklist
+1. Implement tag invalidation metrics.
+2. Add job duration histograms (RFM, archival, promotions precompute).
+3. Configure adaptive email throttle (priority queue).
+4. Introduce segment creation quota & admin override flow.
+5. Automate monthly cost report generation from metrics snapshot.
+
+### G. Success Metrics Extension
+| Metric | Target |
+|--------|-------|
+| Promotion evaluation average CPU ms | < 30ms per request |
+| Embedding generation cost per 1K products | < $X placeholder (monitor) |
+| Email send suppression (low-value) | > 20% of potential raw volume |
+| Cache thrash incidents per month | 0 |
+
+*Addendum authored 2025-11-24; integrate metrics into cost dashboard roadmap.*

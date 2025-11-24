@@ -206,3 +206,55 @@ gantt
 
 ## Conclusion
 This roadmap operationalizes the earlier analyses into actionable phases with clear user value and internal architecture maturation. Progressive layering minimizes refactor churn while building a competitive, extensible commerce SaaS platform.
+
+---
+## 2025-11-24 Cross-Reference & KPI Enhancement Addendum
+Roadmap phases are revalidated against funnel stages and MACH alignment to ensure each increment directly contributes to measurable merchant value.
+
+### A. Funnel Overlay on Phases
+| Phase | Primary Funnel Focus | Key KPI |
+|-------|----------------------|---------|
+| 1 | Conversion (checkout integrity) | Order creation p95 latency |
+| 2 | Consideration / Conversion | AOV uplift, promotion adoption |
+| 3 | Measurement / Conversion | Webhook success %, analytics freshness |
+| 4 | Loyalty / Conversion | Repeat purchase uplift, recovery rate |
+| 5 | Measurement / Loyalty | Data consistency incidents, automated workflow coverage |
+
+### B. MACH Principle Reinforcement per Phase
+| Phase | MACH Boost |
+|-------|-----------|
+| 1 | API-first: add idempotent order endpoint spec |
+| 2 | Headless: GraphQL schema extension for collections & bundles |
+| 3 | Cloud-native: event emission + lightweight queue adoption |
+| 4 | Microservices ready: segmentation & pricing services separated logically |
+| 5 | Resilience: event sourcing pilot enabling future service extraction |
+
+### C. Expanded KPI Targets
+| KPI | Phase Introduced | Target |
+|-----|------------------|-------|
+| Cache Hit Ratio (product/category) | 1 | >65% |
+| Promotion Adoption Rate | 2 | >20% of orders |
+| Webhook Delivery Success | 3 | >98% after retries |
+| Abandoned Cart Recovery Rate | 4 | >12% |
+| Automated Returns Workflow Coverage | 5 | >70% |
+
+### D. Risk Tracking Enhancements
+| Risk | Phase | Tracking Mechanism |
+|------|-------|-------------------|
+| Inventory oversell | 1 | Reconciliation nightly job |
+| Promotion miscalc | 2 | Validation & rule evaluation span metrics |
+| Webhook storm | 3 | Queue depth & failure rate alert |
+| Segment proliferation | 4 | Segment count quota + growth alert |
+| Event sourcing drift | 5 | Projection verification script |
+
+### E. Immediate Backlog Reprioritization Snapshot
+| Item | Original Phase | Adjusted Priority Reason |
+|------|---------------|--------------------------|
+| Cache tag invalidation | 2 | Moves to Phase 1 for early perf & cost impact |
+| ProductSummary read model | 2 | Moves to Phase 1 for performance baseline |
+| Correlation ID logging | 3 | Moves to Phase 1 for observability foundation |
+
+### F. Alignment Statement
+Phase execution sequencing now optimizes early performance (cache & read model) and observability before higher-complexity commercial features, reducing regression risk and clarifying ROI measurement from the outset.
+
+*Addendum authored 2025-11-24; integrate KPI changes into dashboard planning.*

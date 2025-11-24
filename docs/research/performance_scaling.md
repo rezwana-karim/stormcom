@@ -108,3 +108,59 @@ Scripts executed on schedule:
 
 ---
 *Performance strategy focuses on early low-effort wins (cache tags, denormalized reads) before heavier structural changes (partitioning, microservices).*
+
+---
+## 2025-11-24 Cross-Reference & Scaling Alignment Addendum
+Integrates performance levers with funnel progression, MACH principles, and cost efficiency.
+
+### A. Funnel-Oriented Performance Targets
+| Stage | User Experience Metric | Backend Target |
+|-------|------------------------|----------------|
+| Awareness | Fast product discovery | Product list cached p95 <250ms |
+| Consideration | Snappy recommendation display | Recommendation resolver p95 <150ms |
+| Conversion | Low checkout friction | Order creation p95 <400ms |
+| Loyalty | Timely account/segment insights | Segment rebuild <10m for 100K customers |
+| Measurement | Fresh analytics dashboard | Daily metrics ready <5m after midnight UTC |
+
+### B. MACH Principle Reinforcement
+| Lever | Principle | Outcome |
+|-------|----------|---------|
+| Tag-based caching | Cloud-native | Reduced origin compute & latency |
+| Read models (ProductSummary) | Microservices-ready | Clear separation of write vs read path |
+| Persisted GraphQL queries | Headless / API-first | Lower payload & over-fetch cost |
+| Domain events + async workers | Cloud-native | Isolation of heavy tasks |
+
+### C. Additional Levers & KPIs
+| Lever | KPI | Target |
+|-------|-----|-------|
+| Promotion precompilation | Eval latency p95 | <120ms |
+| Segment diffing | Rebuild CPU time | <50% of full snapshot |
+| Cache invalidation debounce | Hit ratio preservation | Maintain >65% under update bursts |
+| Inventory reservation optimization | Adjust latency p95 | <50ms |
+
+### D. Cost & Capacity Safeguards
+| Safeguard | Description |
+|----------|-------------|
+| Invalidation storm detection | Measures invalidation/sec and throttles non-critical tags |
+| Promotion complexity guard | Reject overly complex conditions early |
+| Segment quota & alert | Blocks runaway segment definitions |
+| Background job concurrency cap | Prevent queue-induced DB saturation |
+
+### E. Success Metrics Extension
+| Metric | Target |
+|--------|-------|
+| Recommendation resolver p95 | <150ms |
+| Cache thrash incidents | 0 per month |
+| Segment rebuild diff efficiency | >50% rows skipped |
+| Promotion precompile cache hit rate | >70% |
+
+### F. Immediate Action Additions
+1. Implement promotion predicate compilation & caching.
+2. Add invalidation rate monitoring & basic debounce logic.
+3. Build segment diff engine & diff efficiency metric.
+4. Expose recommendation latency histogram.
+
+### G. Alignment Statement
+Performance improvements now explicitly contribute to higher funnel conversion & retention while maintaining lean operational costs and future microservice readiness.
+
+*Addendum authored 2025-11-24.*

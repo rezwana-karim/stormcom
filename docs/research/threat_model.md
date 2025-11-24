@@ -96,3 +96,56 @@
 
 ---
 *Threat model establishes baseline for iterative security reviews; updates accompany new domain surfaces (e.g., subscriptions, marketplace features).*
+
+---
+## 2025-11-24 Cross-Reference & Security Hardening Addendum
+Adds funnel, MACH, and cost-aware context to security posture.
+
+### A. Funnel Impact Security Mapping
+| Funnel Stage | Security Dependency | Rationale |
+|--------------|--------------------|-----------|
+| Conversion | Integrity of pricing, inventory, payment attempts | Prevent checkout errors & trust erosion |
+| Loyalty | Secure refund / return flows, accurate promotions | Maintains post-purchase confidence |
+| Measurement | Untampered audit & analytics events | Reliable optimization insights |
+
+### B. MACH Principle Reinforcement
+| Principle | Security Enhancement |
+|----------|---------------------|
+| API-first | Versioned endpoint allowlist & scope mapping |
+| Microservices-ready | DomainEvent authenticity (signed) for cross-service trust |
+| Cloud-native | Rate limits + circuit breakers guard resource exhaustion |
+| Headless | GraphQL complexity & depth constraints |
+
+### C. New / Updated Controls
+| Control | Purpose |
+|--------|---------|
+| Promotion rule complexity cap | Prevent DoS via expensive conditions |
+| Cache invalidation auth | Ensure only authorized mutation triggers invalidation |
+| Webhook subscription vetting | Validate host & require test handshake |
+| Permission anomaly detection | Identify unusual grant spikes |
+
+### D. Cost-Security Tradeoffs
+| Tradeoff | Decision |
+|---------|---------|
+| Full RLS early vs repository enforcement | Defer RLS; rely on repository + audits |
+| Dedicated WAF vs selective rate limits | Start with selective rate limits; reassess on traffic growth |
+| External secrets manager vs env vars | Use platform secrets store; move to dedicated manager if rotation complexity rises |
+
+### E. Success Metrics Extension
+| Metric | Target |
+|--------|-------|
+| Promotion abuse incidents | 0 |
+| Unauthorized cross-tenant access attempts | 100% blocked |
+| Webhook SSRF attempts detected | Logged + blocked; no successful exploitation |
+| Audit hash chain verification failures | 0 |
+
+### F. Immediate Action Items
+1. Implement promotion complexity validator.
+2. Add webhook host validation & handshake route.
+3. CorrelationId + signature on DomainEvent payloads.
+4. Permission grant anomaly alert threshold configuration.
+
+### G. Alignment Statement
+Security controls are prioritized to safeguard revenue-critical paths (pricing, inventory, payment) and trust-building lifecycle features (returns, refunds) while maintaining low operational overhead.
+
+*Addendum authored 2025-11-24.*

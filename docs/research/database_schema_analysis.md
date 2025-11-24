@@ -442,3 +442,68 @@ Keep raw email only in transient memory for verification flows.
 
 ---
 *Extended addendum appended to support advanced planning & resilience. Cross-reference implementation roadmap for phase alignment.*
+
+---
+## 2025-11-24 Cross-Reference & Schema Governance Addendum
+This addendum maps proposed schema evolution to the funnel and MACH strategy while introducing governance & cost-aware partition policies.
+
+### A. Funnel Mapping of New Tables
+| Table Group | Funnel Stage Benefit | Metric |
+|-------------|----------------------|--------|
+| DiscountCode / PromotionRule / AppliedPromotion | Conversion | Promotion adoption %, discount ROI |
+| Collection / ProductBundle | Consideration / Conversion | Collection GMV share |
+| CustomerSegment / RFMSnapshot / LifecycleMetrics | Loyalty | Repeat purchase uplift, churn reduction |
+| Cart / CartItem | Conversion | Abandoned cart recovery |
+| RecommendationEvent / ProductEmbedding | Consideration | Recommendation CTR |
+| AnalyticsEvent / DailyStoreMetrics | Measurement | Data freshness SLA |
+| Fulfillment / ReturnRequest / Refund / PaymentAttempt | Conversion / Loyalty (trust) | Fulfillment latency, refund turnaround |
+
+### B. MACH Pillar Alignment
+| Pillar | Schema Strategy |
+|--------|----------------|
+| Microservices ready | Domain boundaries explicit (order, inventory, pricing) enabling future extraction |
+| API-first | Tables normalized for predictable REST/GraphQL representations |
+| Cloud-native | Partition keys & denormalized read models reduce hot-path resource usage |
+| Headless | Rich product relationships (images, bundles, collections) facilitate composable storefront queries |
+
+### C. Governance & ADR Requirements
+| Change Type | Required Artifact |
+|------------|------------------|
+| New table introduction | ADR with rationale, rollback plan |
+| Partition activation | Threshold report + capacity projection |
+| Column removal (legacy) | Dual-write verification log (14 days) |
+| Index addition | EXPLAIN baseline diff + utilization forecast |
+
+### D. Integrity & Observability Enhancements
+| Integrity Aspect | Implementation |
+|------------------|---------------|
+| Pricing dual-write | Consistency job + mismatch alert |
+| Inventory reconciliations | Nightly invariant check (qty vs adjustments - reservations) |
+| Audit hash chain | Verification script & tamper alert |
+| Promotion stacking | Deterministic evaluation + conflict logging |
+
+### E. Cost & Partition Strategy Extensions
+| Table | Early Warning Metric | Pre-Partition Action |
+|-------|---------------------|---------------------|
+| audit_logs | Growth rate > 15% MoM | Evaluate compression & indexing efficiency |
+| inventory_adjustments | Write latency p95 > target | Add covering index before partition |
+| analytics_events | Daily volume spike > 30% | Increase sampling / roll-up frequency |
+
+### F. Immediate Migration Bundle (Refined)
+| Bundle | Tables | Notes |
+|--------|--------|-------|
+| Lifecycle | PaymentAttempt, Refund, Fulfillment, FulfillmentItem, ReturnRequest, ReturnItem | Adds full post-order workflow |
+| Merchandising | Collection, CollectionProduct, ProductImage | Discovery & SEO improvements |
+| Promotions | DiscountCode, PromotionRule, AppliedPromotion | Conversion lever |
+| Pricing | ProductPrice, CurrencyRate | Enables multi-currency & tiered logic |
+| Integrity | InventoryAdjustment, StockReservation | Prevent oversell; auditing inventory correctness |
+
+### G. Success Metrics Extension
+| Metric | Target |
+|--------|-------|
+| Inventory reconciliation drift incidents | 0 per month |
+| Promotion rule evaluation p95 | < 120ms |
+| Refund processing median time | < 2m (async gateway) |
+| Partition activation SLA post-threshold | < 48h |
+
+*Addendum authored 2025-11-24; append future schema governance decisions below.*
