@@ -97,7 +97,7 @@ export default function CheckoutPage() {
   };
 
   return (
-    <CartProvider storeId="default-store-id">
+    <CartProvider storeId="clqm1j4k00000l8dw8z8r8z8r">
       <CheckoutPageContent 
         currentStep={currentStep}
         isProcessing={isProcessing}

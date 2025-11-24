@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 };
 
 // TODO: Get actual storeId from user's organization/store
-const STORE_ID = 'default-store-id';
+const STORE_ID = 'clqm1j4k00000l8dw8z8r8z8r';
 
 export default async function CartPage() {
   const session = await getServerSession(authOptions);

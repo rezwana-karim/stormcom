@@ -95,7 +95,7 @@ const data = {
         {
           title: "Cart",
           url: "/dashboard/cart",
-          badge: <CartBadge storeId="default-store-id" />,
+          badge: <CartBadge storeId="clqm1j4k00000l8dw8z8r8z8r" />,
         },
       ],
     },
