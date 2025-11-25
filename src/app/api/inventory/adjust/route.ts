@@ -4,7 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { InventoryService } from '@/lib/services/inventory.service';
+import { InventoryService, InventoryAdjustmentReason } from '@/lib/services/inventory.service';
 import { z } from 'zod';
 
 const adjustStockSchema = z.object({
@@ -14,6 +14,7 @@ const adjustStockSchema = z.object({
   type: z.enum(['ADD', 'REMOVE', 'SET']),
   reason: z.string().min(1),
   note: z.string().optional(),
+  orderId: z.string().optional(),
 });
 
 // POST /api/inventory/adjust - Adjust product stock levels
@@ -56,6 +57,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Handle insufficient stock error (409 Conflict)
+    if (error instanceof Error && error.message.includes('Insufficient stock')) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 409 }
+      );
+    }
+
     return NextResponse.json(
       {
         error: 'Failed to adjust stock',
@@ -64,4 +73,12 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// GET /api/inventory/adjust - Get available reason codes
+export async function GET() {
+  return NextResponse.json({
+    reasonCodes: Object.values(InventoryAdjustmentReason),
+    adjustmentTypes: ['ADD', 'REMOVE', 'SET'],
+  });
 }
