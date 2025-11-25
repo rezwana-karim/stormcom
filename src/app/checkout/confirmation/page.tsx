@@ -31,15 +31,25 @@ function ConfirmationContent() {
       try {
         // TODO: Get actual storeId from user's organization/store
         const storeId = 'clqm1j4k00000l8dw8z8r8z8r';
+        
+        console.log('Fetching order:', orderId, 'for store:', storeId);
+        
         const response = await fetch(`/api/orders/${orderId}?storeId=${storeId}`);
+        
+        console.log('Order fetch response status:', response.status);
+        
         if (!response.ok) {
-          throw new Error('Order not found');
+          const errorData = await response.json();
+          console.error('Order fetch failed:', errorData);
+          throw new Error(errorData.error || 'Order not found');
         }
+        
         const data = await response.json();
+        console.log('Order fetched successfully:', data);
         setOrder(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load order');
         console.error('Failed to fetch order:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load order');
       } finally {
         setIsLoading(false);
       }

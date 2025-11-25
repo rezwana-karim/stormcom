@@ -36,8 +36,8 @@ const completeCheckoutSchema = z.object({
   shippingCost: z.number().min(0),
   discountCode: z.string().optional(),
   customerNote: z.string().optional(),
-  paymentMethod: z.string().optional(),
-  paymentGateway: z.string().optional(),
+  paymentMethod: z.enum(['CREDIT_CARD', 'DEBIT_CARD', 'MOBILE_BANKING', 'BANK_TRANSFER', 'CASH_ON_DELIVERY']).optional(),
+  paymentGateway: z.enum(['STRIPE', 'SSLCOMMERZ', 'MANUAL']).optional(),
 });
 
 // POST /api/checkout/complete - Create order
