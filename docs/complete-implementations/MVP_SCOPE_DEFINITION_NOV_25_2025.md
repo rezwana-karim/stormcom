@@ -11,7 +11,7 @@
 
 ## 📋 Document Purpose
 
-This document defines the strict 2-month MVP scope for StormCom based on market validation needs and realistic development capacity. It ensures focus on high-impact features and prevents scope creep.
+This document defines the MVP scope for StormCom based on market validation needs and realistic development capacity. The target is an aggressive 2.5-month (10 weeks) delivery with a realistic 3-month (12-14 weeks) timeline including buffer. It ensures focus on high-impact features and prevents scope creep.
 
 ---
 
@@ -322,7 +322,7 @@ TOTAL: 14 weeks (3.5 months)
 - ❌ Email/SMS/WhatsApp Marketing → Phase 4
 - ❌ Event Sourcing/Fraud Detection → Phase 5
 
-**Timeline**: 12-14 weeks from Phase 0 completion (estimated completion: March 2026)
+**Timeline**: 12-14 weeks from Phase 0 completion (Phase 0 ends Week 2 of December 2025; estimated beta launch: February-March 2026)
 
 **Launch Criteria**: See "MVP Launch Criteria" section above
 
