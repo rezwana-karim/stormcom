@@ -640,7 +640,7 @@ async listOrders(params: ListOrdersParams) {
 ### 8.3 Known Pre-existing Issues
 
 **ESLint Errors (7 total):**
-1. `src/app/checkout/confirmation/page.tsx`: Unescaped apostrophes (5 errors)
+1. `src/app/checkout/confirmation/page.tsx`: Unescaped entities (5 errors)
 2. `src/lib/services/order.service.ts`: `@typescript-eslint/no-explicit-any` (2 errors)
 
 **ESLint Warnings (12 total):**
