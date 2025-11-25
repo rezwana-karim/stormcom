@@ -256,6 +256,7 @@ model Store {
   attributes     ProductAttribute[]
   auditLogs      AuditLog[]
   inventoryLogs  InventoryLog[] @relation("StoreInventoryLogs")
+  websiteIntegration WebsiteIntegration?
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -314,6 +315,7 @@ model Product {
   attributes  ProductAttributeValue[]
   reviews     Review[]
   inventoryLogs InventoryLog[] @relation("InventoryLogs")
+  mappings    ProductMapping[]
   
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
@@ -522,6 +524,7 @@ model Order {
   ipAddress   String?
   
   items    OrderItem[]
+  mappings OrderMapping[]
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -641,4 +644,158 @@ model AuditLog {
   @@index([userId, createdAt])
   @@index([entityType, entityId, createdAt])
   @@map("audit_logs")
+}
+
+// ============================================================================
+// WEBSITE INTEGRATION MODELS (Phase 2)
+// ============================================================================
+
+enum IntegrationType {
+  TEMPLATE
+  WORDPRESS
+  SHOPIFY
+  WOOCOMMERCE
+  CUSTOM_API
+}
+
+enum SyncDirection {
+  TO_STORMCOM
+  FROM_STORMCOM
+  TWO_WAY
+}
+
+enum SyncAction {
+  CREATE
+  UPDATE
+  DELETE
+  SYNC
+}
+
+enum SyncStatus {
+  SUCCESS
+  FAILED
+  PENDING
+  SKIPPED
+}
+
+// Website Integration Configuration
+model WebsiteIntegration {
+  id             String   @id @default(cuid())
+  storeId        String   @unique
+  store          Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  // Integration Type
+  type           IntegrationType
+  
+  // Connection Details
+  websiteUrl     String?  // External website URL
+  apiKey         String?  // Generated for external site
+  apiSecret      String?  // For signature verification
+  
+  // OAuth (for Shopify, WooCommerce)
+  accessToken    String?
+  refreshToken   String?
+  expiresAt      DateTime?
+  
+  // Sync Settings
+  syncProducts   Boolean  @default(true)
+  syncOrders     Boolean  @default(true)
+  syncInventory  Boolean  @default(true)
+  syncCustomers  Boolean  @default(false)
+  
+  // Sync Direction
+  productSyncDirection  SyncDirection @default(TWO_WAY)
+  orderSyncDirection    SyncDirection @default(TO_STORMCOM)
+  inventorySyncDirection SyncDirection @default(TWO_WAY)
+  
+  // Webhook URLs (for custom integrations)
+  webhookUrl     String?
+  webhookSecret  String?
+  
+  // Status
+  isActive       Boolean  @default(true)
+  lastSyncAt     DateTime?
+  
+  // Metadata
+  platform       String?  // "wordpress", "shopify", "woocommerce", "custom"
+  platformVersion String?
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  syncLogs       SyncLog[]
+  productMappings ProductMapping[]
+  orderMappings  OrderMapping[]
+
+  @@index([storeId])
+  @@index([apiKey])
+}
+
+// Product ID Mapping (for external integrations)
+model ProductMapping {
+  id             String   @id @default(cuid())
+  integrationId  String
+  integration    WebsiteIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  
+  stormcomProductId String
+  externalProductId String
+  
+  product        Product  @relation(fields: [stormcomProductId], references: [id], onDelete: Cascade)
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  @@unique([integrationId, externalProductId])
+  @@unique([integrationId, stormcomProductId])
+  @@index([stormcomProductId])
+  @@index([externalProductId])
+}
+
+// Order ID Mapping (for external integrations - bidirectional sync)
+model OrderMapping {
+  id             String   @id @default(cuid())
+  integrationId  String
+  integration    WebsiteIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  
+  stormcomOrderId String
+  externalOrderId String
+  
+  order          Order    @relation(fields: [stormcomOrderId], references: [id], onDelete: Cascade)
+  
+  // Sync metadata
+  lastSyncedAt   DateTime @default(now())
+  syncDirection  String   @default("TO_STORMCOM") // "TO_STORMCOM" or "FROM_STORMCOM"
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  @@unique([integrationId, externalOrderId])
+  @@unique([integrationId, stormcomOrderId])
+  @@index([stormcomOrderId])
+  @@index([externalOrderId])
+}
+
+// Sync Activity Log
+model SyncLog {
+  id             String   @id @default(cuid())
+  integrationId  String
+  integration    WebsiteIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  
+  action         SyncAction
+  entityType     String   // "product", "order", "inventory"
+  entityId       String?  // StormCom ID
+  externalId     String?  // External platform ID
+  
+  status         SyncStatus
+  errorMessage   String?
+  
+  // Metadata
+  requestData    String?  // JSON
+  responseData   String?  // JSON
+  
+  createdAt      DateTime @default(now())
+  
+  @@index([integrationId, createdAt])
+  @@index([entityType, entityId])
+  @@index([status])
 }
