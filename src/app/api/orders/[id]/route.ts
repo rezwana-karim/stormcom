@@ -40,9 +40,19 @@ export async function GET(
     const order = await orderService.getOrderById(params.id, storeId);
 
     if (!order) {
+      console.error(`Order not found: orderId=${params.id}, storeId=${storeId}`);
       return NextResponse.json(
         { error: 'Order not found' },
         { status: 404 }
+      );
+    }
+
+    // Verify customer has access to this order
+    if (order.customerId !== session.user.id) {
+      console.error(`Customer access denied: orderId=${params.id}, customerId=${order.customerId}, userId=${session.user.id}`);
+      return NextResponse.json(
+        { error: 'Access denied to this order' },
+        { status: 403 }
       );
     }
 

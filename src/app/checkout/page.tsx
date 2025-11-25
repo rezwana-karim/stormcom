@@ -17,7 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { CartProvider } from '@/contexts/cart-context';
+import { CartProvider, useCart } from '@/contexts/cart-context';
 import { CartReviewStep } from '@/components/checkout/cart-review-step';
 import { ShippingDetailsStep } from '@/components/checkout/shipping-details-step';
 import { PaymentMethodStep } from '@/components/checkout/payment-method-step';
