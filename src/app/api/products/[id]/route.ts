@@ -112,6 +112,62 @@ export async function PATCH(
   }
 }
 
+// PUT /api/products/[id] - Update product (full update, alias for PATCH)
+export async function PUT(
+  request: NextRequest,
+  context: RouteContext
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const params = await context.params;
+    const body = await request.json();
+    
+    if (!body.storeId) {
+      return NextResponse.json(
+        { error: 'storeId is required' },
+        { status: 400 }
+      );
+    }
+
+    const productService = ProductService.getInstance();
+    const product = await productService.updateProduct(
+      params.id,
+      body.storeId,
+      body
+    );
+
+    return NextResponse.json(product);
+  } catch (error) {
+    console.error('PUT /api/products/[id] error:', error);
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Validation error', details: error.issues },
+        { status: 400 }
+      );
+    }
+    
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: 'Failed to update product' },
+      { status: 500 }
+    );
+  }
+}
+
 // DELETE /api/products/[id] - Delete product (soft delete)
 export async function DELETE(
   request: NextRequest,

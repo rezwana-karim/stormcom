@@ -61,6 +61,23 @@ export interface ProductListResult {
 // VALIDATION SCHEMAS
 // ============================================================================
 
+// Variant schema for creating product variants
+export const createVariantSchema = z.object({
+  name: z.string().min(1, "Variant name is required").max(255),
+  sku: z.string().min(1, "Variant SKU is required").max(100),
+  barcode: z.string().max(100).optional().nullable(),
+  price: z.number().min(0).optional().nullable(),
+  compareAtPrice: z.number().min(0).optional().nullable(),
+  inventoryQty: z.number().int().min(0).default(0),
+  lowStockThreshold: z.number().int().min(0).default(5),
+  weight: z.number().min(0).optional().nullable(),
+  image: z.string().url().optional().nullable(),
+  options: z.record(z.string(), z.string()).default({}), // e.g., { "size": "L", "color": "Red" }
+  isDefault: z.boolean().default(false),
+});
+
+export type CreateVariantData = z.infer<typeof createVariantSchema>;
+
 export const createProductSchema = z.object({
   name: z.string().min(1, "Product name is required").max(255),
   slug: z.string()
@@ -89,6 +106,8 @@ export const createProductSchema = z.object({
   metaKeywords: z.string().optional().nullable(),
   status: z.nativeEnum(ProductStatus).default(ProductStatus.DRAFT),
   isFeatured: z.boolean().default(false),
+  // Variants support (min 1 if provided, max 100)
+  variants: z.array(createVariantSchema).min(1).max(100).optional(),
 });
 
 export const updateProductSchema = createProductSchema.partial().extend({
@@ -377,6 +396,11 @@ export class ProductService {
     // Validate business rules
     await this.validateBusinessRules(storeId, { ...validatedData, slug });
 
+    // Validate variant SKUs are unique
+    if (validatedData.variants && validatedData.variants.length > 0) {
+      await this.validateVariantSkus(storeId, validatedData.variants);
+    }
+
     // Calculate inventory status
     const inventoryStatus = this.calculateInventoryStatus(
       validatedData.inventoryQty,
@@ -421,6 +445,25 @@ export class ProductService {
     // Connect brand if provided
     if (validatedData.brandId) {
       productData.brand = { connect: { id: validatedData.brandId } };
+    }
+
+    // Add variants if provided
+    if (validatedData.variants && validatedData.variants.length > 0) {
+      productData.variants = {
+        create: validatedData.variants.map((variant, index) => ({
+          name: variant.name,
+          sku: variant.sku,
+          barcode: variant.barcode,
+          price: variant.price,
+          compareAtPrice: variant.compareAtPrice,
+          inventoryQty: variant.inventoryQty,
+          lowStockThreshold: variant.lowStockThreshold,
+          weight: variant.weight,
+          image: variant.image,
+          options: JSON.stringify(variant.options),
+          isDefault: variant.isDefault || index === 0, // First variant is default if none specified
+        })),
+      };
     }
 
     const product = await prisma.product.create({
@@ -473,6 +516,11 @@ export class ProductService {
     // Validate business rules
     await this.validateBusinessRules(storeId, validatedData, productId);
 
+    // Validate variant SKUs if variants are being updated
+    if (validatedData.variants && validatedData.variants.length > 0) {
+      await this.validateVariantSkus(storeId, validatedData.variants, productId);
+    }
+
     // Calculate inventory status if quantity changed
     let inventoryStatus = existingProduct.inventoryStatus;
     if (validatedData.inventoryQty !== undefined) {
@@ -480,8 +528,8 @@ export class ProductService {
       inventoryStatus = this.calculateInventoryStatus(validatedData.inventoryQty, lowStockThreshold);
     }
 
-    // Prepare update data (exclude JSON fields like images from direct spread to satisfy Prisma types)
-    const { images: imagesArr, ...rest } = validatedData as UpdateProductData & { images?: string[] };
+    // Prepare update data (exclude JSON fields and variants from direct spread to satisfy Prisma types)
+    const { images: imagesArr, variants: variantsArr, ...rest } = validatedData as UpdateProductData & { images?: string[]; variants?: CreateVariantData[] };
     const updateData: Prisma.ProductUpdateInput = {
       ...rest,
       inventoryStatus,
@@ -513,6 +561,26 @@ export class ProductService {
       updateData.brand = validatedData.brandId
         ? { connect: { id: validatedData.brandId } }
         : { disconnect: true };
+    }
+
+    // Handle variants update (replace all existing variants)
+    if (variantsArr && variantsArr.length > 0) {
+      updateData.variants = {
+        deleteMany: {}, // Clear existing variants
+        create: variantsArr.map((variant, index) => ({
+          name: variant.name,
+          sku: variant.sku,
+          barcode: variant.barcode,
+          price: variant.price,
+          compareAtPrice: variant.compareAtPrice,
+          inventoryQty: variant.inventoryQty,
+          lowStockThreshold: variant.lowStockThreshold,
+          weight: variant.weight,
+          image: variant.image,
+          options: JSON.stringify(variant.options),
+          isDefault: variant.isDefault || index === 0,
+        })),
+      };
     }
 
     // Remove id from update data
@@ -1056,6 +1124,39 @@ export class ProductService {
       if (data.compareAtPrice <= data.price) {
         throw new Error("Compare at price must be greater than regular price");
       }
+    }
+  }
+
+  /**
+   * Validate variant SKUs are unique in the store
+   */
+  private async validateVariantSkus(
+    storeId: string,
+    variants: CreateVariantData[],
+    excludeProductId?: string
+  ): Promise<void> {
+    // Check for duplicate SKUs within the variants array
+    const skus = variants.map(v => v.sku);
+    const uniqueSkus = new Set(skus);
+    if (skus.length !== uniqueSkus.size) {
+      throw new Error("Duplicate variant SKUs provided");
+    }
+
+    // Check if any variant SKUs already exist in the database
+    const existingVariants = await prisma.productVariant.findMany({
+      where: {
+        sku: { in: skus },
+        product: {
+          storeId,
+          ...(excludeProductId && { id: { not: excludeProductId } }),
+        },
+      },
+      select: { sku: true },
+    });
+
+    if (existingVariants.length > 0) {
+      const existingSkus = existingVariants.map(v => v.sku).join(', ');
+      throw new Error(`Variant SKU(s) already exist: ${existingSkus}`);
     }
   }
 
