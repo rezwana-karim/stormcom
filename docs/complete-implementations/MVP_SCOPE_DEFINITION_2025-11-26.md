@@ -10,10 +10,10 @@
 
 ## Executive Summary
 
-This document defines the strict 2-month MVP scope for StormCom, a Next.js 16 multi-tenant SaaS e-commerce platform targeting the Bangladesh market. Based on comprehensive analysis of 15+ research documents, current codebase state (~35% complete), and market validation requirements, we present:
+This document defines the MVP scope for StormCom, a Next.js 16 multi-tenant SaaS e-commerce platform targeting the Bangladesh market. Based on comprehensive analysis of 15+ research documents, current codebase state (~35% complete), and market validation requirements, we present:
 
 - **21 MVP Features** (9 Core E-commerce + 9 P0 Integrity Foundations + 3 Bangladesh Features)
-- **16-18 Week Timeline** (4-4.5 months realistic, 3.5 months aggressive)
+- **16-18 Week Timeline** (4-4.5 months realistic, 14 weeks aggressive stretch goal)
 - **Launch Criteria** for beta user readiness
 - **Deferred Features** with rationale (Phase 2-5)
 - **Risk Assessment** and mitigation strategies
@@ -152,8 +152,8 @@ These critical issues were identified in the risk matrix analysis and **MUST be 
 | # | Feature | Issue Ref | Dev Effort | Priority | Rationale |
 |---|---------|-----------|------------|----------|-----------|
 | 19 | **bKash Payment Gateway** | Planned | 6 days | P0 | 60% of BD transactions use bKash |
-| 20 | **Cash on Delivery (COD)** | Planned | 2 days | P1 | 70% of BD orders are COD |
-| 21 | **Bengali Localization** | Planned | 4 days | P1 | 65% customers prefer Bengali |
+| 20 | **Cash on Delivery (COD)** | Planned | 2 days | P0 | 70% of BD orders are COD (critical fallback if bKash delayed) |
+| 21 | **Bengali Localization** | Planned | 4 days | P1 | 65% customers prefer Bengali (can launch with English first) |
 
 **Note:** Pathao Shipping Integration (originally planned, 5 days) is **deferred to Phase 2** to keep MVP scope tight. Manual shipping as fallback.
 
@@ -171,7 +171,14 @@ These critical issues were identified in the risk matrix analysis and **MUST be 
 
 *Phase 1.5 can partially overlap with P0 completion (1 developer on Bangladesh, 1 on P0 hardening)
 
-**TOTAL MVP:** 21 features, **76 days effort** (~16-18 weeks calendar time with 2 developers, including buffer)
+**TOTAL MVP:** 21 features, **76 dev-days effort**
+
+**Calendar Time Calculation:**
+- Raw development: 76 days ÷ 2 developers = 38 dev days (~8 weeks)
+- Realistic velocity (70%): 38 ÷ 0.7 = 54 days (~11 weeks)
+- Buffer for testing, bugs, reviews: +2-3 weeks
+- Integration and deployment prep: +1 week
+- **Total: 14-16 weeks realistic, 18 weeks with contingency**
 
 ---
 
@@ -279,7 +286,7 @@ Week 13-16: Phase 1.5 (Bangladesh Features) - 4 weeks
 Week 17:    Buffer / Testing / Bug Fixes
 Week 18:    Beta Launch Preparation
 ---------------------------------------------------------
-TOTAL: 16-18 weeks (4-4.5 months realistic, 3.5 months aggressive)
+TOTAL: 16-18 weeks (4-4.5 months realistic, 14 weeks aggressive stretch)
 ```
 
 ### 5.1 Parallel Execution Opportunities
@@ -305,7 +312,7 @@ TOTAL: 16-18 weeks (4-4.5 months realistic, 3.5 months aggressive)
 | Week 16 | Bangladesh Ready | bKash + COD + Bengali localization tested |
 | Week 18 | Launch Ready | All success metrics met |
 
-**Recommendation:** Communicate **4-month timeline** to stakeholders with **3.5-month stretch goal**. The inclusion of P0 integrity features is non-negotiable for production readiness.
+**Recommendation:** Communicate **4-4.5 month timeline** to stakeholders with **14-week aggressive stretch goal**. The inclusion of P0 integrity features is non-negotiable for production readiness.
 
 ---
 
