@@ -252,8 +252,11 @@ CREATE TABLE IF NOT EXISTS "Product" (
     "metaTitle" TEXT,
     "metaDescription" TEXT,
     "metaKeywords" TEXT,
+    "seoTitle" TEXT,
+    "seoDescription" TEXT,
     "status" "ProductStatus" NOT NULL DEFAULT 'DRAFT',
     "publishedAt" TIMESTAMP(3),
+    "archivedAt" TIMESTAMP(3),
     "isFeatured" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -350,6 +353,7 @@ CREATE TABLE IF NOT EXISTS "Order" (
     "shippingMethod" TEXT,
     "trackingNumber" TEXT,
     "trackingUrl" TEXT,
+    "estimatedDelivery" TIMESTAMP(3),
     "shippingAddress" TEXT,
     "billingAddress" TEXT,
     "fulfilledAt" TIMESTAMP(3),
@@ -357,6 +361,7 @@ CREATE TABLE IF NOT EXISTS "Order" (
     "cancelReason" TEXT,
     "customerNote" TEXT,
     "adminNote" TEXT,
+    "notes" TEXT,
     "ipAddress" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -409,6 +414,39 @@ CREATE TABLE IF NOT EXISTS "Review" (
     CONSTRAINT "Review_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "Customer" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
+-- InventoryLog model (for audit trail)
+CREATE TABLE IF NOT EXISTS "InventoryLog" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "storeId" TEXT NOT NULL,
+    "productId" TEXT NOT NULL,
+    "previousQty" INTEGER NOT NULL,
+    "newQty" INTEGER NOT NULL,
+    "changeQty" INTEGER NOT NULL,
+    "reason" TEXT NOT NULL,
+    "note" TEXT,
+    "userId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "InventoryLog_storeId_fkey" FOREIGN KEY ("storeId") REFERENCES "Store" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "InventoryLog_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "InventoryLog_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+-- AuditLog model (for tracking all system actions)
+CREATE TABLE IF NOT EXISTS "audit_logs" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "storeId" TEXT,
+    "userId" TEXT,
+    "action" TEXT NOT NULL,
+    "entityType" TEXT NOT NULL,
+    "entityId" TEXT NOT NULL,
+    "changes" TEXT,
+    "ipAddress" TEXT,
+    "userAgent" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "AuditLog_storeId_fkey" FOREIGN KEY ("storeId") REFERENCES "Store" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "AuditLog_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+);
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS "Account_userId_idx" ON "Account"("userId");
 CREATE INDEX IF NOT EXISTS "Session_userId_idx" ON "Session"("userId");
@@ -447,3 +485,31 @@ CREATE INDEX IF NOT EXISTS "OrderItem_productId_idx" ON "OrderItem"("productId")
 CREATE INDEX IF NOT EXISTS "Review_storeId_productId_idx" ON "Review"("storeId", "productId");
 CREATE INDEX IF NOT EXISTS "Review_productId_isApproved_createdAt_idx" ON "Review"("productId", "isApproved", "createdAt");
 CREATE INDEX IF NOT EXISTS "Review_customerId_createdAt_idx" ON "Review"("customerId", "createdAt");
+CREATE INDEX IF NOT EXISTS "InventoryLog_storeId_productId_createdAt_idx" ON "InventoryLog"("storeId", "productId", "createdAt");
+CREATE INDEX IF NOT EXISTS "InventoryLog_productId_createdAt_idx" ON "InventoryLog"("productId", "createdAt");
+CREATE INDEX IF NOT EXISTS "InventoryLog_userId_createdAt_idx" ON "InventoryLog"("userId", "createdAt");
+CREATE INDEX IF NOT EXISTS "AuditLog_storeId_createdAt_idx" ON "audit_logs"("storeId", "createdAt");
+CREATE INDEX IF NOT EXISTS "AuditLog_userId_createdAt_idx" ON "audit_logs"("userId", "createdAt");
+CREATE INDEX IF NOT EXISTS "AuditLog_entityType_entityId_createdAt_idx" ON "audit_logs"("entityType", "entityId", "createdAt");
+
+-- Add new columns for existing tables (handles upgrades from older schema)
+-- These will silently fail if columns already exist (expected behavior)
+DO $$ BEGIN
+    ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "seoTitle" TEXT;
+EXCEPTION WHEN duplicate_column THEN END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "seoDescription" TEXT;
+EXCEPTION WHEN duplicate_column THEN END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "archivedAt" TIMESTAMP(3);
+EXCEPTION WHEN duplicate_column THEN END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "estimatedDelivery" TIMESTAMP(3);
+EXCEPTION WHEN duplicate_column THEN END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "notes" TEXT;
+EXCEPTION WHEN duplicate_column THEN END $$;
