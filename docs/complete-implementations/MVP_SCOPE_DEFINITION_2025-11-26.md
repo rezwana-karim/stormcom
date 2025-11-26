@@ -12,7 +12,7 @@
 
 This document defines the strict 2-month MVP scope for StormCom, a Next.js 16 multi-tenant SaaS e-commerce platform targeting the Bangladesh market. Based on comprehensive analysis of 15+ research documents, current codebase state (~35% complete), and market validation requirements, we present:
 
-- **21 MVP Features** (12 Core E-commerce + 9 P0 Integrity Foundations)
+- **21 MVP Features** (9 Core E-commerce + 9 P0 Integrity Foundations + 3 Bangladesh Features)
 - **16-18 Week Timeline** (4-4.5 months realistic, 3.5 months aggressive)
 - **Launch Criteria** for beta user readiness
 - **Deferred Features** with rationale (Phase 2-5)
@@ -50,7 +50,7 @@ Each feature was evaluated using the following criteria:
 
 ## 2. Finalized MVP Feature List (21 Features)
 
-### 2.1 Phase 1: E-Commerce Core (6 weeks, 12 features)
+### 2.1 Phase 1: E-Commerce Core (6 weeks, 9 features)
 
 #### Epic 1: Product Management (#15)
 
@@ -171,7 +171,7 @@ These critical issues were identified in the risk matrix analysis and **MUST be 
 
 *Phase 1.5 can partially overlap with P0 completion (1 developer on Bangladesh, 1 on P0 hardening)
 
-**TOTAL MVP:** 21 features, **76 days effort** (~14-16 weeks calendar time with 2 developers)
+**TOTAL MVP:** 21 features, **76 days effort** (~16-18 weeks calendar time with 2 developers, including buffer)
 
 ---
 
@@ -393,10 +393,10 @@ LOW LIKELIHOOD      │            │ Webhook│ DB   │ Leak     │
 
 **MVP Features** (21 total):
 
-**Phase 1 Core (12 features):**
-- Product Management: #15, #16, #17, #18
-- Storefront: #19, #20, #21
-- Shopping & Checkout: 5 planned issues
+**Phase 1 Core (9 features):**
+- Product Management: #15 (epic), #16 (CRUD API), #17 (Dashboard UI), #18 (Inventory)
+- Storefront: #19 (epic), #20 (Subdomain Routing), #21 (Template)
+- Shopping & Checkout: 4 planned issues (Cart/Checkout, Order API, Order UI, Stripe)
 
 **Phase 1 P0 Integrity (9 features):**
 - #63: PaymentAttempt & PaymentTransaction State Machine
