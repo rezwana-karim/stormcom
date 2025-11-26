@@ -291,25 +291,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      - name: Switch to PostgreSQL
-        run: npm run db:switch:postgres
-      
-      - name: Run migrations
+      - name: Run PostgreSQL migrations
+        # Uses schema.postgres.prisma directly - no schema modification needed
         run: npm run prisma:migrate:deploy
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      
-      - name: Switch back to SQLite
-        run: npm run db:switch:sqlite
-      
-      - name: Commit schema if changed
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add prisma/schema.prisma
-          git diff --quiet || git commit -m "Reset schema to SQLite"
-          git push
 ```
+
+> **Note**: The deployment uses `schema.postgres.prisma` directly via the npm script.
+> Do NOT commit schema changes back from CI/CD as this creates merge conflicts and git noise.
+> The unified `schema.prisma` remains set to SQLite for local development.
 
 ## Performance Considerations
 

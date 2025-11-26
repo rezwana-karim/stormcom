@@ -305,9 +305,12 @@ model Product {
   metaTitle       String?
   metaDescription String?
   metaKeywords    String?
+  seoTitle        String? // Additional SEO title field
+  seoDescription  String? // Additional SEO description field
   
   status      ProductStatus @default(DRAFT)
   publishedAt DateTime?
+  archivedAt  DateTime? // Soft archiving timestamp
   isFeatured  Boolean       @default(false)
   
   variants    ProductVariant[]
@@ -327,6 +330,8 @@ model Product {
   @@index([storeId, brandId])
   @@index([categoryId, status])
   @@index([brandId, status])
+  @@index([storeId, categoryId, status]) // Filtered product lists
+  @@index([storeId, createdAt]) // Sorted product lists (newest first)
 }
 
 model ProductVariant {
@@ -432,7 +437,7 @@ model ProductAttribute {
   
   @@unique([storeId, name])
   @@index([storeId])
-  @@index([name])
+  // Note: Removed @@index([name]) to prevent cross-tenant queries without storeId
 }
 
 model ProductAttributeValue {
@@ -479,7 +484,7 @@ model Customer {
   
   @@unique([storeId, email])
   @@index([storeId, userId])
-  @@index([storeId, email])
+  // Note: @@unique([storeId, email]) already creates an implicit index
 }
 
 // Order models
@@ -506,9 +511,10 @@ model Order {
   paymentGateway PaymentGateway?
   paymentStatus  PaymentStatus @default(PENDING)
   
-  shippingMethod String?
+  shippingMethod String? // Shipping method (e.g., "Pathao", "manual", "pickup")
   trackingNumber String?
   trackingUrl    String?
+  estimatedDelivery DateTime? // Estimated delivery date
   
   shippingAddress String? // JSON object
   billingAddress  String? // JSON object
@@ -518,7 +524,8 @@ model Order {
   cancelReason String?
   
   customerNote String?
-  adminNote    String?
+  adminNote    String? // Internal notes for staff
+  notes        String? // Additional order notes
   
   ipAddress   String?
   
@@ -532,8 +539,10 @@ model Order {
   @@index([storeId, customerId])
   @@index([storeId, status])
   @@index([storeId, createdAt])
-  @@index([orderNumber])
-  @@index([paymentStatus])
+  // Note: Removed @@index([orderNumber]) to prevent cross-tenant queries
+  // Note: Removed @@index([paymentStatus]) to prevent cross-tenant queries
+  @@index([storeId, customerId, createdAt]) // Customer order history (tenant-isolated)
+  @@index([storeId, status, createdAt]) // Admin dashboard filters
 }
 
 model OrderItem {

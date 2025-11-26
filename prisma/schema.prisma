@@ -409,8 +409,7 @@ model Category {
   @@index([storeId, parentId])
   @@index([storeId, isPublished])
   @@index([parentId, sortOrder])
-  @@index([slug]) // Fast category lookups by slug
-  @@index([storeId, slug]) // Multi-tenant category queries
+  // Note: @@unique([storeId, slug]) already creates an implicit index for lookups
 }
 
 model Brand {
@@ -454,7 +453,7 @@ model ProductAttribute {
   
   @@unique([storeId, name])
   @@index([storeId])
-  @@index([name])
+  // Note: Removed @@index([name]) to prevent cross-tenant queries without storeId
 }
 
 model ProductAttributeValue {
@@ -501,8 +500,8 @@ model Customer {
   
   @@unique([storeId, email])
   @@index([storeId, userId])
-  @@index([storeId, email])
-  @@index([email, storeId]) // Fast customer lookup by email
+  // Note: @@unique([storeId, email]) already creates an implicit index
+  // Removed redundant @@index([storeId, email]) and @@index([email, storeId])
 }
 
 // Order models
@@ -557,9 +556,9 @@ model Order {
   @@index([storeId, customerId])
   @@index([storeId, status])
   @@index([storeId, createdAt])
-  @@index([orderNumber]) // Fast order lookup
-  @@index([paymentStatus])
-  @@index([customerId, createdAt]) // Customer order history
+  // Note: Removed @@index([orderNumber]) to prevent cross-tenant queries
+  // Note: Removed @@index([paymentStatus]) to prevent cross-tenant queries
+  @@index([storeId, customerId, createdAt]) // Customer order history (tenant-isolated)
   @@index([storeId, status, createdAt]) // Admin dashboard filters
 }
 
