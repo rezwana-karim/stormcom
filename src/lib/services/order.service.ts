@@ -653,8 +653,8 @@ export class OrderService {
       paymentMethod: order.paymentMethod,
       store: order.store,
       customer: order.customer,
-      billingAddress: order.billingAddress as any,
-      shippingAddress: order.shippingAddress as any,
+      billingAddress: order.billingAddress as unknown as Record<string, unknown>,
+      shippingAddress: order.shippingAddress as unknown as Record<string, unknown>,
       items: order.items.map(item => ({
         productName: item.product?.name || item.productName || 'Unknown Product',
         variantName: item.variant?.name || item.variantName || null,
