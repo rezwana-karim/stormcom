@@ -506,6 +506,12 @@ model Order {
   paymentGateway PaymentGateway?
   paymentStatus  PaymentStatus @default(PENDING)
   
+  // Stripe payment fields
+  stripePaymentIntentId String?
+  stripeRefundId        String?
+  refundedAmount        Float?
+  refundReason          String?
+  
   shippingMethod String?
   trackingNumber String?
   trackingUrl    String?
@@ -513,7 +519,13 @@ model Order {
   shippingAddress String? // JSON object
   billingAddress  String? // JSON object
   
+  // Customer info for guest checkout
+  customerEmail String?
+  customerName  String?
+  customerPhone String?
+  
   fulfilledAt DateTime?
+  deliveredAt DateTime?
   canceledAt  DateTime?
   cancelReason String?
   
@@ -521,6 +533,9 @@ model Order {
   adminNote    String?
   
   ipAddress   String?
+  
+  // Idempotency support
+  idempotencyKey String?
   
   items    OrderItem[]
   inventoryLogs InventoryLog[] @relation("OrderInventoryLogs")
@@ -530,11 +545,13 @@ model Order {
   deletedAt DateTime?
   
   @@unique([storeId, orderNumber])
+  @@unique([storeId, idempotencyKey])
   @@index([storeId, customerId])
   @@index([storeId, status])
   @@index([storeId, createdAt])
   @@index([orderNumber])
   @@index([paymentStatus])
+  @@index([idempotencyKey])
 }
 
 model OrderItem {

@@ -1,5 +1,5 @@
 // src/app/api/orders/route.ts
-// Orders API Routes - List orders
+// Orders API Routes - List and Create orders
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
@@ -19,6 +19,24 @@ const querySchema = z.object({
   dateTo: z.string().datetime().optional(),
   sortBy: z.enum(['createdAt', 'totalAmount', 'orderNumber']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
+});
+
+// Validation schema for creating orders
+const createOrderSchema = z.object({
+  customerEmail: z.string().email(),
+  customerName: z.string().min(1),
+  customerPhone: z.string().min(10),
+  shippingAddress: z.string().min(5),
+  billingAddress: z.string().optional(),
+  items: z.array(z.object({
+    productId: z.string(),
+    variantId: z.string().optional(),
+    quantity: z.number().int().positive(),
+    price: z.number().positive()
+  })).min(1),
+  paymentMethod: z.enum(['STRIPE', 'BKASH', 'CASH_ON_DELIVERY']),
+  shippingMethod: z.string().optional(),
+  notes: z.string().optional()
 });
 
 // GET /api/orders - List orders
@@ -58,8 +76,8 @@ export async function GET(request: NextRequest) {
       ...order,
       customerName: order.customer
         ? `${order.customer.firstName} ${order.customer.lastName}`.trim()
-        : 'Guest',
-      customerEmail: order.customer?.email || 'N/A',
+        : order.customerName || 'Guest',
+      customerEmail: order.customer?.email || order.customerEmail || 'N/A',
     }));
 
     return NextResponse.json({
@@ -78,6 +96,64 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       { error: 'Failed to fetch orders' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/orders - Create a new order
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    const storeId = request.headers.get('x-store-id');
+    const idempotencyKey = request.headers.get('idempotency-key');
+
+    if (!storeId) {
+      return NextResponse.json(
+        { error: 'Store ID required (x-store-id header)' },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+    const data = createOrderSchema.parse(body);
+
+    const orderService = OrderService.getInstance();
+    const order = await orderService.createOrderWithItems(
+      data,
+      storeId,
+      session?.user?.id || 'guest',
+      idempotencyKey || undefined
+    );
+
+    return NextResponse.json(order, { status: 201 });
+  } catch (error) {
+    console.error('POST /api/orders error:', error);
+
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Validation error', details: error.issues },
+        { status: 400 }
+      );
+    }
+
+    if (error instanceof Error) {
+      if (error.message.includes('Insufficient stock')) {
+        return NextResponse.json(
+          { error: error.message },
+          { status: 409 }
+        );
+      }
+      if (error.message.includes('not found')) {
+        return NextResponse.json(
+          { error: error.message },
+          { status: 404 }
+        );
+      }
+    }
+
+    return NextResponse.json(
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

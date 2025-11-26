@@ -126,6 +126,28 @@ export const createOrderSchema = z.object({
   ).min(1),
 });
 
+/**
+ * Input for creating an order with items (API-style input)
+ */
+export interface CreateOrderInput {
+  customerId?: string;
+  customerEmail: string;
+  customerName: string;
+  customerPhone: string;
+  shippingAddress: string;
+  billingAddress?: string;
+  items: Array<{
+    productId: string;
+    variantId?: string;
+    quantity: number;
+    price: number;
+  }>;
+  paymentMethod: 'STRIPE' | 'BKASH' | 'CASH_ON_DELIVERY';
+  paymentGateway?: 'STRIPE' | 'SSLCOMMERZ' | 'MANUAL';
+  shippingMethod?: string;
+  notes?: string;
+}
+
 // ============================================================================
 // SERVICE CLASS
 // ============================================================================
@@ -308,6 +330,324 @@ export class OrderService {
   }
 
   /**
+   * Create order atomically with inventory decrement
+   * Uses Prisma transaction to ensure data consistency
+   * Supports idempotency key to prevent duplicate orders
+   */
+  async createOrderWithItems(
+    input: CreateOrderInput,
+    storeId: string,
+    userId: string,
+    idempotencyKey?: string
+  ) {
+    // Check idempotency key to prevent duplicates
+    if (idempotencyKey) {
+      const existing = await prisma.order.findFirst({
+        where: { storeId, idempotencyKey },
+        include: {
+          items: {
+            include: {
+              product: { select: { name: true, sku: true } },
+              variant: { select: { name: true, sku: true } }
+            }
+          }
+        }
+      });
+      if (existing) {
+        console.log(`Duplicate order prevented: ${idempotencyKey}`);
+        return existing;
+      }
+    }
+
+    return await prisma.$transaction(async (tx) => {
+      // 1. Validate items and check stock
+      const { InventoryService } = await import('./inventory.service');
+      const inventoryService = InventoryService.getInstance();
+      
+      for (const item of input.items) {
+        const target = item.variantId
+          ? await tx.productVariant.findUnique({ 
+              where: { id: item.variantId },
+              select: { id: true, name: true, inventoryQty: true }
+            })
+          : await tx.product.findUnique({ 
+              where: { id: item.productId },
+              select: { id: true, name: true, inventoryQty: true }
+            });
+
+        if (!target) {
+          throw new Error(`Product not found: ${item.productId}`);
+        }
+
+        if ((target.inventoryQty || 0) < item.quantity) {
+          throw new Error(`Insufficient stock for ${target.name || 'product'}: ${target.inventoryQty} available, ${item.quantity} requested`);
+        }
+      }
+
+      // 2. Generate order number (ORD-YYYYMMDD-XXXX format)
+      const orderNumber = await this.generateOrderNumberWithDate(storeId, tx);
+
+      // 3. Calculate totals
+      const subtotal = input.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const shippingCost = 0; // TODO: Calculate from ShippingMethod
+      const tax = 0; // TODO: Calculate based on location
+      const totalAmount = subtotal + shippingCost + tax;
+
+      // 4. Fetch product details for order items
+      const productIds = input.items.map(item => item.productId);
+      const products = await tx.product.findMany({
+        where: { id: { in: productIds } },
+        select: { id: true, name: true, sku: true, thumbnailUrl: true }
+      });
+      const productMap = new Map(products.map(p => [p.id, p]));
+
+      // Fetch variant details if any
+      const variantIds = input.items.filter(item => item.variantId).map(item => item.variantId!);
+      let variantMap = new Map<string, { id: string; name: string; sku: string }>();
+      if (variantIds.length > 0) {
+        const variants = await tx.productVariant.findMany({
+          where: { id: { in: variantIds } },
+          select: { id: true, name: true, sku: true }
+        });
+        variantMap = new Map(variants.map(v => [v.id, v]));
+      }
+
+      // Map payment method to enum
+      const paymentMethodMap: Record<string, 'CREDIT_CARD' | 'MOBILE_BANKING' | 'CASH_ON_DELIVERY'> = {
+        'STRIPE': 'CREDIT_CARD',
+        'BKASH': 'MOBILE_BANKING',
+        'CASH_ON_DELIVERY': 'CASH_ON_DELIVERY'
+      };
+
+      // Map payment gateway to enum
+      const paymentGatewayMap: Record<string, 'STRIPE' | 'SSLCOMMERZ' | 'MANUAL'> = {
+        'STRIPE': 'STRIPE',
+        'BKASH': 'SSLCOMMERZ',
+        'CASH_ON_DELIVERY': 'MANUAL'
+      };
+
+      // 5. Create order
+      const order = await tx.order.create({
+        data: {
+          storeId,
+          orderNumber,
+          customerId: input.customerId,
+          customerEmail: input.customerEmail,
+          customerName: input.customerName,
+          customerPhone: input.customerPhone,
+          shippingAddress: input.shippingAddress,
+          billingAddress: input.billingAddress || input.shippingAddress,
+          subtotal,
+          shippingAmount: shippingCost,
+          taxAmount: tax,
+          totalAmount,
+          paymentMethod: paymentMethodMap[input.paymentMethod] || null,
+          paymentGateway: paymentGatewayMap[input.paymentMethod] || null,
+          paymentStatus: input.paymentMethod === 'CASH_ON_DELIVERY' ? 'PENDING' : 'PENDING',
+          status: 'PENDING',
+          shippingMethod: input.shippingMethod,
+          customerNote: input.notes,
+          idempotencyKey,
+          items: {
+            create: input.items.map(item => {
+              const product = productMap.get(item.productId);
+              const variant = item.variantId ? variantMap.get(item.variantId) : undefined;
+              return {
+                productId: item.productId,
+                variantId: item.variantId,
+                productName: product?.name || '',
+                variantName: variant?.name,
+                sku: variant?.sku || product?.sku || '',
+                image: product?.thumbnailUrl,
+                quantity: item.quantity,
+                price: item.price,
+                subtotal: item.price * item.quantity,
+                taxAmount: 0,
+                discountAmount: 0,
+                totalAmount: item.price * item.quantity
+              };
+            })
+          }
+        },
+        include: {
+          items: {
+            include: {
+              product: { select: { name: true, sku: true } },
+              variant: { select: { name: true, sku: true } }
+            }
+          }
+        }
+      });
+
+      // 6. Decrement inventory atomically using InventoryService
+      const itemsForInventory = input.items.map(item => ({
+        productId: item.productId,
+        variantId: item.variantId,
+        quantity: item.quantity
+      }));
+      
+      await inventoryService.deductStock(
+        storeId,
+        itemsForInventory,
+        order.id,
+        userId
+      );
+
+      // 7. Send order notification (async, don't block)
+      this.sendOrderNotification(order).catch(err =>
+        console.error('Failed to send order notification:', err)
+      );
+
+      return order;
+    });
+  }
+
+  /**
+   * Generate sequential order number per store
+   * Format: ORD-YYYYMMDD-XXXX (e.g., ORD-20251125-0001)
+   */
+  private async generateOrderNumberWithDate(
+    storeId: string,
+    tx: Prisma.TransactionClient
+  ): Promise<string> {
+    const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
+    const prefix = `ORD-${today}`;
+
+    // Get last order number for today
+    const lastOrder = await tx.order.findFirst({
+      where: {
+        storeId,
+        orderNumber: { startsWith: prefix }
+      },
+      orderBy: { orderNumber: 'desc' }
+    });
+
+    let sequence = 1;
+    if (lastOrder) {
+      const lastSequence = parseInt(lastOrder.orderNumber.split('-')[2]);
+      if (!isNaN(lastSequence)) {
+        sequence = lastSequence + 1;
+      }
+    }
+
+    return `${prefix}-${sequence.toString().padStart(4, '0')}`;
+  }
+
+  /**
+   * Process refund with Stripe integration
+   * Restores inventory and marks order as refunded
+   */
+  async processRefund(
+    orderId: string,
+    storeId: string,
+    amount: number,
+    reason: string,
+    userId: string
+  ) {
+    const order = await prisma.order.findFirst({
+      where: { id: orderId, storeId, deletedAt: null },
+      include: { items: true }
+    });
+
+    if (!order) {
+      throw new Error('Order not found');
+    }
+
+    if (order.paymentStatus !== 'PAID') {
+      throw new Error('Cannot refund unpaid order');
+    }
+
+    // Refund via payment gateway
+    let stripeRefundId: string | undefined;
+    if (order.paymentGateway === 'STRIPE' && order.stripePaymentIntentId) {
+      try {
+        const stripe = (await import('stripe')).default;
+        const stripeClient = new stripe(process.env.STRIPE_SECRET_KEY!, {
+          apiVersion: '2025-08-27.basil'
+        });
+
+        const refund = await stripeClient.refunds.create({
+          payment_intent: order.stripePaymentIntentId,
+          amount: Math.round(amount * 100), // Convert to cents
+          reason: 'requested_by_customer',
+          metadata: { orderId, reason }
+        });
+        stripeRefundId = refund.id;
+      } catch (error) {
+        console.error('Stripe refund failed:', error);
+        throw new Error('Failed to process Stripe refund');
+      }
+    }
+
+    // Update order
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        status: 'REFUNDED',
+        paymentStatus: 'REFUNDED',
+        refundedAmount: amount,
+        refundReason: reason,
+        stripeRefundId
+      }
+    });
+
+    // Restore inventory
+    const { InventoryService } = await import('./inventory.service');
+    const inventoryService = InventoryService.getInstance();
+    
+    const items = order.items
+      .filter(item => item.productId !== null)
+      .map(item => ({
+        productId: item.productId!,
+        variantId: item.variantId || undefined,
+        quantity: item.quantity
+      }));
+
+    if (items.length > 0) {
+      await inventoryService.restoreStock(
+        storeId,
+        items,
+        orderId,
+        'Refund',
+        userId
+      );
+    }
+
+    return { success: true, stripeRefundId };
+  }
+
+  /**
+   * Send order notification email to customer
+   */
+  private async sendOrderNotification(order: {
+    orderNumber: string;
+    customerEmail?: string | null;
+    totalAmount: number;
+  }) {
+    if (!order.customerEmail) return;
+
+    try {
+      const { Resend } = await import('resend');
+      const resend = new Resend(process.env.RESEND_API_KEY);
+
+      await resend.emails.send({
+        from: process.env.EMAIL_FROM || 'orders@stormcom.app',
+        to: order.customerEmail,
+        subject: `Order Confirmation - ${order.orderNumber}`,
+        html: `
+          <h1>Thank you for your order!</h1>
+          <p>Order Number: <strong>${order.orderNumber}</strong></p>
+          <p>Total: $${order.totalAmount.toFixed(2)}</p>
+          <p>We'll send you a shipping confirmation when your order ships.</p>
+        `
+      });
+    } catch (error) {
+      console.error('Failed to send order notification email:', error);
+      // Don't throw - email failure shouldn't fail the order
+    }
+  }
+
+  /**
    * Create a new order
    */
   async createOrder(data: z.infer<typeof createOrderSchema>) {
@@ -413,6 +753,7 @@ export class OrderService {
     if (newStatus && newStatus !== order.status) {
       if (newStatus === OrderStatus.DELIVERED) {
         updateData.fulfilledAt = new Date();
+        updateData.deliveredAt = new Date();
       } else if (newStatus === OrderStatus.CANCELED) {
         updateData.canceledAt = new Date();
       }
@@ -644,6 +985,16 @@ export class OrderService {
       return null;
     }
 
+    // Parse JSON addresses safely
+    const parseAddress = (addr: string | null): Record<string, unknown> | null => {
+      if (!addr) return null;
+      try {
+        return JSON.parse(addr) as Record<string, unknown>;
+      } catch {
+        return null;
+      }
+    };
+
     // Format invoice data
     return {
       orderNumber: order.orderNumber,
@@ -653,8 +1004,8 @@ export class OrderService {
       paymentMethod: order.paymentMethod,
       store: order.store,
       customer: order.customer,
-      billingAddress: order.billingAddress as any,
-      shippingAddress: order.shippingAddress as any,
+      billingAddress: parseAddress(order.billingAddress),
+      shippingAddress: parseAddress(order.shippingAddress),
       items: order.items.map(item => ({
         productName: item.product?.name || item.productName || 'Unknown Product',
         variantName: item.variant?.name || item.variantName || null,
