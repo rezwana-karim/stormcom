@@ -32,6 +32,8 @@ import {
 import { StoreSelector } from '@/components/store-selector';
 import { VariantManager, type ProductVariant } from '@/components/product/variant-manager';
 import { ImageUpload } from '@/components/product/image-upload';
+import { CategorySelector } from '@/components/product/category-selector';
+import { BrandSelector } from '@/components/product/brand-selector';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
@@ -59,6 +61,8 @@ export function ProductForm() {
   const [storeId, setStoreId] = useState<string>('');
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [images, setImages] = useState<string[]>([]);
+  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [brandId, setBrandId] = useState<string | null>(null);
 
   const form = useForm<ProductFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -124,6 +128,8 @@ export function ProductForm() {
           costPrice: data.costPerItem || null,
           inventoryQty: data.inventoryQty,
           status: data.status,
+          categoryId: categoryId || null,
+          brandId: brandId || null,
           images: images,
           variants: apiVariants.length > 0 ? apiVariants : undefined,
         }),
@@ -245,6 +251,45 @@ export function ProductForm() {
             />
           </CardContent>
         </Card>
+
+        {/* Organization - Category & Brand */}
+        {storeId && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Organization</CardTitle>
+              <CardDescription>Assign category and brand for this product</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <CategorySelector
+                  storeId={storeId}
+                  value={categoryId}
+                  onChange={setCategoryId}
+                  disabled={loading}
+                  placeholder="Select a category"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Organize products by category for easier browsing
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Brand</Label>
+                <BrandSelector
+                  storeId={storeId}
+                  value={brandId}
+                  onChange={setBrandId}
+                  disabled={loading}
+                  placeholder="Select a brand"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Associate product with a brand
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Product Images */}
         {storeId && (

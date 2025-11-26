@@ -10,6 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
@@ -31,6 +32,8 @@ import {
 import { StoreSelector } from '@/components/store-selector';
 import { VariantManager, type ProductVariant } from '@/components/product/variant-manager';
 import { ImageUpload } from '@/components/product/image-upload';
+import { CategorySelector } from '@/components/product/category-selector';
+import { BrandSelector } from '@/components/product/brand-selector';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
@@ -65,6 +68,10 @@ interface FetchedProduct {
   costPrice?: number | null;
   inventoryQty: number;
   status: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+  categoryId?: string | null;
+  brandId?: string | null;
+  category?: { id: string; name: string } | null;
+  brand?: { id: string; name: string } | null;
   images?: string[];
   variants?: Array<{
     id: string;
@@ -82,6 +89,8 @@ export function ProductEditForm({ productId }: ProductEditFormProps) {
   const [storeId, setStoreId] = useState<string>('');
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [images, setImages] = useState<string[]>([]);
+  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [brandId, setBrandId] = useState<string | null>(null);
 
   const form = useForm<ProductFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -126,6 +135,10 @@ export function ProductEditForm({ productId }: ProductEditFormProps) {
 
         // Set images
         setImages(product.images || []);
+
+        // Set category and brand
+        setCategoryId(product.categoryId || null);
+        setBrandId(product.brandId || null);
 
         // Set variants
         if (product.variants && product.variants.length > 0) {
@@ -184,6 +197,8 @@ export function ProductEditForm({ productId }: ProductEditFormProps) {
           costPrice: data.costPerItem || null,
           inventoryQty: data.inventoryQty,
           status: data.status,
+          categoryId: categoryId || null,
+          brandId: brandId || null,
           images: images,
           variants: apiVariants,
         }),
@@ -303,6 +318,43 @@ export function ProductEditForm({ productId }: ProductEditFormProps) {
                     </FormItem>
                   )}
                 />
+              </CardContent>
+            </Card>
+
+            {/* Organization - Category & Brand */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Organization</CardTitle>
+                <CardDescription>Assign category and brand for this product</CardDescription>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Category</Label>
+                  <CategorySelector
+                    storeId={storeId}
+                    value={categoryId}
+                    onChange={setCategoryId}
+                    disabled={loading}
+                    placeholder="Select a category"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Organize products by category for easier browsing
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Brand</Label>
+                  <BrandSelector
+                    storeId={storeId}
+                    value={brandId}
+                    onChange={setBrandId}
+                    disabled={loading}
+                    placeholder="Select a brand"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Associate product with a brand
+                  </p>
+                </div>
               </CardContent>
             </Card>
 
