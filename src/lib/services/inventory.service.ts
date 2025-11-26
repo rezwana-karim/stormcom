@@ -7,6 +7,25 @@ import { caseInsensitiveStringFilter } from '@/lib/prisma-utils';
 import { InventoryStatus, Prisma } from '@prisma/client';
 
 /**
+ * Inventory adjustment reason codes enum
+ * Used for standardized tracking of why inventory was adjusted
+ */
+export enum InventoryAdjustmentReason {
+  ORDER_CREATED = 'order_created',
+  ORDER_CANCELLED = 'order_cancelled',
+  RETURN_PROCESSED = 'return_processed',
+  MANUAL_ADJUSTMENT = 'manual_adjustment',
+  RESTOCK = 'restock',
+  DAMAGED = 'damaged',
+  LOST = 'lost',
+  FOUND = 'found',
+  STOCK_TRANSFER = 'stock_transfer',
+  INVENTORY_COUNT = 'inventory_count',
+  EXPIRED = 'expired',
+  THEFT = 'theft',
+}
+
+/**
  * Options for retrieving inventory levels
  */
 export interface GetInventoryOptions {
@@ -23,11 +42,36 @@ export interface GetInventoryOptions {
  */
 export interface StockAdjustment {
   productId: string;
+  variantId?: string;
   quantity: number;
   type: 'ADD' | 'REMOVE' | 'SET';
   reason: string;
   note?: string;
   userId?: string;
+  orderId?: string;
+}
+
+/**
+ * Bulk adjustment input item
+ */
+export interface BulkAdjustmentItem {
+  productId?: string;
+  variantId?: string;
+  sku?: string;
+  quantity: number;
+  type: 'ADD' | 'REMOVE' | 'SET';
+  reason: InventoryAdjustmentReason;
+  note?: string;
+}
+
+/**
+ * Bulk adjustment result
+ */
+export interface BulkAdjustmentResult {
+  total: number;
+  succeeded: number;
+  failed: number;
+  errors: Array<{ sku?: string; productId?: string; error: string }>;
 }
 
 /**
@@ -46,12 +90,16 @@ export interface InventoryItem {
 }
 
 /**
- * Inventory log entry
+ * Inventory log entry with extended details
  */
 export interface InventoryLogEntry {
   id: string;
   productId: string;
+  variantId?: string;
+  orderId?: string;
+  orderNumber?: string;
   productName: string;
+  variantName?: string;
   sku: string;
   previousQty: number;
   newQty: number;
@@ -60,6 +108,7 @@ export interface InventoryLogEntry {
   note?: string;
   userId?: string;
   userName?: string;
+  userEmail?: string;
   createdAt: Date;
 }
 
@@ -181,7 +230,7 @@ export class InventoryService {
     storeId: string,
     adjustment: StockAdjustment
   ): Promise<InventoryItem> {
-    const { productId, quantity, type, reason, note, userId } = adjustment;
+    const { productId, variantId, quantity, type, reason, note, userId, orderId } = adjustment;
 
     // Validate quantity
     if (quantity < 0) {
@@ -210,43 +259,87 @@ export class InventoryService {
         throw new Error('Product not found or does not belong to this store');
       }
 
+      // If variant specified, get variant stock
+      let targetQty = product.inventoryQty;
+      let targetThreshold = product.lowStockThreshold;
+      
+      if (variantId) {
+        const variant = await tx.productVariant.findUnique({
+          where: { id: variantId, productId },
+          select: { inventoryQty: true, lowStockThreshold: true },
+        });
+        if (!variant) {
+          throw new Error('Variant not found or does not belong to this product');
+        }
+        targetQty = variant.inventoryQty;
+        targetThreshold = variant.lowStockThreshold;
+      }
+
       // Calculate new quantity
       let newQty: number;
       let changeQty: number;
 
       switch (type) {
         case 'ADD':
-          newQty = product.inventoryQty + quantity;
+          newQty = targetQty + quantity;
           changeQty = quantity;
           break;
         case 'REMOVE':
-          newQty = product.inventoryQty - quantity;
+          newQty = targetQty - quantity;
           changeQty = -quantity;
           if (newQty < 0) {
             throw new Error(
-              `Cannot remove ${quantity} units. Current stock: ${product.inventoryQty}`
+              `Cannot remove ${quantity} units. Current stock: ${targetQty}`
             );
           }
           break;
         case 'SET':
           newQty = quantity;
-          changeQty = quantity - product.inventoryQty;
+          changeQty = quantity - targetQty;
           break;
         default:
           throw new Error(`Invalid adjustment type: ${type}`);
       }
 
       // Determine new inventory status
-      const newStatus = this.determineInventoryStatus(newQty, product.lowStockThreshold);
-      const previousStatus = product.inventoryStatus;
+      const newStatus = this.determineInventoryStatus(newQty, targetThreshold);
+      const previousQty = targetQty;
 
-      // Update product inventory
-      const updatedProduct = await tx.product.update({
-        where: { id: productId },
+      // Update variant or product inventory
+      if (variantId) {
+        await tx.productVariant.update({
+          where: { id: variantId },
+          data: { inventoryQty: newQty },
+        });
+      } else {
+        await tx.product.update({
+          where: { id: productId },
+          data: {
+            inventoryQty: newQty,
+            inventoryStatus: newStatus,
+          },
+        });
+      }
+
+      // Create inventory log with orderId and variantId
+      await tx.inventoryLog.create({
         data: {
-          inventoryQty: newQty,
-          inventoryStatus: newStatus,
+          storeId,
+          productId,
+          variantId,
+          orderId,
+          previousQty,
+          newQty,
+          changeQty,
+          reason,
+          note,
+          userId,
         },
+      });
+
+      // Re-fetch updated product for return
+      const updatedProduct = await tx.product.findUnique({
+        where: { id: productId },
         select: {
           id: true,
           name: true,
@@ -260,24 +353,8 @@ export class InventoryService {
         },
       });
 
-      // Create inventory log
-      await tx.inventoryLog.create({
-        data: {
-          storeId,
-          productId,
-          previousQty: product.inventoryQty,
-          newQty,
-          changeQty,
-          reason,
-          note,
-          userId,
-        },
-      });
-
-      return { updatedProduct, previousStatus };
+      return { updatedProduct: updatedProduct! };
     });
-
-    // TODO: Send low stock notifications to store admins
 
     return {
       id: result.updatedProduct.id,
@@ -351,10 +428,23 @@ export class InventoryService {
       select: {
         id: true,
         productId: true,
+        variantId: true,
+        orderId: true,
         product: {
           select: {
             name: true,
             sku: true,
+          },
+        },
+        variant: {
+          select: {
+            name: true,
+            sku: true,
+          },
+        },
+        order: {
+          select: {
+            orderNumber: true,
           },
         },
         previousQty: true,
@@ -366,6 +456,7 @@ export class InventoryService {
         user: {
           select: {
             name: true,
+            email: true,
           },
         },
         createdAt: true,
@@ -379,8 +470,12 @@ export class InventoryService {
     return logs.map((log) => ({
       id: log.id,
       productId: log.productId,
+      variantId: log.variantId || undefined,
+      orderId: log.orderId || undefined,
+      orderNumber: log.order?.orderNumber || undefined,
       productName: log.product.name,
-      sku: log.product.sku,
+      variantName: log.variant?.name || undefined,
+      sku: log.variant?.sku || log.product.sku,
       previousQty: log.previousQty,
       newQty: log.newQty,
       changeQty: log.changeQty,
@@ -388,6 +483,7 @@ export class InventoryService {
       note: log.note || undefined,
       userId: log.userId || undefined,
       userName: log.user?.name || undefined,
+      userEmail: log.user?.email || undefined,
       createdAt: log.createdAt,
     }));
   }
@@ -398,8 +494,9 @@ export class InventoryService {
    */
   async deductStock(
     storeId: string,
-    items: Array<{ productId: string; quantity: number }>,
-    orderId: string
+    items: Array<{ productId: string; variantId?: string; quantity: number }>,
+    orderId: string,
+    userId?: string
   ): Promise<void> {
     await prisma.$transaction(async (tx) => {
       for (const item of items) {
@@ -412,33 +509,58 @@ export class InventoryService {
           throw new Error(`Product ${item.productId} not found`);
         }
 
-        const newQty = product.inventoryQty - item.quantity;
+        let targetQty = product.inventoryQty;
+        let targetThreshold = product.lowStockThreshold;
+
+        // Handle variant-level stock if variantId is provided
+        if (item.variantId) {
+          const variant = await tx.productVariant.findUnique({
+            where: { id: item.variantId, productId: item.productId },
+            select: { inventoryQty: true, lowStockThreshold: true },
+          });
+          if (variant) {
+            targetQty = variant.inventoryQty;
+            targetThreshold = variant.lowStockThreshold;
+          }
+        }
+
+        const newQty = targetQty - item.quantity;
 
         if (newQty < 0) {
           throw new Error(
-            `Insufficient stock for product "${product.name}". Available: ${product.inventoryQty}, Requested: ${item.quantity}`
+            `Insufficient stock for product "${product.name}". Available: ${targetQty}, Requested: ${item.quantity}`
           );
         }
 
-        const newStatus = this.determineInventoryStatus(newQty, product.lowStockThreshold);
+        const newStatus = this.determineInventoryStatus(newQty, targetThreshold);
 
-        await tx.product.update({
-          where: { id: item.productId },
-          data: {
-            inventoryQty: newQty,
-            inventoryStatus: newStatus,
-          },
-        });
+        // Update variant or product inventory
+        if (item.variantId) {
+          await tx.productVariant.update({
+            where: { id: item.variantId },
+            data: { inventoryQty: newQty },
+          });
+        } else {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              inventoryQty: newQty,
+              inventoryStatus: newStatus,
+            },
+          });
+        }
 
         await tx.inventoryLog.create({
           data: {
             storeId,
             productId: item.productId,
-            previousQty: product.inventoryQty,
+            variantId: item.variantId,
+            orderId,
+            previousQty: targetQty,
             newQty,
             changeQty: -item.quantity,
-            reason: 'Sale',
-            note: `Order ${orderId}`,
+            reason: InventoryAdjustmentReason.ORDER_CREATED,
+            userId,
           },
         });
       }
@@ -451,10 +573,15 @@ export class InventoryService {
    */
   async restoreStock(
     storeId: string,
-    items: Array<{ productId: string; quantity: number }>,
+    items: Array<{ productId: string; variantId?: string; quantity: number }>,
     orderId: string,
-    reason: 'Cancellation' | 'Refund'
+    reason: 'Cancellation' | 'Refund',
+    userId?: string
   ): Promise<void> {
+    const reasonCode = reason === 'Cancellation' 
+      ? InventoryAdjustmentReason.ORDER_CANCELLED 
+      : InventoryAdjustmentReason.RETURN_PROCESSED;
+
     await prisma.$transaction(async (tx) => {
       for (const item of items) {
         const product = await tx.product.findUnique({
@@ -466,30 +593,134 @@ export class InventoryService {
           continue; // Skip if product deleted
         }
 
-        const newQty = product.inventoryQty + item.quantity;
-        const newStatus = this.determineInventoryStatus(newQty, product.lowStockThreshold);
+        let targetQty = product.inventoryQty;
+        let targetThreshold = product.lowStockThreshold;
 
-        await tx.product.update({
-          where: { id: item.productId },
-          data: {
-            inventoryQty: newQty,
-            inventoryStatus: newStatus,
-          },
-        });
+        // Handle variant-level stock if variantId is provided
+        if (item.variantId) {
+          const variant = await tx.productVariant.findUnique({
+            where: { id: item.variantId, productId: item.productId },
+            select: { inventoryQty: true, lowStockThreshold: true },
+          });
+          if (variant) {
+            targetQty = variant.inventoryQty;
+            targetThreshold = variant.lowStockThreshold;
+          }
+        }
+
+        const newQty = targetQty + item.quantity;
+        const newStatus = this.determineInventoryStatus(newQty, targetThreshold);
+
+        // Update variant or product inventory
+        if (item.variantId) {
+          await tx.productVariant.update({
+            where: { id: item.variantId },
+            data: { inventoryQty: newQty },
+          });
+        } else {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              inventoryQty: newQty,
+              inventoryStatus: newStatus,
+            },
+          });
+        }
 
         await tx.inventoryLog.create({
           data: {
             storeId,
             productId: item.productId,
-            previousQty: product.inventoryQty,
+            variantId: item.variantId,
+            orderId,
+            previousQty: targetQty,
             newQty,
             changeQty: item.quantity,
-            reason,
-            note: `Order ${orderId}`,
+            reason: reasonCode,
+            userId,
           },
         });
       }
     });
+  }
+
+  /**
+   * Bulk adjust inventory (e.g., after CSV import)
+   * Processes up to 1000 products in a single batch
+   */
+  async bulkAdjust(
+    storeId: string,
+    adjustments: BulkAdjustmentItem[],
+    userId?: string
+  ): Promise<BulkAdjustmentResult> {
+    const MAX_BULK_ITEMS = 1000;
+
+    if (adjustments.length > MAX_BULK_ITEMS) {
+      throw new Error(`Cannot process more than ${MAX_BULK_ITEMS} items at once`);
+    }
+
+    const errors: Array<{ sku?: string; productId?: string; error: string }> = [];
+    let succeeded = 0;
+
+    // Process adjustments sequentially to maintain transactional integrity
+    for (const adjustment of adjustments) {
+      try {
+        // If SKU is provided instead of productId, look up the product
+        let productId = adjustment.productId;
+        if (!productId && adjustment.sku) {
+          const product = await prisma.product.findFirst({
+            where: { 
+              storeId, 
+              sku: adjustment.sku,
+              deletedAt: null,
+            },
+            select: { id: true },
+          });
+          if (!product) {
+            errors.push({ 
+              sku: adjustment.sku, 
+              error: `Product with SKU "${adjustment.sku}" not found` 
+            });
+            continue;
+          }
+          productId = product.id;
+        }
+
+        if (!productId) {
+          errors.push({ 
+            sku: adjustment.sku, 
+            productId: adjustment.productId,
+            error: 'Either productId or sku must be provided' 
+          });
+          continue;
+        }
+
+        await this.adjustStock(storeId, {
+          productId,
+          variantId: adjustment.variantId,
+          quantity: adjustment.quantity,
+          type: adjustment.type,
+          reason: adjustment.reason,
+          note: adjustment.note,
+          userId,
+        });
+
+        succeeded++;
+      } catch (error) {
+        errors.push({
+          sku: adjustment.sku,
+          productId: adjustment.productId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    }
+
+    return {
+      total: adjustments.length,
+      succeeded,
+      failed: errors.length,
+      errors,
+    };
   }
 
   /**
