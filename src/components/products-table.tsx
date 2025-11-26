@@ -441,11 +441,18 @@ export function ProductsTable({
                         >
                           {product.name}
                         </Link>
-                        {product.category && (
-                          <span className="text-xs text-muted-foreground">
-                            {product.category.name}
-                          </span>
-                        )}
+                        <div className="flex flex-wrap gap-2">
+                          {product.category && (
+                            <span className="text-xs text-muted-foreground">
+                              {product.category.name}
+                            </span>
+                          )}
+                          {product.brand && (
+                            <span className="text-xs text-muted-foreground">
+                              {product.brand.name}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell className="hidden font-mono text-sm sm:table-cell">

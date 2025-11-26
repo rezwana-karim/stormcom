@@ -37,6 +37,8 @@ import { Loader2 } from 'lucide-react';
 // Form validation schema
 const productFormSchema = z.object({
   name: z.string().min(1, 'Product name is required').max(255, 'Name too long'),
+  categoryId: z.string().optional().nullable(),
+  brandId: z.string().optional().nullable(),
   slug: z.string()
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug must be lowercase with hyphens only'),
   description: z.string().max(5000, 'Description too long').optional(),
@@ -82,6 +84,8 @@ export function ProductEditForm({ productId }: ProductEditFormProps) {
   const [storeId, setStoreId] = useState<string>('');
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [images, setImages] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
+  const [brands, setBrands] = useState<Array<{ id: string; name: string }>>([]);
 
   const form = useForm<ProductFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -116,6 +120,8 @@ export function ProductEditForm({ productId }: ProductEditFormProps) {
           name: product.name || '',
           slug: product.slug || '',
           description: product.description || '',
+          categoryId: (product as any).categoryId || undefined,
+          brandId: (product as any).brandId || undefined,
           sku: product.sku || '',
           price: product.price || 0,
           compareAtPrice: product.compareAtPrice || null,
@@ -177,6 +183,8 @@ export function ProductEditForm({ productId }: ProductEditFormProps) {
           storeId,
           name: data.name,
           slug: data.slug,
+          categoryId: (data as any).categoryId && (data as any).categoryId !== '__none' ? (data as any).categoryId : undefined,
+          brandId: (data as any).brandId && (data as any).brandId !== '__none' ? (data as any).brandId : undefined,
           description: data.description || undefined,
           sku: data.sku,
           price: data.price,
@@ -204,6 +212,32 @@ export function ProductEditForm({ productId }: ProductEditFormProps) {
       setLoading(false);
     }
   };
+
+  // Fetch categories and brands when storeId is available
+  useEffect(() => {
+    if (!storeId) return;
+
+    (async () => {
+      try {
+        const [cRes, bRes] = await Promise.all([
+          fetch('/api/categories'),
+          fetch('/api/brands'),
+        ]);
+
+        if (cRes.ok) {
+          const cJson = await cRes.json();
+          setCategories((cJson.categories || []).map((c: any) => ({ id: c.id, name: c.name })));
+        }
+
+        if (bRes.ok) {
+          const bJson = await bRes.json();
+          setBrands((bJson.brands || []).map((b: any) => ({ id: b.id, name: b.name })));
+        }
+      } catch (e) {
+        console.error('Failed to fetch categories/brands', e);
+      }
+    })();
+  }, [storeId]);
 
   return (
     <div className="space-y-6">
@@ -303,6 +337,56 @@ export function ProductEditForm({ productId }: ProductEditFormProps) {
                     </FormItem>
                   )}
                 />
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="categoryId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Category</FormLabel>
+                        <FormControl>
+                                  <Select onValueChange={field.onChange} value={field.value ?? '__none'}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                      <SelectItem value="__none">None</SelectItem>
+                              {categories.map((c) => (
+                                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="brandId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Brand</FormLabel>
+                        <FormControl>
+                          <Select onValueChange={field.onChange} value={field.value ?? '__none'}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select brand" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__none">None</SelectItem>
+                              {brands.map((b) => (
+                                <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </CardContent>
             </Card>
 

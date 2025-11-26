@@ -6,6 +6,7 @@ import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { ProductForm } from '@/components/product-form';
 import { AppSidebar } from "@/components/app-sidebar";
+import ClientOnly from '@/components/ClientOnly'
 import { SiteHeader } from "@/components/site-header";
 import {
   SidebarInset,
@@ -33,7 +34,9 @@ export default async function NewProductPage() {
         } as React.CSSProperties
       }
     >
-      <AppSidebar variant="inset" />
+      <ClientOnly>
+        <AppSidebar variant="inset" />
+      </ClientOnly>
       <SidebarInset>
         <SiteHeader />
         <div className="flex flex-1 flex-col">
