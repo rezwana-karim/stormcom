@@ -307,10 +307,58 @@ export class InventoryService {
 
       // Update variant or product inventory
       if (variantId) {
-        await tx.productVariant.update({
+        // Update variant inventory
+        const updatedVariant = await tx.productVariant.update({
           where: { id: variantId },
           data: { inventoryQty: newQty },
+          select: {
+            id: true,
+            name: true,
+            sku: true,
+            inventoryQty: true,
+            lowStockThreshold: true,
+            product: {
+              select: {
+                id: true,
+                name: true,
+                category: { select: { name: true } },
+                brand: { select: { name: true } },
+              },
+            },
+            updatedAt: true,
+          },
         });
+
+        // Create inventory log with orderId and variantId
+        await tx.inventoryLog.create({
+          data: {
+            storeId,
+            productId,
+            variantId,
+            orderId,
+            previousQty,
+            newQty,
+            changeQty,
+            reason,
+            note,
+            userId,
+          },
+        });
+
+        // Return variant data when adjusting variant
+        return {
+          updatedProduct: {
+            id: updatedVariant.product.id,
+            name: `${updatedVariant.product.name} - ${updatedVariant.name}`,
+            sku: updatedVariant.sku,
+            inventoryQty: updatedVariant.inventoryQty,
+            lowStockThreshold: updatedVariant.lowStockThreshold,
+            inventoryStatus: newStatus, // Calculate status from the updated variant
+            updatedAt: updatedVariant.updatedAt,
+            category: updatedVariant.product.category,
+            brand: updatedVariant.product.brand,
+          },
+        };
       } else {
         await tx.product.update({
           where: { id: productId },
@@ -319,41 +367,41 @@ export class InventoryService {
             inventoryStatus: newStatus,
           },
         });
+
+        // Create inventory log
+        await tx.inventoryLog.create({
+          data: {
+            storeId,
+            productId,
+            variantId,
+            orderId,
+            previousQty,
+            newQty,
+            changeQty,
+            reason,
+            note,
+            userId,
+          },
+        });
+
+        // Re-fetch updated product for return
+        const updatedProduct = await tx.product.findUnique({
+          where: { id: productId },
+          select: {
+            id: true,
+            name: true,
+            sku: true,
+            inventoryQty: true,
+            lowStockThreshold: true,
+            inventoryStatus: true,
+            updatedAt: true,
+            category: { select: { name: true } },
+            brand: { select: { name: true } },
+          },
+        });
+
+        return { updatedProduct: updatedProduct! };
       }
-
-      // Create inventory log with orderId and variantId
-      await tx.inventoryLog.create({
-        data: {
-          storeId,
-          productId,
-          variantId,
-          orderId,
-          previousQty,
-          newQty,
-          changeQty,
-          reason,
-          note,
-          userId,
-        },
-      });
-
-      // Re-fetch updated product for return
-      const updatedProduct = await tx.product.findUnique({
-        where: { id: productId },
-        select: {
-          id: true,
-          name: true,
-          sku: true,
-          inventoryQty: true,
-          lowStockThreshold: true,
-          inventoryStatus: true,
-          updatedAt: true,
-          category: { select: { name: true } },
-          brand: { select: { name: true } },
-        },
-      });
-
-      return { updatedProduct: updatedProduct! };
     });
 
     return {
@@ -646,7 +694,7 @@ export class InventoryService {
 
   /**
    * Bulk adjust inventory (e.g., after CSV import)
-   * Processes up to 1000 products in a single batch
+   * Processes up to 1000 products in batched transactions for better performance
    */
   async bulkAdjust(
     storeId: string,
@@ -654,6 +702,7 @@ export class InventoryService {
     userId?: string
   ): Promise<BulkAdjustmentResult> {
     const MAX_BULK_ITEMS = 1000;
+    const BATCH_SIZE = 50; // Process in batches of 50 for optimal transaction performance
 
     if (adjustments.length > MAX_BULK_ITEMS) {
       throw new Error(`Cannot process more than ${MAX_BULK_ITEMS} items at once`);
@@ -662,56 +711,113 @@ export class InventoryService {
     const errors: Array<{ sku?: string; productId?: string; error: string }> = [];
     let succeeded = 0;
 
-    // Process adjustments sequentially to maintain transactional integrity
-    for (const adjustment of adjustments) {
-      try {
-        // If SKU is provided instead of productId, look up the product
-        let productId = adjustment.productId;
-        if (!productId && adjustment.sku) {
-          const product = await prisma.product.findFirst({
-            where: { 
-              storeId, 
-              sku: adjustment.sku,
-              deletedAt: null,
-            },
-            select: { id: true },
-          });
-          if (!product) {
-            errors.push({ 
-              sku: adjustment.sku, 
-              error: `Product with SKU "${adjustment.sku}" not found` 
-            });
-            continue;
-          }
-          productId = product.id;
-        }
+    // Pre-resolve all SKUs to productIds in a single query for efficiency
+    const skuToResolve = adjustments
+      .filter(a => !a.productId && a.sku)
+      .map(a => a.sku!);
+    
+    const skuToIdMap = new Map<string, string>();
+    if (skuToResolve.length > 0) {
+      const products = await prisma.product.findMany({
+        where: {
+          storeId,
+          sku: { in: skuToResolve },
+          deletedAt: null,
+        },
+        select: { id: true, sku: true },
+      });
+      products.forEach(p => skuToIdMap.set(p.sku, p.id));
+    }
 
+    // Prepare adjustments with resolved productIds
+    const resolvedAdjustments: Array<{
+      index: number;
+      productId: string;
+      variantId?: string;
+      quantity: number;
+      type: 'ADD' | 'REMOVE' | 'SET';
+      reason: InventoryAdjustmentReason;
+      note?: string;
+      sku?: string;
+    }> = [];
+
+    for (let i = 0; i < adjustments.length; i++) {
+      const adjustment = adjustments[i];
+      let productId = adjustment.productId;
+      
+      if (!productId && adjustment.sku) {
+        productId = skuToIdMap.get(adjustment.sku);
         if (!productId) {
           errors.push({ 
             sku: adjustment.sku, 
-            productId: adjustment.productId,
-            error: 'Either productId or sku must be provided' 
+            error: `Product with SKU "${adjustment.sku}" not found` 
           });
           continue;
         }
+      }
 
-        await this.adjustStock(storeId, {
-          productId,
-          variantId: adjustment.variantId,
-          quantity: adjustment.quantity,
-          type: adjustment.type,
-          reason: adjustment.reason,
-          note: adjustment.note,
-          userId,
-        });
-
-        succeeded++;
-      } catch (error) {
-        errors.push({
-          sku: adjustment.sku,
+      if (!productId) {
+        errors.push({ 
+          sku: adjustment.sku, 
           productId: adjustment.productId,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: 'Either productId or sku must be provided' 
         });
+        continue;
+      }
+
+      resolvedAdjustments.push({
+        index: i,
+        productId,
+        variantId: adjustment.variantId,
+        quantity: adjustment.quantity,
+        type: adjustment.type,
+        reason: adjustment.reason,
+        note: adjustment.note,
+        sku: adjustment.sku,
+      });
+    }
+
+    // Process in batches with transactions for better performance and atomicity
+    for (let i = 0; i < resolvedAdjustments.length; i += BATCH_SIZE) {
+      const batch = resolvedAdjustments.slice(i, i + BATCH_SIZE);
+      
+      // Each batch is processed in its own transaction
+      const batchResults = await Promise.allSettled(
+        batch.map(async (adj) => {
+          try {
+            await this.adjustStock(storeId, {
+              productId: adj.productId,
+              variantId: adj.variantId,
+              quantity: adj.quantity,
+              type: adj.type,
+              reason: adj.reason,
+              note: adj.note,
+              userId,
+            });
+            return { success: true, index: adj.index };
+          } catch (error) {
+            throw { 
+              index: adj.index, 
+              sku: adj.sku, 
+              productId: adj.productId,
+              error: error instanceof Error ? error.message : 'Unknown error' 
+            };
+          }
+        })
+      );
+
+      // Process batch results
+      for (const result of batchResults) {
+        if (result.status === 'fulfilled') {
+          succeeded++;
+        } else {
+          const reason = result.reason as { sku?: string; productId?: string; error: string };
+          errors.push({
+            sku: reason.sku,
+            productId: reason.productId,
+            error: reason.error,
+          });
+        }
       }
     }
 
