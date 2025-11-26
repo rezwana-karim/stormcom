@@ -178,7 +178,7 @@ These critical issues were identified in the risk matrix analysis and **MUST be 
 - Realistic velocity (70%): 38 ÷ 0.7 = 54 days (~11 weeks)
 - Buffer for testing, bugs, reviews: +2-3 weeks
 - Integration and deployment prep: +1 week
-- **Total: 14-16 weeks realistic, 18 weeks with contingency**
+- **Total: 16-18 weeks with buffer and contingency**
 
 ---
 
