@@ -5,6 +5,9 @@
  * Usage:
  *   node scripts/switch-db-provider.js sqlite
  *   node scripts/switch-db-provider.js postgresql
+ * 
+ * NOTE: For production deployments, prefer using schema.postgres.prisma directly
+ * rather than modifying the unified schema. This script is mainly for local testing.
  */
 
 const fs = require('fs');
@@ -19,7 +22,8 @@ if (!['sqlite', 'postgresql'].includes(provider)) {
 }
 
 try {
-  let schema = fs.readFileSync(schemaPath, 'utf8');
+  const originalSchema = fs.readFileSync(schemaPath, 'utf8');
+  let schema = originalSchema;
   
   // Replace the provider line
   if (provider === 'sqlite') {
@@ -32,6 +36,12 @@ try {
       /provider\s*=\s*"sqlite"/,
       'provider = "postgresql"'
     );
+  }
+  
+  // Validate that the replacement was successful
+  if (schema === originalSchema) {
+    console.log(`ℹ️  Provider is already set to "${provider}" (no changes made)`);
+    process.exit(0);
   }
   
   fs.writeFileSync(schemaPath, schema);

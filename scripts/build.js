@@ -38,17 +38,13 @@ if (!databaseUrl) {
   process.exit(1);
 }
 
-// Detect database type
-let dbType;
+// Detect and log database type
 if (databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://')) {
   console.log('🐘 Detected PostgreSQL database');
-  dbType = 'postgresql';
 } else if (databaseUrl.startsWith('file:')) {
   console.log('🗄️  Detected SQLite database');
-  dbType = 'sqlite';
 } else {
-  console.log('⚠️  Unknown database type, defaulting to PostgreSQL');
-  dbType = 'postgresql';
+  console.log('⚠️  Unknown database type, proceeding with build');
 }
 
 // Use unified schema

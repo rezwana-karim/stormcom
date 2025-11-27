@@ -93,7 +93,7 @@ function ConfirmationContent() {
         {/* What's Next */}
         <Card>
           <CardHeader>
-            <CardTitle>What's Next?</CardTitle>
+            <CardTitle>What&apos;s Next?</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex gap-4">
@@ -103,7 +103,7 @@ function ConfirmationContent() {
               <div className="space-y-1">
                 <h3 className="font-medium">Order Confirmation Email</h3>
                 <p className="text-sm text-muted-foreground">
-                  We've sent a confirmation email to your email address with your order details.
+                  We&apos;ve sent a confirmation email to your email address with your order details.
                 </p>
               </div>
             </div>
@@ -117,7 +117,7 @@ function ConfirmationContent() {
               <div className="space-y-1">
                 <h3 className="font-medium">Order Processing</h3>
                 <p className="text-sm text-muted-foreground">
-                  Your order is being prepared. You'll receive another email when it ships.
+                  Your order is being prepared. You&apos;ll receive another email when it ships.
                 </p>
               </div>
             </div>
@@ -131,7 +131,7 @@ function ConfirmationContent() {
               <div className="space-y-1">
                 <h3 className="font-medium">Track Your Order</h3>
                 <p className="text-sm text-muted-foreground">
-                  Once shipped, you'll be able to track your package's delivery progress.
+                  Once shipped, you&apos;ll be able to track your package&apos;s delivery progress.
                 </p>
               </div>
             </div>
