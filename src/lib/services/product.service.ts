@@ -72,7 +72,18 @@ export const variantSchema = z.object({
   inventoryQty: z.number().int().min(0).default(0),
   lowStockThreshold: z.number().int().min(0).default(5),
   weight: z.number().min(0).optional().nullable(),
-  image: z.string().url().optional().nullable(),
+  image: z.string().min(1).optional().nullable().refine((v) => {
+    if (!v) return true;
+    try {
+      // Accept absolute URLs
+      // eslint-disable-next-line no-new
+      new URL(v);
+      return true;
+    } catch {
+      // Accept relative paths starting with '/'
+      return typeof v === 'string' && v.startsWith('/');
+    }
+  }, { message: 'Invalid image URL' }),
   options: z.union([z.string(), z.record(z.string(), z.string())]).default("{}"), // JSON string or object
   isDefault: z.boolean().default(false),
 });
@@ -100,7 +111,17 @@ export const createProductSchema = z.object({
   height: z.number().min(0).optional().nullable(),
   categoryId: z.string().cuid().optional().nullable(),
   brandId: z.string().cuid().optional().nullable(),
-  images: z.array(z.string().url()).default([]),
+  images: z.array(z.string().min(1).refine((v) => {
+    try {
+      // Accept absolute URLs
+      // eslint-disable-next-line no-new
+      new URL(v);
+      return true;
+    } catch {
+      // Accept relative paths starting with '/'
+      return typeof v === 'string' && v.startsWith('/');
+    }
+  }, { message: 'Invalid image URL' })).default([]),
   thumbnailUrl: z.string().url().optional().nullable(),
   // SEO fields
   metaTitle: z.string().max(255).optional().nullable(),

@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { IconPlus } from '@tabler/icons-react';
 import { ProductsPageClient } from '@/components/products-page-client';
+import { ProductsHeaderActions } from '@/components/products-header-actions';
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import {
@@ -50,12 +51,9 @@ export default async function ProductsPage() {
                       Manage your product catalog across all stores.
                     </p>
                   </div>
-                  <Link href="/dashboard/products/new">
-                    <Button className="gap-2">
-                      <IconPlus className="size-4" />
-                      Add Product
-                    </Button>
-                  </Link>
+                  <div>
+                    <ProductsHeaderActions />
+                  </div>
                 </div>
 
                 <ProductsPageClient />

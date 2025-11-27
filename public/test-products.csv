@@ -1,0 +1,4 @@
+name,sku,price,categoryId,brandId,description,inventoryQty,status
+Test Product 1,TEST-001,29.99,,,A test product for bulk import,100,ACTIVE
+Test Product 2,TEST-002,49.99,,,Another test product,50,ACTIVE
+Test Product 3,TEST-003,19.99,,,Third test product,75,DRAFT
