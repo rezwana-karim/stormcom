@@ -932,6 +932,8 @@ export class InventoryService {
 
   /**
    * Internal method to restore stock
+   * Note: Silently skips deleted products/variants to allow processing other items
+   * in the order. This is intentional as products may be discontinued after order creation.
    */
   private async restoreStockInternal(
     storeId: string,
@@ -949,7 +951,13 @@ export class InventoryService {
             select: { inventoryQty: true, lowStockThreshold: true },
           });
 
-          if (!variant) continue; // Skip if variant deleted
+          if (!variant) {
+            // Log warning for deleted variant - this is expected when product is discontinued
+            console.warn(
+              `[InventoryService] Skipping stock restoration for deleted variant ${item.variantId} (Order: ${orderId})`
+            );
+            continue;
+          }
 
           const newQty = variant.inventoryQty + item.quantity;
 
@@ -979,7 +987,13 @@ export class InventoryService {
             select: { inventoryQty: true, lowStockThreshold: true },
           });
 
-          if (!product) continue; // Skip if product deleted
+          if (!product) {
+            // Log warning for deleted product - this is expected when product is discontinued
+            console.warn(
+              `[InventoryService] Skipping stock restoration for deleted product ${item.productId} (Order: ${orderId})`
+            );
+            continue;
+          }
 
           const newQty = product.inventoryQty + item.quantity;
           const newStatus = this.determineInventoryStatus(newQty, product.lowStockThreshold);
