@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
+import { getProductImageUrl } from "@/lib/utils";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -146,16 +147,7 @@ export default async function StoreHomePage({ params }: StoreHomePageProps) {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {products.map((product) => {
-              // Parse images JSON if needed
-              let imageUrl = product.thumbnailUrl;
-              if (!imageUrl && product.images) {
-                try {
-                  const images = JSON.parse(product.images);
-                  imageUrl = Array.isArray(images) ? images[0] : null;
-                } catch {
-                  imageUrl = null;
-                }
-              }
+              const imageUrl = getProductImageUrl(product.thumbnailUrl, product.images);
 
               return (
                 <Link

@@ -99,30 +99,30 @@ export default async function StoreLayout({
               <h1 className="text-2xl font-bold">{store.name}</h1>
             </div>
             <nav className="flex items-center gap-6">
-              <a
+              <Link
                 href={`/store/${store.slug}`}
                 className="text-sm font-medium hover:text-primary"
               >
                 Home
-              </a>
-              <a
+              </Link>
+              <Link
                 href={`/store/${store.slug}/products`}
                 className="text-sm font-medium hover:text-primary"
               >
                 Products
-              </a>
-              <a
+              </Link>
+              <Link
                 href={`/store/${store.slug}/categories`}
                 className="text-sm font-medium hover:text-primary"
               >
                 Categories
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/checkout"
                 className="text-sm font-medium hover:text-primary"
               >
                 Cart
-              </a>
+              </Link>
             </nav>
           </div>
         </div>
@@ -150,19 +150,19 @@ export default async function StoreLayout({
               <h3 className="font-semibold mb-4">Quick Links</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
-                  <a href={`/store/${store.slug}`} className="hover:text-primary">
+                  <Link href={`/store/${store.slug}`} className="hover:text-primary">
                     Home
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href={`/store/${store.slug}/products`} className="hover:text-primary">
+                  <Link href={`/store/${store.slug}/products`} className="hover:text-primary">
                     All Products
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href={`/store/${store.slug}/categories`} className="hover:text-primary">
+                  <Link href={`/store/${store.slug}/categories`} className="hover:text-primary">
                     Categories
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>

@@ -60,7 +60,7 @@ export interface StoreData {
  * @example
  * - vendor1.stormcom.app → vendor1
  * - vendor1.localhost → vendor1
- * - vendor.com → vendor (custom domain case)
+ * - vendor.com → null (custom domain - handled by customDomain lookup)
  * - www.stormcom.app → null (www is ignored)
  * - stormcom.app → null (root domain)
  */
@@ -83,13 +83,9 @@ export function extractSubdomain(hostname: string): string | null {
     return parts[0];
   }
 
-  if (parts.length === 2) {
-    // Custom domain case: vendor.com → vendor
-    // This will be handled by custom domain lookup
-    return parts[0];
-  }
-
-  // Single part (localhost, etc.) → no subdomain
+  // Custom domain (vendor.com) or root domain (stormcom.app)
+  // These should be looked up by customDomain, not subdomain
+  // Return null so the lookup falls through to customDomain check
   return null;
 }
 

@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
+import { getProductImageUrl } from "@/lib/utils";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -300,15 +301,7 @@ export default async function StoreProductsPage({
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {products.map((product) => {
-                let imageUrl = product.thumbnailUrl;
-                if (!imageUrl && product.images) {
-                  try {
-                    const images = JSON.parse(product.images);
-                    imageUrl = Array.isArray(images) ? images[0] : null;
-                  } catch {
-                    imageUrl = null;
-                  }
-                }
+                const imageUrl = getProductImageUrl(product.thumbnailUrl, product.images);
 
                 return (
                   <Link
@@ -371,20 +364,33 @@ export default async function StoreProductsPage({
                   Previous
                 </Link>
               )}
-              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                const pageNum = i + 1;
-                return (
-                  <Link
-                    key={pageNum}
-                    href={buildFilterUrl({ page: String(pageNum) })}
-                    className={`px-4 py-2 border rounded-md ${
-                      page === pageNum ? "bg-primary text-primary-foreground" : "hover:bg-accent"
-                    }`}
-                  >
-                    {pageNum}
-                  </Link>
-                );
-              })}
+              {/* Show pagination window around current page */}
+              {(() => {
+                const windowSize = 5;
+                const halfWindow = Math.floor(windowSize / 2);
+                let start = Math.max(1, page - halfWindow);
+                const end = Math.min(totalPages, start + windowSize - 1);
+                
+                // Adjust start if we're near the end
+                if (end - start + 1 < windowSize) {
+                  start = Math.max(1, end - windowSize + 1);
+                }
+
+                return Array.from({ length: end - start + 1 }, (_, i) => {
+                  const pageNum = start + i;
+                  return (
+                    <Link
+                      key={pageNum}
+                      href={buildFilterUrl({ page: String(pageNum) })}
+                      className={`px-4 py-2 border rounded-md ${
+                        page === pageNum ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+                      }`}
+                    >
+                      {pageNum}
+                    </Link>
+                  );
+                });
+              })()}
               {page < totalPages && (
                 <Link
                   href={buildFilterUrl({ page: String(page + 1) })}

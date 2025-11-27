@@ -42,7 +42,7 @@ interface StoreData {
  * @example
  * - vendor1.stormcom.app → vendor1
  * - vendor1.localhost → vendor1
- * - vendor.com → vendor (custom domain case)
+ * - vendor.com → null (custom domain - handled by customDomain lookup)
  * - www.stormcom.app → null (www is ignored)
  */
 function extractSubdomain(hostname: string): string | null {
@@ -60,12 +60,25 @@ function extractSubdomain(hostname: string): string | null {
     return parts[0];
   }
 
-  // Custom domain: vendor.com → vendor
-  if (parts.length === 2) {
-    return parts[0];
-  }
-
+  // Custom domain (vendor.com) or root domain (stormcom.app)
+  // Return null so the lookup falls through to customDomain check
   return null;
+}
+
+/**
+ * Check if hostname is a potential custom domain (not a subdomain)
+ */
+function isCustomDomain(hostname: string): boolean {
+  const host = hostname.split(":")[0];
+  
+  // Not localhost
+  if (host === "localhost" || host.endsWith(".localhost")) {
+    return false;
+  }
+  
+  // Custom domain: vendor.com (2 parts)
+  const parts = host.split(".");
+  return parts.length === 2;
 }
 
 /**
@@ -73,9 +86,11 @@ function extractSubdomain(hostname: string): string | null {
  */
 function shouldSkipSubdomainRouting(
   subdomain: string | null,
-  pathname: string
+  pathname: string,
+  hostname: string
 ): boolean {
-  if (!subdomain) return true;
+  // If no subdomain and not a custom domain, skip
+  if (!subdomain && !isCustomDomain(hostname)) return true;
   if (subdomain === "www") return true;
 
   // Skip admin/protected routes
@@ -97,9 +112,9 @@ function shouldSkipSubdomainRouting(
   // Skip Next.js internal routes
   if (pathname.startsWith("/_next")) return true;
 
-  // Skip static files
+  // Skip static files (common file extensions)
   if (pathname.startsWith("/favicon")) return true;
-  if (pathname.match(/\.[a-zA-Z0-9]+$/)) return true;
+  if (pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|webp|avif|json|xml|txt|map)$/i)) return true;
 
   // Skip checkout routes
   if (pathname.startsWith("/checkout")) return true;
@@ -113,8 +128,8 @@ function shouldSkipSubdomainRouting(
 /**
  * Fetch store data via API (Edge Runtime compatible)
  */
-async function getStoreBySubdomain(
-  subdomain: string,
+async function getStoreBySubdomainOrDomain(
+  subdomain: string | null,
   hostname: string,
   baseUrl: string
 ): Promise<StoreData | null> {
@@ -125,14 +140,21 @@ async function getStoreBySubdomain(
   if (cached) return cached;
 
   try {
-    // Fetch store from internal API
+    // Build query params
+    const params = new URLSearchParams();
+    if (subdomain) {
+      params.set("subdomain", subdomain);
+    }
+    params.set("domain", hostname.split(":")[0]);
+
+    // Fetch store from internal API with 1.5 second timeout
     const response = await fetch(
-      `${baseUrl}/api/stores/lookup?subdomain=${encodeURIComponent(subdomain)}&domain=${encodeURIComponent(hostname.split(":")[0])}`,
+      `${baseUrl}/api/stores/lookup?${params.toString()}`,
       { 
         method: "GET",
         headers: { "Content-Type": "application/json" },
-        // Use short timeout for middleware
-        signal: AbortSignal.timeout(3000),
+        // Use short timeout for middleware - 1.5 seconds
+        signal: AbortSignal.timeout(1500),
       }
     );
 
@@ -149,7 +171,7 @@ async function getStoreBySubdomain(
 
     return null;
   } catch {
-    // Don't block on cache/fetch errors
+    // Don't block on cache/fetch errors - allow request to continue
     return null;
   }
 }
@@ -165,14 +187,14 @@ export async function middleware(request: NextRequest) {
   // Get subdomain
   const subdomain = extractSubdomain(hostname);
 
-  // Check if we should process subdomain routing
-  if (!shouldSkipSubdomainRouting(subdomain, pathname)) {
-    // Subdomain detected - handle store routing
+  // Check if we should process subdomain/custom domain routing
+  if (!shouldSkipSubdomainRouting(subdomain, pathname, hostname)) {
+    // Subdomain or custom domain detected - handle store routing
     const baseUrl = url.origin;
-    const store = await getStoreBySubdomain(subdomain!, hostname, baseUrl);
+    const store = await getStoreBySubdomainOrDomain(subdomain, hostname, baseUrl);
 
     if (!store) {
-      // Invalid subdomain - redirect to 404 page
+      // Invalid subdomain/domain - redirect to 404 page
       return NextResponse.rewrite(new URL("/store-not-found", request.url));
     }
 
