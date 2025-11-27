@@ -120,16 +120,18 @@ export function InventoryPageClient() {
   const [reason, setReason] = useState('');
   const [note, setNote] = useState('');
 
-  // Debounce search input
+  // Debounce search input and reset page on search change
   useEffect(() => {
     const timeout = setTimeout(() => {
-      setDebouncedSearch(search);
-      if (search !== debouncedSearch) {
-        setPage(1);
-      }
+      setDebouncedSearch((prev) => {
+        if (prev !== search) {
+          setPage(1);
+        }
+        return search;
+      });
     }, 300);
     return () => clearTimeout(timeout);
-  }, [search, debouncedSearch]);
+  }, [search]);
 
   // Fetch inventory when dependencies change
   const fetchInventory = useCallback(async () => {
