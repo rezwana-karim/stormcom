@@ -394,8 +394,21 @@ export class CheckoutService {
         )
       );
 
-      // Reduce inventory for each item
+      // Reduce inventory for each item with audit trail
       for (const item of validated.items) {
+        const product = await tx.product.findUnique({
+          where: { id: item.productId },
+          select: { 
+            inventoryQty: true, 
+            lowStockThreshold: true,
+            trackInventory: true,
+          },
+        });
+
+        if (!product || !product.trackInventory) {
+          continue; // Skip inventory update for non-tracked products
+        }
+
         if (item.variantId) {
           // Update variant inventory
           await tx.productVariant.update({
@@ -407,16 +420,40 @@ export class CheckoutService {
             },
           });
         } else {
-          // Update product stock
+          // Calculate new quantity
+          const newQty = product.inventoryQty - item.quantity;
+          
+          // Determine new inventory status
+          let newStatus: 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK' = 'IN_STOCK';
+          if (newQty === 0) {
+            newStatus = 'OUT_OF_STOCK';
+          } else if (newQty <= product.lowStockThreshold) {
+            newStatus = 'LOW_STOCK';
+          }
+
+          // Update product stock and status
           await tx.product.update({
             where: { id: item.productId },
             data: {
-              inventoryQty: {
-                decrement: item.quantity,
-              },
+              inventoryQty: newQty,
+              inventoryStatus: newStatus,
             },
           });
         }
+
+        // Create inventory log entry for audit trail
+        await tx.inventoryLog.create({
+          data: {
+            storeId: input.storeId,
+            productId: item.productId,
+            previousQty: product.inventoryQty,
+            newQty: product.inventoryQty - item.quantity,
+            changeQty: -item.quantity,
+            reason: 'order_created',
+            note: `Order ${newOrder.orderNumber}`,
+            orderId: newOrder.id,
+          },
+        });
       }
 
       return { ...newOrder, items: orderItems };

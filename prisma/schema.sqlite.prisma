@@ -522,6 +522,7 @@ model Order {
   ipAddress   String?
   
   items    OrderItem[]
+  inventoryLogs InventoryLog[] @relation("OrderInventoryLogs")
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -608,11 +609,16 @@ model InventoryLog {
   userId      String?
   user        User?    @relation("InventoryUserLogs", fields: [userId], references: [id], onDelete: SetNull)
   
+  // Optional reference to order for order-related adjustments
+  orderId     String?
+  order       Order?   @relation("OrderInventoryLogs", fields: [orderId], references: [id], onDelete: SetNull)
+  
   createdAt   DateTime @default(now())
   
   @@index([storeId, productId, createdAt])
   @@index([productId, createdAt])
   @@index([userId, createdAt])
+  @@index([orderId])
 }
 
 // Audit log model (for tracking all system actions)
