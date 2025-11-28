@@ -327,9 +327,10 @@ export class CheckoutService {
 
   /**
    * Create order with items in transaction
+   * Includes atomic inventory deduction to prevent race conditions
    */
   async createOrder(input: CreateOrderInput): Promise<CreatedOrder> {
-    // Validate cart first
+    // Validate cart first (includes stock availability check)
     const validated = await this.validateCart(input.storeId, input.items);
     if (!validated.isValid) {
       throw new Error(`Cart validation failed: ${validated.errors.join(', ')}`);
@@ -345,7 +346,11 @@ export class CheckoutService {
     // Generate order number
     const orderNumber = await this.generateOrderNumber(input.storeId);
 
-    // Create order with items in transaction
+    // Import InventoryAdjustmentReason for audit logging
+    const { InventoryAdjustmentReason } = await import('./inventory.service');
+
+    // Create order with items AND deduct inventory in single transaction
+    // CRITICAL: This ensures atomicity - if inventory deduction fails, order is rolled back
     const order = await prisma.$transaction(async (tx) => {
       // Create order
       const newOrder = await tx.order.create({
@@ -394,26 +399,104 @@ export class CheckoutService {
         )
       );
 
-      // Reduce inventory for each item
+      // Deduct inventory for each item within the same transaction
+      // NOTE: This logic is intentionally duplicated here (also in InventoryService.deductStockForOrder)
+      // because order creation + inventory deduction MUST happen in the SAME Prisma transaction
+      // to guarantee atomicity. Calling InventoryService externally would use a separate transaction,
+      // allowing race conditions where the order succeeds but inventory deduction fails.
+      // Both implementations must be kept in sync when making changes.
       for (const item of validated.items) {
         if (item.variantId) {
-          // Update variant inventory
+          // Variant-level deduction
+          const variant = await tx.productVariant.findUnique({
+            where: { id: item.variantId },
+            select: {
+              inventoryQty: true,
+              lowStockThreshold: true,
+              name: true,
+              product: { select: { name: true, storeId: true } },
+            },
+          });
+
+          if (!variant || variant.product.storeId !== input.storeId) {
+            throw new Error(`Variant ${item.variantId} not found`);
+          }
+
+          const newQty = variant.inventoryQty - item.quantity;
+
+          if (newQty < 0) {
+            throw new Error(
+              `Insufficient stock for "${variant.product.name} - ${variant.name}". Available: ${variant.inventoryQty}, Requested: ${item.quantity}`
+            );
+          }
+
           await tx.productVariant.update({
             where: { id: item.variantId },
+            data: { inventoryQty: newQty },
+          });
+
+          // Create inventory log
+          await tx.inventoryLog.create({
             data: {
-              inventoryQty: {
-                decrement: item.quantity,
-              },
+              storeId: input.storeId,
+              productId: item.productId,
+              variantId: item.variantId,
+              orderId: newOrder.id,
+              previousQty: variant.inventoryQty,
+              newQty,
+              changeQty: -item.quantity,
+              reason: InventoryAdjustmentReason.ORDER_CREATED,
+              note: `Order ${orderNumber}`,
             },
           });
         } else {
-          // Update product stock
+          // Product-level deduction
+          const product = await tx.product.findUnique({
+            where: { id: item.productId },
+            select: { inventoryQty: true, lowStockThreshold: true, name: true, storeId: true },
+          });
+
+          if (!product || product.storeId !== input.storeId) {
+            throw new Error(`Product ${item.productId} not found`);
+          }
+
+          const newQty = product.inventoryQty - item.quantity;
+
+          if (newQty < 0) {
+            throw new Error(
+              `Insufficient stock for "${product.name}". Available: ${product.inventoryQty}, Requested: ${item.quantity}`
+            );
+          }
+
+          // Determine inventory status
+          let inventoryStatus: 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK';
+          if (newQty === 0) {
+            inventoryStatus = 'OUT_OF_STOCK';
+          } else if (newQty <= product.lowStockThreshold) {
+            inventoryStatus = 'LOW_STOCK';
+          } else {
+            inventoryStatus = 'IN_STOCK';
+          }
+
           await tx.product.update({
             where: { id: item.productId },
             data: {
-              inventoryQty: {
-                decrement: item.quantity,
-              },
+              inventoryQty: newQty,
+              inventoryStatus,
+            },
+          });
+
+          // Create inventory log
+          await tx.inventoryLog.create({
+            data: {
+              storeId: input.storeId,
+              productId: item.productId,
+              orderId: newOrder.id,
+              previousQty: product.inventoryQty,
+              newQty,
+              changeQty: -item.quantity,
+              reason: InventoryAdjustmentReason.ORDER_CREATED,
+              note: `Order ${orderNumber}`,
             },
           });
         }

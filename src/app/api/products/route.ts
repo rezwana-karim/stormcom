@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import { verifyStoreAccess } from '@/lib/get-current-user';
 import { ProductService } from '@/lib/services/product.service';
 import { z } from 'zod';
 
@@ -27,6 +28,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { error: 'storeId is required' },
         { status: 400 }
+      );
+    }
+
+    // Verify user has access to this store
+    const hasStoreAccess = await verifyStoreAccess(storeId);
+    if (!hasStoreAccess) {
+      return NextResponse.json(
+        { error: 'Access denied. You do not have permission to access this store.' },
+        { status: 403 }
       );
     }
 
@@ -82,16 +92,29 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     
-    // Validate required storeId
-    if (!body.storeId) {
+    // Get storeId from request body
+    // Security: storeId is accepted from client but VERIFIED against user's organization membership
+    // via verifyStoreAccess() to prevent tenant spoofing
+    const storeId = body.storeId as string | undefined;
+    
+    if (!storeId) {
       return NextResponse.json(
         { error: 'storeId is required' },
         { status: 400 }
       );
     }
 
+    // Verify user has access to this store (prevents tenant spoofing)
+    const hasStoreAccess = await verifyStoreAccess(storeId);
+    if (!hasStoreAccess) {
+      return NextResponse.json(
+        { error: 'Access denied. You do not have permission to create products in this store.' },
+        { status: 403 }
+      );
+    }
+
     const productService = ProductService.getInstance();
-    const product = await productService.createProduct(body.storeId, body);
+    const product = await productService.createProduct(storeId, body);
 
     return NextResponse.json(product, { status: 201 });
   } catch (error) {

@@ -122,3 +122,48 @@ export async function requireStoreId(): Promise<string> {
   
   return storeId;
 }
+
+/**
+ * Verify user has access to a specific store
+ * Checks if the user is a member of the organization that owns the store
+ * @param storeId - The store ID to verify access for
+ * @returns True if user has access, false otherwise
+ */
+export async function verifyStoreAccess(storeId: string): Promise<boolean> {
+  const session = await getServerSession(authOptions);
+  
+  if (!session?.user?.id) {
+    return false;
+  }
+
+  // Find membership where the user belongs to the organization that owns this store
+  const membership = await prisma.membership.findFirst({
+    where: {
+      userId: session.user.id,
+      organization: {
+        store: {
+          id: storeId,
+        },
+      },
+    },
+  });
+
+  return membership !== null;
+}
+
+/**
+ * Require verified store access - verifies user has access to specific store
+ * Use this when you need to verify access to a client-provided storeId
+ * @param storeId - The store ID to verify access for
+ * @throws Error if user doesn't have access to the store
+ * @returns Store ID (the same one passed in, for convenience)
+ */
+export async function requireVerifiedStoreAccess(storeId: string): Promise<string> {
+  const hasAccess = await verifyStoreAccess(storeId);
+  
+  if (!hasAccess) {
+    throw new Error('Access denied. You do not have permission to access this store.');
+  }
+  
+  return storeId;
+}
