@@ -40,6 +40,35 @@ async function main() {
   });
   console.log(`✅ Created user: ${user.email}`);
 
+  // Create Super Admin user
+  console.log('👤 Creating Super Admin user...');
+  const superAdminHash = await bcrypt.hash('SuperAdmin123!@#', 12);
+  const superAdmin = await prisma.user.create({
+    data: {
+      id: 'clqm1j4k00000l8dw8z8r8z9a', // Fixed Super Admin ID
+      email: 'superadmin@example.com',
+      name: 'Super Administrator',
+      emailVerified: new Date(),
+      passwordHash: superAdminHash,
+      isSuperAdmin: true,  // Platform-level administrator
+    },
+  });
+  console.log(`✅ Created Super Admin: ${superAdmin.email}`);
+
+  // Create Store Admin user (will be assigned to store later)
+  console.log('👤 Creating Store Admin user...');
+  const storeAdminHash = await bcrypt.hash('StoreAdmin123!@#', 12);
+  const storeAdmin = await prisma.user.create({
+    data: {
+      id: 'clqm1j4k00000l8dw8z8r8z9b', // Fixed Store Admin ID
+      email: 'storeadmin@example.com',
+      name: 'Store Administrator',
+      emailVerified: new Date(),
+      passwordHash: storeAdminHash,
+    },
+  });
+  console.log(`✅ Created Store Admin user: ${storeAdmin.email}`);
+
   // Create organization
   console.log('🏢 Creating organization...');
   const organization = await prisma.organization.create({
@@ -90,6 +119,136 @@ async function main() {
     },
   });
   console.log(`✅ Created store: ${store.name} (ID: ${store.id})`);
+
+  // Create additional staff members with different roles
+  console.log('👥 Creating staff members with various roles...');
+  
+  // Sales Manager
+  const salesManagerHash = await bcrypt.hash('Sales123!@#', 12);
+  const salesManager = await prisma.user.create({
+    data: {
+      email: 'sales@example.com',
+      name: 'Sales Manager',
+      emailVerified: new Date(),
+      passwordHash: salesManagerHash,
+    },
+  });
+  console.log(`✅ Created Sales Manager: ${salesManager.email}`);
+  
+  // Inventory Manager
+  const inventoryManagerHash = await bcrypt.hash('Inventory123!@#', 12);
+  const inventoryManager = await prisma.user.create({
+    data: {
+      email: 'inventory@example.com',
+      name: 'Inventory Manager',
+      emailVerified: new Date(),
+      passwordHash: inventoryManagerHash,
+    },
+  });
+  console.log(`✅ Created Inventory Manager: ${inventoryManager.email}`);
+  
+  // Customer Service
+  const customerServiceHash = await bcrypt.hash('Support123!@#', 12);
+  const customerService = await prisma.user.create({
+    data: {
+      email: 'support@example.com',
+      name: 'Customer Service Rep',
+      emailVerified: new Date(),
+      passwordHash: customerServiceHash,
+    },
+  });
+  console.log(`✅ Created Customer Service: ${customerService.email}`);
+  
+  // Content Manager
+  const contentManagerHash = await bcrypt.hash('Content123!@#', 12);
+  const contentManager = await prisma.user.create({
+    data: {
+      email: 'content@example.com',
+      name: 'Content Manager',
+      emailVerified: new Date(),
+      passwordHash: contentManagerHash,
+    },
+  });
+  console.log(`✅ Created Content Manager: ${contentManager.email}`);
+  
+  // Marketing Manager
+  const marketingManagerHash = await bcrypt.hash('Marketing123!@#', 12);
+  const marketingManager = await prisma.user.create({
+    data: {
+      email: 'marketing@example.com',
+      name: 'Marketing Manager',
+      emailVerified: new Date(),
+      passwordHash: marketingManagerHash,
+    },
+  });
+  console.log(`✅ Created Marketing Manager: ${marketingManager.email}`);
+  
+  // Assign Store Admin to store
+  console.log('👥 Assigning staff to store...');
+  await prisma.storeStaff.create({
+    data: {
+      userId: storeAdmin.id,
+      storeId: store.id,
+      role: 'STORE_ADMIN',
+      isActive: true,
+    },
+  });
+  console.log('✅ Assigned Store Admin to Demo Store');
+  
+  // Assign Sales Manager
+  await prisma.storeStaff.create({
+    data: {
+      userId: salesManager.id,
+      storeId: store.id,
+      role: 'SALES_MANAGER',
+      isActive: true,
+    },
+  });
+  console.log('✅ Assigned Sales Manager to Demo Store');
+  
+  // Assign Inventory Manager
+  await prisma.storeStaff.create({
+    data: {
+      userId: inventoryManager.id,
+      storeId: store.id,
+      role: 'INVENTORY_MANAGER',
+      isActive: true,
+    },
+  });
+  console.log('✅ Assigned Inventory Manager to Demo Store');
+  
+  // Assign Customer Service
+  await prisma.storeStaff.create({
+    data: {
+      userId: customerService.id,
+      storeId: store.id,
+      role: 'CUSTOMER_SERVICE',
+      isActive: true,
+    },
+  });
+  console.log('✅ Assigned Customer Service to Demo Store');
+  
+  // Assign Content Manager
+  await prisma.storeStaff.create({
+    data: {
+      userId: contentManager.id,
+      storeId: store.id,
+      role: 'CONTENT_MANAGER',
+      isActive: true,
+    },
+  });
+  console.log('✅ Assigned Content Manager to Demo Store');
+  
+  // Assign Marketing Manager
+  await prisma.storeStaff.create({
+    data: {
+      userId: marketingManager.id,
+      storeId: store.id,
+      role: 'MARKETING_MANAGER',
+      isActive: true,
+    },
+  });
+  console.log('✅ Assigned Marketing Manager to Demo Store');
 
   // Create categories
   console.log('📂 Creating categories...');
@@ -711,18 +870,57 @@ async function main() {
 
   console.log('\n🎉 Database seeding completed successfully!');
   console.log('\n📊 Summary:');
-  console.log(`   - Users: 1`);
+  console.log(`   - Users: 8 (1 Owner + 1 Super Admin + 6 Staff Members)`);
   console.log(`   - Organizations: 1`);
   console.log(`   - Stores: 1 (ID: ${store.id})`);
+  console.log(`   - Store Staff Assignments: 6`);
   console.log(`   - Categories: 3`);
   console.log(`   - Brands: 3`);
   console.log(`   - Products: ${products.length}`);
   console.log(`   - Customers: ${customers.length}`);
   console.log(`   - Orders: ${orders.length}`);
   console.log('\n🔑 Test Credentials:');
+  console.log(`\n   🏢 Organization Owner:`);
   console.log(`   Email: test@example.com`);
   console.log(`   Password: Test123!@#`);
-  console.log(`   Store ID: ${store.id}`);
+  console.log(`   Role: OWNER`);
+  console.log(`   Access: Full organization control`);
+  console.log(`\n   👑 Super Admin (Platform):`);
+  console.log(`   Email: superadmin@example.com`);
+  console.log(`   Password: SuperAdmin123!@#`);
+  console.log(`   Role: SUPER_ADMIN`);
+  console.log(`   Access: ALL (Platform-wide)`);
+  console.log(`\n   🏪 Store Admin:`);
+  console.log(`   Email: storeadmin@example.com`);
+  console.log(`   Password: StoreAdmin123!@#`);
+  console.log(`   Role: STORE_ADMIN`);
+  console.log(`   Access: Full store control`);
+  console.log(`\n   💼 Sales Manager:`);
+  console.log(`   Email: sales@example.com`);
+  console.log(`   Password: Sales123!@#`);
+  console.log(`   Role: SALES_MANAGER`);
+  console.log(`   Access: Orders, customers, sales reports`);
+  console.log(`\n   📦 Inventory Manager:`);
+  console.log(`   Email: inventory@example.com`);
+  console.log(`   Password: Inventory123!@#`);
+  console.log(`   Role: INVENTORY_MANAGER`);
+  console.log(`   Access: Products, inventory, stock management`);
+  console.log(`\n   🎧 Customer Service:`);
+  console.log(`   Email: support@example.com`);
+  console.log(`   Password: Support123!@#`);
+  console.log(`   Role: CUSTOMER_SERVICE`);
+  console.log(`   Access: Customers, support tickets, orders (view)`);
+  console.log(`\n   ✍️  Content Manager:`);
+  console.log(`   Email: content@example.com`);
+  console.log(`   Password: Content123!@#`);
+  console.log(`   Role: CONTENT_MANAGER`);
+  console.log(`   Access: Product content, categories, descriptions`);
+  console.log(`\n   📢 Marketing Manager:`);
+  console.log(`   Email: marketing@example.com`);
+  console.log(`   Password: Marketing123!@#`);
+  console.log(`   Role: MARKETING_MANAGER`);
+  console.log(`   Access: Campaigns, analytics, customer insights`);
+  console.log(`\n   Store ID: ${store.id}`);
 }
 
 main()

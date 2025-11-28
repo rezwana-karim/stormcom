@@ -18,10 +18,12 @@ model User {
   emailVerified DateTime?
   image         String?
   passwordHash  String?  // For email/password authentication
+  isSuperAdmin  Boolean  @default(false) // Platform-level administrator
 
   // Multi-tenancy relations
   memberships   Membership[]
   projectMembers ProjectMember[]
+  storeStaff    StoreStaff[]  // Store-level role assignments
   customer      Customer?     // E-commerce customer profile
   inventoryLogs InventoryLog[] @relation("InventoryUserLogs")
   auditLogs     AuditLog[]     @relation("AuditUserLogs")
@@ -100,10 +102,19 @@ model Membership {
 }
 
 enum Role {
+  SUPER_ADMIN
   OWNER
   ADMIN
   MEMBER
   VIEWER
+  STORE_ADMIN
+  SALES_MANAGER
+  INVENTORY_MANAGER
+  CUSTOMER_SERVICE
+  CONTENT_MANAGER
+  MARKETING_MANAGER
+  DELIVERY_BOY
+  CUSTOMER
 }
 
 // Project management models
@@ -256,6 +267,7 @@ model Store {
   attributes     ProductAttribute[]
   auditLogs      AuditLog[]
   inventoryLogs  InventoryLog[] @relation("StoreInventoryLogs")
+  staff          StoreStaff[]  // Store staff assignments
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -264,6 +276,26 @@ model Store {
   @@index([slug])
   @@index([subscriptionPlan])
   @@index([subscriptionStatus])
+}
+
+// Store Staff - Store-level role assignments
+model StoreStaff {
+  id        String   @id @default(cuid())
+  userId    String
+  storeId   String
+  role      Role     // Store-level roles: STORE_ADMIN, SALES_MANAGER, etc.
+  isActive  Boolean  @default(true)
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, storeId])
+  @@index([storeId, isActive])
+  @@index([userId, isActive])
+  @@index([storeId, role])
 }
 
 // Product models
