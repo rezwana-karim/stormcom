@@ -127,7 +127,7 @@ export class StoreService {
       
       // Auto-create organization for the store with unique slug
       let orgSlug = `${input.slug}-org`;
-      let orgName = `${input.name} Organization`;
+      const orgName = `${input.name} Organization`;
       
       // Check if organization slug already exists
       const existingOrg = await prisma.organization.findUnique({

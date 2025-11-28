@@ -76,7 +76,7 @@ export const variantSchema = z.object({
     if (!v) return true;
     try {
       // Accept absolute URLs
-      // eslint-disable-next-line no-new
+       
       new URL(v);
       return true;
     } catch {
@@ -114,7 +114,7 @@ export const createProductSchema = z.object({
   images: z.array(z.string().min(1).refine((v) => {
     try {
       // Accept absolute URLs
-      // eslint-disable-next-line no-new
+       
       new URL(v);
       return true;
     } catch {
