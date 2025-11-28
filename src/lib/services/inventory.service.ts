@@ -737,42 +737,126 @@ export class InventoryService {
       products.forEach((p) => skuToProductMap.set(p.sku, p.id));
     }
 
-    // Process each item
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      try {
-        // Resolve productId from SKU if not provided
-        let productId = item.productId;
-        if (!productId && item.sku) {
-          productId = skuToProductMap.get(item.sku);
-          if (!productId) {
-            errors.push({ index: i, sku: item.sku, error: `Product not found with SKU: ${item.sku}` });
-            continue;
+    // Process items in batches to reduce transaction overhead
+    const BATCH_SIZE = 50;
+    
+    for (let batchStart = 0; batchStart < items.length; batchStart += BATCH_SIZE) {
+      const batchEnd = Math.min(batchStart + BATCH_SIZE, items.length);
+      const batch = items.slice(batchStart, batchEnd);
+
+      // Process batch in a single transaction
+      await prisma.$transaction(async (tx) => {
+        for (let i = 0; i < batch.length; i++) {
+          const globalIndex = batchStart + i;
+          const item = batch[i];
+          
+          try {
+            // Resolve productId from SKU if not provided
+            let productId = item.productId;
+            if (!productId && item.sku) {
+              productId = skuToProductMap.get(item.sku);
+              if (!productId) {
+                errors.push({ 
+                  index: globalIndex, 
+                  sku: item.sku, 
+                  error: `Product not found with SKU: ${item.sku}` 
+                });
+                continue;
+              }
+            }
+
+            if (!productId) {
+              errors.push({ 
+                index: globalIndex, 
+                sku: item.sku, 
+                error: 'Product ID or SKU is required' 
+              });
+              continue;
+            }
+
+            // Perform stock adjustment within the transaction
+            const { quantity, type, reason, note } = item;
+
+            // Validate quantity
+            if (quantity < 0) {
+              errors.push({
+                index: globalIndex,
+                sku: item.sku,
+                error: 'Quantity must be non-negative',
+              });
+              continue;
+            }
+
+            // Get current product
+            const product = await tx.product.findUnique({
+              where: { id: productId, storeId, deletedAt: null },
+              select: {
+                id: true,
+                name: true,
+                inventoryQty: true,
+                lowStockThreshold: true,
+                inventoryStatus: true,
+              },
+            });
+
+            if (!product) {
+              errors.push({
+                index: globalIndex,
+                sku: item.sku,
+                error: 'Product not found or does not belong to this store',
+              });
+              continue;
+            }
+
+            // Calculate new quantity
+            const { newQty, changeQty } = this.calculateNewQuantity(
+              product.inventoryQty,
+              quantity,
+              type,
+              product.name
+            );
+
+            // Determine new inventory status
+            const newStatus = this.determineInventoryStatus(
+              newQty, 
+              product.lowStockThreshold
+            );
+
+            // Update product inventory
+            await tx.product.update({
+              where: { id: productId },
+              data: {
+                inventoryQty: newQty,
+                inventoryStatus: newStatus,
+              },
+            });
+
+            // Create inventory log
+            await tx.inventoryLog.create({
+              data: {
+                storeId,
+                productId,
+                variantId: null,
+                orderId: null,
+                previousQty: product.inventoryQty,
+                newQty,
+                changeQty,
+                reason,
+                note,
+                userId,
+              },
+            });
+
+            succeeded++;
+          } catch (error) {
+            errors.push({
+              index: globalIndex,
+              sku: item.sku,
+              error: error instanceof Error ? error.message : 'Unknown error',
+            });
           }
         }
-
-        if (!productId) {
-          errors.push({ index: i, sku: item.sku, error: 'Product ID or SKU is required' });
-          continue;
-        }
-
-        await this.adjustStock(storeId, {
-          productId,
-          quantity: item.quantity,
-          type: item.type,
-          reason: item.reason,
-          note: item.note,
-          userId,
-        });
-
-        succeeded++;
-      } catch (error) {
-        errors.push({
-          index: i,
-          sku: item.sku,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
-      }
+      });
     }
 
     return {

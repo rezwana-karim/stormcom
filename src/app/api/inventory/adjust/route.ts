@@ -35,6 +35,26 @@ export async function POST(request: NextRequest) {
 
     const { storeId, ...adjustment } = validatedData;
 
+    // Verify store membership to prevent cross-tenant access
+    const { prisma } = await import('@/lib/prisma');
+    const membership = await prisma.membership.findFirst({
+      where: {
+        userId: session.user.id,
+        organization: {
+          store: {
+            id: storeId
+          }
+        }
+      }
+    });
+
+    if (!membership) {
+      return NextResponse.json(
+        { error: 'Forbidden: You do not have access to this store' },
+        { status: 403 }
+      );
+    }
+
     const inventoryService = InventoryService.getInstance();
     const updatedItem = await inventoryService.adjustStock(storeId, {
       ...adjustment,

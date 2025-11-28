@@ -168,7 +168,9 @@ export function InventoryPageClient() {
     if (session?.user && selectedStore) {
       fetchInventory();
     }
-  }, [session, fetchInventory, selectedStore]);
+    // Intentionally not including fetchInventory to avoid circular dependency
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.id, selectedStore, page, debouncedSearch, lowStockOnly]);
 
   const handleStoreChange = (storeId: string) => {
     setSelectedStore(storeId);

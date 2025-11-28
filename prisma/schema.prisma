@@ -633,7 +633,7 @@ model InventoryLog {
   previousQty Int
   newQty      Int
   changeQty   Int
-  reason      String   // InventoryAdjustmentReason enum value
+  reason      String   // String value from InventoryAdjustmentReason enum (stored as raw string, not TypeScript enum)
   note        String?
   
   userId      String?

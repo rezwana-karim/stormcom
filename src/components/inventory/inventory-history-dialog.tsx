@@ -140,7 +140,9 @@ export function InventoryHistoryDialog({
     if (open && productId && storeId) {
       fetchHistory();
     }
-  }, [open, productId, storeId, fetchHistory]);
+    // Intentionally not including fetchHistory to avoid circular dependency
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, productId, storeId, page, reasonFilter]);
 
   const getChangeIcon = (changeQty: number) => {
     if (changeQty > 0) {

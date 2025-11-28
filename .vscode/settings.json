@@ -13,5 +13,10 @@
                 "copilot/gpt-4o"
             ]
         }
-    }
+    },
+    // Prisma extension settings - only load active schema file
+    "[prisma]": {
+        "editor.defaultFormatter": "Prisma.prisma"
+    },
+    "prisma.schemaPath": "prisma/schema.prisma"
 }
