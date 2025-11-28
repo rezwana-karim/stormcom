@@ -10,8 +10,8 @@ import { Role } from '@prisma/client';
 import { z } from 'zod';
 
 const CreateStoreStaffSchema = z.object({
-  userId: z.string().cuid(),
-  storeId: z.string().cuid(),
+  userId: z.string().cuid('Invalid user ID format'),
+  storeId: z.string().cuid('Invalid store ID format'),
   role: z.nativeEnum(Role),
 });
 
@@ -111,6 +111,25 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const validatedData = CreateStoreStaffSchema.parse(body);
+
+    // Verify the creator has access to this store
+    const creatorMembership = await prisma.membership.findFirst({
+      where: {
+        userId: session.user.id,
+        organization: {
+          store: {
+            id: validatedData.storeId,
+          },
+        },
+      },
+    });
+
+    if (!creatorMembership) {
+      return NextResponse.json(
+        { error: 'Access denied. You do not have access to this store.' },
+        { status: 403 }
+      );
+    }
 
     // Check if assignment already exists
     const existing = await prisma.storeStaff.findUnique({

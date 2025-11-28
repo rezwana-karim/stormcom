@@ -12,8 +12,8 @@ import { getOrganizationBySlug, isAdminOrOwner } from "@/lib/multi-tenancy";
 import { checkRateLimit, getClientIdentifier } from "@/lib/rate-limit";
 
 const inviteSchema = z.object({
-  email: z.string().email(),
-  role: z.enum(["ADMIN", "MEMBER", "VIEWER"]),
+  email: z.string().email().max(254), // RFC 5321 max email length
+  role: z.enum(["ADMIN", "MEMBER", "VIEWER"]), // Explicitly prevent OWNER
 });
 
 export async function POST(
@@ -95,6 +95,9 @@ export async function POST(
         { status: 409 }
       );
     }
+
+    // Note: OWNER role is already prevented by schema validation
+    // The inviteSchema only allows: ["ADMIN", "MEMBER", "VIEWER"]
 
     // Create membership
     const membership = await prisma.membership.create({

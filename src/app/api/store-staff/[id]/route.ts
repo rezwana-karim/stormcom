@@ -2,6 +2,8 @@
 // Store Staff Detail API Routes - Update, Delete
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 import { requirePermission } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/prisma';
 import { Role } from '@prisma/client';
@@ -24,6 +26,7 @@ export async function GET(
   try {
     await requirePermission('staff:read');
 
+    const session = await getServerSession(authOptions);
     const params = await context.params;
     
     const storeStaff = await prisma.storeStaff.findUnique({
@@ -41,6 +44,7 @@ export async function GET(
           select: {
             id: true,
             name: true,
+            organizationId: true,
           },
         },
       },
@@ -50,6 +54,21 @@ export async function GET(
       return NextResponse.json(
         { error: 'Store staff assignment not found' },
         { status: 404 }
+      );
+    }
+
+    // Verify user has access to this store's organization
+    const userMembership = await prisma.membership.findFirst({
+      where: {
+        userId: session?.user?.id,
+        organizationId: storeStaff.store.organizationId,
+      },
+    });
+
+    if (!userMembership) {
+      return NextResponse.json(
+        { error: 'Access denied. You do not have access to this store.' },
+        { status: 403 }
       );
     }
 
