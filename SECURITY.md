@@ -2,9 +2,6 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
-
 | Version | Supported          |
 | ------- | ------------------ |
 | 0.1.x   | :white_check_mark: |
@@ -13,7 +10,7 @@ currently being supported with security updates.
 **Note:** This project is in early development (pre-1.0.0). Formal version support policies will be established after the 1.0.0 release.
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in this project, please report it by opening a private security advisory on GitHub at [https://github.com/your-org/your-repo/security/advisories/new](https://github.com/your-org/your-repo/security/advisories/new) or by emailing security@example.com.
+If you discover a security vulnerability in this project, please report it by opening a private security advisory on GitHub at [https://github.com/CodeStorm-Hub/stormcomui/security/advisories/new](https://github.com/CodeStorm-Hub/stormcomui/security/advisories/new) or by emailing contact@codestormhub.dev
 
 We will acknowledge receipt of your report within 48 hours. After initial triage, we will provide updates at least every 5 business days until the issue is resolved or declined.
 
