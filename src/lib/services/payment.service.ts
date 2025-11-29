@@ -692,7 +692,7 @@ export class PaymentService {
     if (!this.isValidTransition(attempt.status, PaymentAttemptStatus.CANCELED)) {
       throw new Error(
         `Invalid transition from ${attempt.status} to CANCELED. ` +
-          'Void is only allowed for INITIATED, AUTHORIZING, or AUTHORIZED payments.'
+          'Void is only allowed for INITIATED or AUTHORIZED payments.'
       );
     }
 
