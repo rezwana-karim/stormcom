@@ -13,6 +13,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Search, Download, MoreHorizontal, Mail, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { getCustomerDisplayName } from '@/lib/utils/customer';
 import {
   Table,
   TableBody,
@@ -212,7 +213,7 @@ export function CustomersList({ storeId }: CustomersListProps) {
                   <TableCell>
                     <div>
                       <p className="font-medium">
-                        {customer.name || `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || 'Unknown'}
+                        {getCustomerDisplayName(customer)}
                       </p>
                       {customer.lastOrderAt && (
                         <p className="text-xs text-muted-foreground">

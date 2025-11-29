@@ -200,8 +200,8 @@ export function AnalyticsDashboard() {
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {metrics && (
-                    <span className={metrics.products.trend === 'up' ? 'text-green-600' : 'text-red-600'}>
-                      {metrics.products.total} active products
+                    <span className="text-green-600">
+                      Active in catalog
                     </span>
                   )}
                 </p>

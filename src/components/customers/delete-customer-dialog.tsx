@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { getCustomerDisplayName } from '@/lib/utils/customer';
 
 interface Customer {
   id: string;
@@ -74,7 +75,7 @@ export function DeleteCustomerDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This will permanently delete <strong>{customer.name || `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || 'this customer'}</strong> ({customer.email})
+            This will permanently delete <strong>{getCustomerDisplayName(customer, 'this customer')}</strong> ({customer.email})
             and all associated data. This action cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>

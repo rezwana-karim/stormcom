@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Mail, Phone, Calendar, ShoppingCart, DollarSign } from 'lucide-react';
+import { getCustomerDisplayName } from '@/lib/utils/customer';
 
 interface Customer {
   id: string;
@@ -65,7 +66,7 @@ export function CustomerDetailDialog({
           <div className="flex items-center justify-between">
             <div>
               <DialogTitle className="text-2xl">
-                {customer.name || `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || 'Unknown Customer'}
+                {getCustomerDisplayName(customer)}
               </DialogTitle>
               <DialogDescription>Customer details and activity</DialogDescription>
             </div>
