@@ -13,8 +13,14 @@ currently being supported with security updates.
 **Note:** This project is in early development (pre-1.0.0). Formal version support policies will be established after the 1.0.0 release.
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
+If you discover a security vulnerability in this project, please report it by opening a private security advisory on GitHub at [https://github.com/your-org/your-repo/security/advisories/new](https://github.com/your-org/your-repo/security/advisories/new) or by emailing security@example.com.
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+We will acknowledge receipt of your report within 48 hours. After initial triage, we will provide updates at least every 5 business days until the issue is resolved or declined.
+
+Please include the following information in your report:
+- A description of the vulnerability and its impact
+- Steps to reproduce the issue (if applicable)
+- Any relevant logs, screenshots, or proof of concept
+- Your contact information for follow-up
+
+We appreciate responsible disclosure and will work with you to address the issue promptly.
