@@ -49,7 +49,7 @@ export const createPaymentAttemptSchema = z.object({
   orderId: z.string().cuid(),
   provider: z.enum(['stripe', 'bkash', 'cod']),
   amount: z.number().int().positive('Amount must be positive (minor units)'),
-  currency: z.string().length(3, 'Currency must be ISO 4217 code (3 chars)'),
+  currency: z.string().length(3, 'Currency must be ISO 4217 code (3 chars)').transform(c => c.toUpperCase()),
   idempotencyKey: z.string().min(1).max(128).optional(),
   providerReference: z.string().optional(),
 });
@@ -275,7 +275,7 @@ export class PaymentService {
         provider: validated.provider,
         providerReference: validated.providerReference,
         amount: validated.amount,
-        currency: validated.currency.toUpperCase(),
+        currency: validated.currency, // Already normalized to uppercase by schema
         idempotencyKey: validated.idempotencyKey,
         status: PaymentAttemptStatus.INITIATED,
         attemptCount: 1,
@@ -692,7 +692,7 @@ export class PaymentService {
     if (!this.isValidTransition(attempt.status, PaymentAttemptStatus.CANCELED)) {
       throw new Error(
         `Invalid transition from ${attempt.status} to CANCELED. ` +
-          'Void is only allowed for INITIATED or AUTHORIZED payments.'
+          'Void is only allowed for INITIATED, AUTHORIZING, or AUTHORIZED payments.'
       );
     }
 

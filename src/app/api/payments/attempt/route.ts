@@ -26,6 +26,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { PaymentService, createPaymentAttemptSchema } from '@/lib/services/payment.service';
+import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
 export async function POST(request: NextRequest) {
@@ -51,6 +52,15 @@ export async function POST(request: NextRequest) {
       idempotencyKey,
     });
 
+    // Check for existing attempt with same idempotency key before creating
+    let isExisting = false;
+    if (idempotencyKey) {
+      const existingAttempt = await prisma.paymentAttempt.findUnique({
+        where: { idempotencyKey },
+      });
+      isExisting = !!existingAttempt;
+    }
+
     // Create or retrieve attempt
     const paymentService = PaymentService.getInstance();
 
@@ -59,11 +69,6 @@ export async function POST(request: NextRequest) {
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
       userAgent: request.headers.get('user-agent') || undefined,
     });
-
-    // Check if this was an existing attempt by comparing creation time
-    // If createdAt was before our request (more than 1 second ago), it's an existing one
-    const requestTime = Date.now();
-    const isExisting = requestTime - attempt.createdAt.getTime() > 1000;
 
     return NextResponse.json(
       {
