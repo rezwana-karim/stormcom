@@ -126,6 +126,7 @@ export async function requireStoreId(): Promise<string> {
 /**
  * Verify user has access to a specific store
  * Checks if the user is a member of the organization that owns the store
+ * OR if the user is directly assigned as store staff
  * @param storeId - The store ID to verify access for
  * @returns True if user has access, false otherwise
  */
@@ -136,7 +137,30 @@ export async function verifyStoreAccess(storeId: string): Promise<boolean> {
     return false;
   }
 
-  // Find membership where the user belongs to the organization that owns this store
+  // Check if user is super admin
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { isSuperAdmin: true },
+  });
+
+  if (user?.isSuperAdmin) {
+    return true;
+  }
+
+  // Check if user is store staff (direct assignment)
+  const storeStaff = await prisma.storeStaff.findFirst({
+    where: {
+      userId: session.user.id,
+      storeId: storeId,
+      isActive: true,
+    },
+  });
+
+  if (storeStaff) {
+    return true;
+  }
+
+  // Check if user is member of organization that owns this store
   const membership = await prisma.membership.findFirst({
     where: {
       userId: session.user.id,

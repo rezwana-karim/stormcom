@@ -84,7 +84,7 @@ export async function logAudit(data: AuditLogData): Promise<void> {
         entityId: data.entityId,
         permission: data.permission,
         role: data.role,
-        allowed: data.allowed,
+        allowed: data.allowed !== undefined ? (data.allowed ? 1 : 0) : null,
         changes: data.changes ? JSON.stringify(data.changes) : null,
         endpoint: data.endpoint,
         method: data.method,

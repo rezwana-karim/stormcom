@@ -701,17 +701,49 @@ model AuditLog {
   entityType String  // e.g., "Product", "Order", "User"
   entityId  String
   
-  // Change tracking
-  changes   String?  // JSON { "field": { "old": "value", "new": "value" } }
+  // Permission tracking
+  permission String?  // Permission being checked (e.g., "products:create")
+  role       String?  // User's role at time of action
+  allowed    Int?     // Permission check result (1 = allowed, 0 = denied)
   
   // Request metadata
-  ipAddress String?
-  userAgent String?
+  endpoint   String?  // API endpoint called
+  method     String?  // HTTP method (GET, POST, etc.)
+  ipAddress  String?
+  userAgent  String?
+  
+  // Change tracking
+  changes   String?  // JSON { "field": { "old": "value", "new": "value" } }
 
   createdAt DateTime @default(now())
 
   @@index([storeId, createdAt])
   @@index([userId, createdAt])
   @@index([entityType, entityId, createdAt])
+  @@index([permission, allowed, createdAt])
+  @@index([userId, action, createdAt])
   @@map("audit_logs")
+}
+
+// Rate limiting tracking
+model RateLimit {
+  id         String   @id @default(cuid())
+  identifier String   // userId or IP address
+  endpoint   String   // API endpoint pattern
+  role       String?  // User's role (for role-based limits)
+  
+  // Counters
+  requestCount Int     @default(1)
+  windowStart  DateTime @default(now())
+  
+  // Metadata
+  lastRequest  DateTime @default(now())
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([identifier, endpoint, windowStart])
+  @@index([identifier, endpoint, windowStart])
+  @@index([windowStart])
+  @@map("rate_limits")
 }
