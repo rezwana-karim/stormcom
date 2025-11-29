@@ -10,7 +10,7 @@ import {
 import { InventoryPageClient } from "@/components/inventory/inventory-page-client";
 
 export const metadata = {
-  title: 'Inventory | Dashboard | StormCom',
+  title: 'Inventory | Dashboard',
   description: 'Manage product inventory',
 };
 

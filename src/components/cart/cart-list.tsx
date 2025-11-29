@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -226,11 +227,15 @@ export function CartList() {
           <Card key={item.id}>
             <CardContent className="p-4">
               <div className="flex gap-4">
-                <img
-                  src={item.image}
-                  alt={item.productName}
-                  className="w-24 h-24 object-cover rounded-md"
-                />
+                <div className="relative w-24 h-24">
+                  <Image
+                    src={item.image || '/placeholder.svg'}
+                    alt={item.productName}
+                    fill
+                    className="object-cover rounded-md"
+                    sizes="96px"
+                  />
+                </div>
                 <div className="flex-1">
                   <div className="flex items-start justify-between">
                     <div>

@@ -76,7 +76,6 @@ export const variantSchema = z.object({
     if (!v) return true;
     try {
       // Accept absolute URLs
-      // eslint-disable-next-line no-new
       new URL(v);
       return true;
     } catch {
@@ -114,7 +113,6 @@ export const createProductSchema = z.object({
   images: z.array(z.string().min(1).refine((v) => {
     try {
       // Accept absolute URLs
-      // eslint-disable-next-line no-new
       new URL(v);
       return true;
     } catch {
@@ -910,7 +908,7 @@ export class ProductService {
     productId: string,
     storeId: string,
     quantity: number,
-    reason: string = "Manual adjustment"
+    _reason: string = "Manual adjustment"
   ): Promise<ProductWithRelations> {
     const product = await this.getProductById(productId, storeId);
     if (!product) {
@@ -1098,7 +1096,7 @@ export class ProductService {
       } else if (!Array.isArray(p.images)) {
         p.images = [];
       }
-    } catch (e) {
+    } catch {
       p.images = p.images ? [String(p.images)] : [];
     }
 

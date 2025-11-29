@@ -370,7 +370,7 @@ export class CategoryService {
     }
 
     // Remove id from update data
-    const { id: _, ...updateData } = validatedData;
+    const { id: _id, ...updateData } = validatedData;
 
     const category = await prisma.category.update({
       where: { id: categoryId },

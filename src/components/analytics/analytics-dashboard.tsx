@@ -21,6 +21,7 @@ import {
 import { RevenueChart } from './revenue-chart';
 import { TopProductsTable } from './top-products-table';
 import { CustomerMetrics } from './customer-metrics';
+import { StoreSelector } from '@/components/store-selector';
 import { toast } from 'sonner';
 
 interface DashboardMetrics {
@@ -49,12 +50,18 @@ export function AnalyticsDashboard() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
+  const [storeId, setStoreId] = useState<string>('');
 
   useEffect(() => {
     const fetchMetrics = async () => {
+      if (!storeId) {
+        setLoading(false);
+        return;
+      }
+      
       setLoading(true);
       try {
-        const response = await fetch(`/api/analytics/dashboard?range=${timeRange}`);
+        const response = await fetch(`/api/analytics/dashboard?storeId=${storeId}&range=${timeRange}`);
         if (!response.ok) throw new Error('Failed to fetch analytics');
         
         const data = await response.json();
@@ -68,7 +75,7 @@ export function AnalyticsDashboard() {
     };
 
     fetchMetrics();
-  }, [timeRange]);
+  }, [timeRange, storeId]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -86,8 +93,30 @@ export function AnalyticsDashboard() {
     return <div className="text-center py-12">Loading analytics...</div>;
   }
 
+  if (!storeId) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <label className="text-sm font-medium">Store:</label>
+          <StoreSelector onStoreChange={setStoreId} />
+        </div>
+        <div className="rounded-lg border bg-card p-12 text-center">
+          <p className="text-sm text-muted-foreground">
+            Select a store to view analytics
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Store Selector */}
+      <div className="flex items-center gap-4">
+        <label className="text-sm font-medium">Store:</label>
+        <StoreSelector onStoreChange={setStoreId} />
+      </div>
+
       {/* Time Range Selector */}
       <Tabs value={timeRange} onValueChange={(value) => setTimeRange(value as TimeRange)}>
         <TabsList>
@@ -187,7 +216,7 @@ export function AnalyticsDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <RevenueChart timeRange={timeRange} />
+                <RevenueChart timeRange={timeRange} storeId={storeId} />
               </CardContent>
             </Card>
 
@@ -199,7 +228,7 @@ export function AnalyticsDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <TopProductsTable timeRange={timeRange} />
+                <TopProductsTable timeRange={timeRange} storeId={storeId} />
               </CardContent>
             </Card>
           </div>
@@ -213,7 +242,7 @@ export function AnalyticsDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <CustomerMetrics timeRange={timeRange} />
+              <CustomerMetrics timeRange={timeRange} storeId={storeId} />
             </CardContent>
           </Card>
         </TabsContent>

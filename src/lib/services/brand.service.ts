@@ -246,7 +246,7 @@ export class BrandService {
     await this.validateBusinessRules(storeId, validatedData, brandId);
 
     // Remove id from update data
-    const { id: _, ...updateData } = validatedData;
+    const { id: _id, ...updateData } = validatedData;
 
     const brand = await prisma.brand.update({
       where: { id: brandId },

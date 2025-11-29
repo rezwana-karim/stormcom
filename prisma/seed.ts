@@ -4,10 +4,11 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting database seeding...');
+  console.log('🌱 Starting database seeding with MEDIUM data...');
 
   // Clean existing data (in reverse order of dependencies)
   console.log('🧹 Cleaning existing data...');
+  await prisma.inventoryLog.deleteMany();
   await prisma.orderItem.deleteMany();
   await prisma.order.deleteMany();
   await prisma.review.deleteMany();
@@ -26,369 +27,632 @@ async function main() {
   await prisma.account.deleteMany();
   await prisma.user.deleteMany();
 
-  // Create test user with password
-  console.log('👤 Creating test user...');
+  // Create 3 test users with password
+  console.log('👤 Creating test users...');
   const passwordHash = await bcrypt.hash('Test123!@#', 10);
-  const user = await prisma.user.create({
-    data: {
-      id: 'clqm1j4k00000l8dw8z8r8z8a', // Fixed user ID
-      email: 'test@example.com',
-      name: 'Test User',
-      emailVerified: new Date(),
-      passwordHash,
-    },
-  });
-  console.log(`✅ Created user: ${user.email}`);
-
-  // Create organization
-  console.log('🏢 Creating organization...');
-  const organization = await prisma.organization.create({
-    data: {
-      id: 'clqm1j4k00000l8dw8z8r8z8b', // Fixed org ID
-      name: 'Demo Company',
-      slug: 'demo-company',
-      image: null,
-    },
-  });
-  console.log(`✅ Created organization: ${organization.name}`);
-
-  // Create membership
-  console.log('👥 Creating membership...');
-  await prisma.membership.create({
-    data: {
-      userId: user.id,
-      organizationId: organization.id,
-      role: 'OWNER',
-    },
-  });
-  console.log('✅ Created membership');
-
-  // Create store with the exact CUID used in StoreSelector
-  console.log('🏪 Creating store...');
-  const store = await prisma.store.create({
-    data: {
-      id: 'clqm1j4k00000l8dw8z8r8z8r', // EXACT CUID from StoreSelector
-      organizationId: organization.id,
-      name: 'Demo Store',
-      slug: 'demo-store',
-      description: 'A demo e-commerce store for testing',
-      email: 'store@example.com',
-      phone: '+1-555-0100',
-      website: 'https://demo-store.example.com',
-      address: '123 Commerce Street',
-      city: 'San Francisco',
-      state: 'CA',
-      postalCode: '94102',
-      country: 'US',
-      currency: 'USD',
-      timezone: 'America/Los_Angeles',
-      locale: 'en',
-      subscriptionPlan: SubscriptionPlan.PRO,
-      subscriptionStatus: SubscriptionStatus.ACTIVE,
-      productLimit: 1000,
-      orderLimit: 10000,
-    },
-  });
-  console.log(`✅ Created store: ${store.name} (ID: ${store.id})`);
-
-  // Create categories
-  console.log('📂 Creating categories...');
-  const electronicsCategory = await prisma.category.create({
-    data: {
-      storeId: store.id,
-      name: 'Electronics',
-      slug: 'electronics',
-      description: 'Electronic devices and gadgets',
-      isPublished: true,
-      sortOrder: 1,
-    },
-  });
-
-  const clothingCategory = await prisma.category.create({
-    data: {
-      storeId: store.id,
-      name: 'Clothing',
-      slug: 'clothing',
-      description: 'Fashion and apparel',
-      isPublished: true,
-      sortOrder: 2,
-    },
-  });
-
-  const accessoriesCategory = await prisma.category.create({
-    data: {
-      storeId: store.id,
-      name: 'Accessories',
-      slug: 'accessories',
-      description: 'Fashion accessories and extras',
-      isPublished: true,
-      sortOrder: 3,
-    },
-  });
-  console.log('✅ Created 3 categories');
-
-  // Create brands
-  console.log('🏷️ Creating brands...');
-  const appleBrand = await prisma.brand.create({
-    data: {
-      storeId: store.id,
-      name: 'Apple',
-      slug: 'apple',
-      description: 'Premium technology products',
-      website: 'https://apple.com',
-      isPublished: true,
-    },
-  });
-
-  const nikeBrand = await prisma.brand.create({
-    data: {
-      storeId: store.id,
-      name: 'Nike',
-      slug: 'nike',
-      description: 'Athletic apparel and footwear',
-      website: 'https://nike.com',
-      isPublished: true,
-    },
-  });
-
-  const samsungBrand = await prisma.brand.create({
-    data: {
-      storeId: store.id,
-      name: 'Samsung',
-      slug: 'samsung',
-      description: 'Consumer electronics',
-      website: 'https://samsung.com',
-      isPublished: true,
-    },
-  });
-  console.log('✅ Created 3 brands');
-
-  // Create products
-  console.log('📦 Creating products...');
-  const products = await Promise.all([
-    // Electronics - Active
-    prisma.product.create({
+  const users = await Promise.all([
+    prisma.user.create({
       data: {
-        storeId: store.id,
-        categoryId: electronicsCategory.id,
-        brandId: appleBrand.id,
-        name: 'iPhone 15 Pro',
-        slug: 'iphone-15-pro',
-        description: 'Latest iPhone with A17 Pro chip and titanium design',
-        shortDescription: 'Premium smartphone',
-        price: 999.99,
-        compareAtPrice: 1099.99,
-        costPrice: 750.00,
-        sku: 'AAPL-IPH15P-001',
-        barcode: '194253000000',
-        trackInventory: true,
-        inventoryQty: 50,
-        lowStockThreshold: 10,
-        inventoryStatus: InventoryStatus.IN_STOCK,
-        images: JSON.stringify(['/products/iphone-15-pro.jpg']),
-        thumbnailUrl: '/products/iphone-15-pro-thumb.jpg',
-        status: ProductStatus.ACTIVE,
-        publishedAt: new Date(),
-        isFeatured: true,
+        id: 'clqm1j4k00000l8dw8z8r8z8a',
+        email: 'test@example.com',
+        name: 'Test User',
+        emailVerified: new Date(),
+        passwordHash,
       },
     }),
-    prisma.product.create({
+    prisma.user.create({
       data: {
-        storeId: store.id,
-        categoryId: electronicsCategory.id,
-        brandId: samsungBrand.id,
-        name: 'Samsung Galaxy S24',
-        slug: 'samsung-galaxy-s24',
-        description: 'Flagship Android phone with AI features',
-        shortDescription: 'AI-powered smartphone',
-        price: 899.99,
-        compareAtPrice: 999.99,
-        costPrice: 650.00,
-        sku: 'SAMS-GAL24-001',
-        barcode: '887276000000',
-        trackInventory: true,
-        inventoryQty: 35,
-        lowStockThreshold: 10,
-        inventoryStatus: InventoryStatus.IN_STOCK,
-        images: JSON.stringify(['/products/galaxy-s24.jpg']),
-        status: ProductStatus.ACTIVE,
-        publishedAt: new Date(),
-        isFeatured: true,
+        email: 'seller@example.com',
+        name: 'Seller Admin',
+        emailVerified: new Date(),
+        passwordHash,
       },
     }),
-    // Clothing - Active
-    prisma.product.create({
+    prisma.user.create({
       data: {
-        storeId: store.id,
-        categoryId: clothingCategory.id,
-        brandId: nikeBrand.id,
-        name: 'Nike Air Max 270',
-        slug: 'nike-air-max-270',
-        description: 'Comfortable running shoes with Max Air cushioning',
-        shortDescription: 'Running shoes',
-        price: 150.00,
-        compareAtPrice: 180.00,
-        costPrice: 80.00,
-        sku: 'NIKE-AM270-001',
-        barcode: '193151000000',
-        trackInventory: true,
-        inventoryQty: 120,
-        lowStockThreshold: 20,
-        inventoryStatus: InventoryStatus.IN_STOCK,
-        images: JSON.stringify(['/products/air-max-270.jpg']),
-        status: ProductStatus.ACTIVE,
-        publishedAt: new Date(),
-        isFeatured: false,
-      },
-    }),
-    prisma.product.create({
-      data: {
-        storeId: store.id,
-        categoryId: clothingCategory.id,
-        brandId: nikeBrand.id,
-        name: 'Nike Dri-FIT T-Shirt',
-        slug: 'nike-dri-fit-tshirt',
-        description: 'Moisture-wicking athletic t-shirt',
-        shortDescription: 'Athletic t-shirt',
-        price: 35.00,
-        costPrice: 15.00,
-        sku: 'NIKE-DFT-001',
-        trackInventory: true,
-        inventoryQty: 200,
-        lowStockThreshold: 30,
-        inventoryStatus: InventoryStatus.IN_STOCK,
-        images: JSON.stringify(['/products/dri-fit-tshirt.jpg']),
-        status: ProductStatus.ACTIVE,
-        publishedAt: new Date(),
-      },
-    }),
-    // Low stock product
-    prisma.product.create({
-      data: {
-        storeId: store.id,
-        categoryId: accessoriesCategory.id,
-        name: 'Wireless Earbuds Pro',
-        slug: 'wireless-earbuds-pro',
-        description: 'Premium wireless earbuds with noise cancellation',
-        price: 199.99,
-        costPrice: 100.00,
-        sku: 'EARBUD-PRO-001',
-        trackInventory: true,
-        inventoryQty: 8,
-        lowStockThreshold: 10,
-        inventoryStatus: InventoryStatus.LOW_STOCK,
-        images: JSON.stringify(['/products/earbuds.jpg']),
-        status: ProductStatus.ACTIVE,
-        publishedAt: new Date(),
-      },
-    }),
-    // Out of stock product
-    prisma.product.create({
-      data: {
-        storeId: store.id,
-        categoryId: accessoriesCategory.id,
-        name: 'Smart Watch Ultra',
-        slug: 'smart-watch-ultra',
-        description: 'Advanced fitness tracking smartwatch',
-        price: 449.99,
-        compareAtPrice: 499.99,
-        costPrice: 250.00,
-        sku: 'WATCH-ULT-001',
-        trackInventory: true,
-        inventoryQty: 0,
-        lowStockThreshold: 5,
-        inventoryStatus: InventoryStatus.OUT_OF_STOCK,
-        images: JSON.stringify(['/products/smart-watch.jpg']),
-        status: ProductStatus.ACTIVE,
-        publishedAt: new Date(),
-      },
-    }),
-    // Draft product (not published)
-    prisma.product.create({
-      data: {
-        storeId: store.id,
-        categoryId: electronicsCategory.id,
-        brandId: appleBrand.id,
-        name: 'MacBook Pro 16"',
-        slug: 'macbook-pro-16',
-        description: 'Coming soon - Professional laptop',
-        price: 2499.99,
-        costPrice: 1800.00,
-        sku: 'AAPL-MBP16-001',
-        trackInventory: true,
-        inventoryQty: 0,
-        inventoryStatus: InventoryStatus.OUT_OF_STOCK,
-        images: JSON.stringify(['/products/macbook-pro.jpg']),
-        status: ProductStatus.DRAFT,
+        email: 'buyer@example.com',
+        name: 'Buyer Member',
+        emailVerified: new Date(),
+        passwordHash,
       },
     }),
   ]);
-  console.log(`✅ Created ${products.length} products`);
+  console.log(`✅ Created ${users.length} users`);
 
-  // Create customers
+  // Create 2 organizations
+  console.log('🏢 Creating organizations...');
+  const organizations = await Promise.all([
+    prisma.organization.create({
+      data: {
+        id: 'clqm1j4k00000l8dw8z8r8z8b',
+        name: 'Demo Company',
+        slug: 'demo-company',
+      },
+    }),
+    prisma.organization.create({
+      data: {
+        name: 'Acme Corp',
+        slug: 'acme-corp',
+      },
+    }),
+  ]);
+  console.log(`✅ Created ${organizations.length} organizations`);
+
+  // Create memberships
+  console.log('👥 Creating memberships...');
+  await Promise.all([
+    prisma.membership.create({
+      data: {
+        userId: users[0].id,
+        organizationId: organizations[0].id,
+        role: 'OWNER',
+      },
+    }),
+    prisma.membership.create({
+      data: {
+        userId: users[1].id,
+        organizationId: organizations[0].id,
+        role: 'ADMIN',
+      },
+    }),
+    prisma.membership.create({
+      data: {
+        userId: users[2].id,
+        organizationId: organizations[1].id,
+        role: 'MEMBER',
+      },
+    }),
+  ]);
+  console.log('✅ Created memberships');
+
+  // Create 2 stores
+  console.log('🏪 Creating stores...');
+  const stores = await Promise.all([
+    prisma.store.create({
+      data: {
+        id: 'clqm1j4k00000l8dw8z8r8z8r',
+        organizationId: organizations[0].id,
+        name: 'Demo Store',
+        slug: 'demo-store',
+        description: 'A demo e-commerce store for testing',
+        email: 'store@example.com',
+        phone: '+1-555-0100',
+        website: 'https://demo-store.example.com',
+        address: '123 Commerce Street',
+        city: 'San Francisco',
+        state: 'CA',
+        postalCode: '94102',
+        country: 'US',
+        currency: 'USD',
+        timezone: 'America/Los_Angeles',
+        locale: 'en',
+        subscriptionPlan: SubscriptionPlan.PRO,
+        subscriptionStatus: SubscriptionStatus.ACTIVE,
+        productLimit: 1000,
+        orderLimit: 10000,
+      },
+    }),
+    prisma.store.create({
+      data: {
+        organizationId: organizations[1].id,
+        name: 'Acme Store',
+        slug: 'acme-store',
+        description: 'Acme Corporation online store',
+        email: 'acme@example.com',
+        phone: '+1-555-0200',
+        website: 'https://acme.example.com',
+        address: '456 Business Ave',
+        city: 'New York',
+        state: 'NY',
+        postalCode: '10001',
+        country: 'US',
+        currency: 'USD',
+        timezone: 'America/New_York',
+        subscriptionPlan: SubscriptionPlan.BASIC,
+        subscriptionStatus: SubscriptionStatus.ACTIVE,
+        productLimit: 500,
+        orderLimit: 5000,
+      },
+    }),
+  ]);
+  console.log(`✅ Created ${stores.length} stores`);
+
+  // Create 5 categories
+  console.log('📂 Creating categories...');
+  const categories = await Promise.all([
+    prisma.category.create({
+      data: {
+        storeId: stores[0].id,
+        name: 'Electronics',
+        slug: 'electronics',
+        description: 'Electronic devices and gadgets',
+        isPublished: true,
+        sortOrder: 1,
+      },
+    }),
+    prisma.category.create({
+      data: {
+        storeId: stores[0].id,
+        name: 'Clothing',
+        slug: 'clothing',
+        description: 'Fashion and apparel',
+        isPublished: true,
+        sortOrder: 2,
+      },
+    }),
+    prisma.category.create({
+      data: {
+        storeId: stores[0].id,
+        name: 'Accessories',
+        slug: 'accessories',
+        description: 'Fashion accessories and extras',
+        isPublished: true,
+        sortOrder: 3,
+      },
+    }),
+    prisma.category.create({
+      data: {
+        storeId: stores[0].id,
+        name: 'Home & Garden',
+        slug: 'home-garden',
+        description: 'Home and garden products',
+        isPublished: true,
+        sortOrder: 4,
+      },
+    }),
+    prisma.category.create({
+      data: {
+        storeId: stores[0].id,
+        name: 'Sports',
+        slug: 'sports',
+        description: 'Sports and fitness equipment',
+        isPublished: true,
+        sortOrder: 5,
+      },
+    }),
+  ]);
+  console.log(`✅ Created ${categories.length} categories`);
+
+  // Create 4 brands
+  console.log('🏷️ Creating brands...');
+  const brands = await Promise.all([
+    prisma.brand.create({
+      data: {
+        storeId: stores[0].id,
+        name: 'Apple',
+        slug: 'apple',
+        description: 'Premium technology products',
+        website: 'https://apple.com',
+        isPublished: true,
+      },
+    }),
+    prisma.brand.create({
+      data: {
+        storeId: stores[0].id,
+        name: 'Nike',
+        slug: 'nike',
+        description: 'Athletic apparel and footwear',
+        website: 'https://nike.com',
+        isPublished: true,
+      },
+    }),
+    prisma.brand.create({
+      data: {
+        storeId: stores[0].id,
+        name: 'Samsung',
+        slug: 'samsung',
+        description: 'Consumer electronics',
+        website: 'https://samsung.com',
+        isPublished: true,
+      },
+    }),
+    prisma.brand.create({
+      data: {
+        storeId: stores[0].id,
+        name: 'Sony',
+        slug: 'sony',
+        description: 'Entertainment and electronics',
+        website: 'https://sony.com',
+        isPublished: true,
+      },
+    }),
+  ]);
+  console.log(`✅ Created ${brands.length} brands`);
+
+  // Create 15 products with variants
+  console.log('📦 Creating products with variants...');
+  const productData = [
+    // Electronics (5)
+    {
+      name: 'iPhone 15 Pro',
+      slug: 'iphone-15-pro',
+      categoryId: categories[0].id,
+      brandId: brands[0].id,
+      price: 999.99,
+      compareAtPrice: 1099.99,
+      sku: 'AAPL-IPH15P-001',
+      description: 'Latest iPhone with A17 Pro chip',
+      variants: [
+        { name: '128GB Black', sku: 'AAPL-IPH15P-128B', price: 999.99 },
+        { name: '256GB Silver', sku: 'AAPL-IPH15P-256S', price: 1049.99 },
+        { name: '512GB Gold', sku: 'AAPL-IPH15P-512G', price: 1149.99 },
+      ],
+    },
+    {
+      name: 'Samsung Galaxy S24',
+      slug: 'samsung-galaxy-s24',
+      categoryId: categories[0].id,
+      brandId: brands[2].id,
+      price: 899.99,
+      compareAtPrice: 999.99,
+      sku: 'SAMS-GAL24-001',
+      description: 'Flagship Android phone',
+      variants: [
+        { name: 'Base Model', sku: 'SAMS-GAL24-BASE', price: 899.99 },
+        { name: '512GB', sku: 'SAMS-GAL24-512', price: 949.99 },
+      ],
+    },
+    {
+      name: 'iPad Pro 12.9"',
+      slug: 'ipad-pro-12-9',
+      categoryId: categories[0].id,
+      brandId: brands[0].id,
+      price: 1199.99,
+      sku: 'AAPL-IPAD-001',
+      description: 'Professional tablet',
+      variants: [
+        { name: '256GB WiFi', sku: 'AAPL-IPAD-256W', price: 1199.99 },
+        { name: '512GB WiFi+Cellular', sku: 'AAPL-IPAD-512C', price: 1499.99 },
+      ],
+    },
+    {
+      name: 'Sony WH-1000XM5',
+      slug: 'sony-wh-1000xm5',
+      categoryId: categories[2].id,
+      brandId: brands[3].id,
+      price: 399.99,
+      sku: 'SONY-WH1000-001',
+      description: 'Premium noise-canceling headphones',
+      variants: [
+        { name: 'Black', sku: 'SONY-WH1000-BK', price: 399.99 },
+        { name: 'Silver', sku: 'SONY-WH1000-SV', price: 399.99 },
+      ],
+    },
+    {
+      name: 'Apple Watch Series 9',
+      slug: 'apple-watch-series-9',
+      categoryId: categories[0].id,
+      brandId: brands[0].id,
+      price: 399.99,
+      sku: 'AAPL-AW9-001',
+      description: 'Advanced fitness tracking',
+      variants: [
+        { name: '41mm Silver', sku: 'AAPL-AW9-41S', price: 399.99 },
+        { name: '45mm Space Black', sku: 'AAPL-AW9-45B', price: 429.99 },
+      ],
+    },
+    // Clothing (4)
+    {
+      name: 'Nike Air Max 270',
+      slug: 'nike-air-max-270',
+      categoryId: categories[1].id,
+      brandId: brands[1].id,
+      price: 150.00,
+      compareAtPrice: 180.00,
+      sku: 'NIKE-AM270-001',
+      description: 'Comfortable running shoes',
+      variants: [
+        { name: 'Size 8', sku: 'NIKE-AM270-8', price: 150.00 },
+        { name: 'Size 10', sku: 'NIKE-AM270-10', price: 150.00 },
+        { name: 'Size 12', sku: 'NIKE-AM270-12', price: 150.00 },
+      ],
+    },
+    {
+      name: 'Nike Dri-FIT T-Shirt',
+      slug: 'nike-dri-fit-tshirt',
+      categoryId: categories[1].id,
+      brandId: brands[1].id,
+      price: 35.00,
+      sku: 'NIKE-DFT-001',
+      description: 'Moisture-wicking athletic t-shirt',
+      variants: [
+        { name: 'Small Black', sku: 'NIKE-DFT-S-BK', price: 35.00 },
+        { name: 'Medium Gray', sku: 'NIKE-DFT-M-GR', price: 35.00 },
+      ],
+    },
+    {
+      name: 'Sports Running Jacket',
+      slug: 'sports-running-jacket',
+      categoryId: categories[4].id,
+      brandId: brands[1].id,
+      price: 89.99,
+      sku: 'NIKE-JCK-001',
+      description: 'Lightweight windproof jacket',
+      variants: [
+        { name: 'Small', sku: 'NIKE-JCK-S', price: 89.99 },
+        { name: 'Large', sku: 'NIKE-JCK-L', price: 89.99 },
+      ],
+    },
+    {
+      name: 'Training Shorts',
+      slug: 'training-shorts',
+      categoryId: categories[1].id,
+      brandId: brands[1].id,
+      price: 45.00,
+      sku: 'NIKE-SHRT-001',
+      description: 'Breathable training shorts',
+      variants: [
+        { name: 'Small', sku: 'NIKE-SHRT-S', price: 45.00 },
+      ],
+    },
+    // Accessories (3)
+    {
+      name: 'Wireless Earbuds Pro',
+      slug: 'wireless-earbuds-pro',
+      categoryId: categories[2].id,
+      price: 199.99,
+      sku: 'EARBUD-PRO-001',
+      description: 'Premium wireless earbuds',
+      variants: [
+        { name: 'Black', sku: 'EARBUD-PRO-BK', price: 199.99 },
+      ],
+    },
+    {
+      name: 'Phone Case Protector',
+      slug: 'phone-case-protector',
+      categoryId: categories[2].id,
+      price: 25.00,
+      sku: 'CASE-PRO-001',
+      description: 'Durable phone protection',
+      variants: [
+        { name: 'iPhone Black', sku: 'CASE-PRO-IPH-BK', price: 25.00 },
+        { name: 'Samsung Blue', sku: 'CASE-PRO-SAM-BL', price: 25.00 },
+      ],
+    },
+    {
+      name: 'Travel Backpack',
+      slug: 'travel-backpack',
+      categoryId: categories[3].id,
+      price: 89.99,
+      sku: 'BAG-TRAVEL-001',
+      description: 'Spacious travel backpack',
+      variants: [
+        { name: 'Gray', sku: 'BAG-TRAVEL-GR', price: 89.99 },
+      ],
+    },
+    // Home (2)
+    {
+      name: 'Smart LED Lamp',
+      slug: 'smart-led-lamp',
+      categoryId: categories[3].id,
+      price: 49.99,
+      sku: 'LAMP-SMART-001',
+      description: 'WiFi-enabled smart lamp',
+      variants: [
+        { name: 'White', sku: 'LAMP-SMART-WH', price: 49.99 },
+      ],
+    },
+    {
+      name: 'USB Charging Hub',
+      slug: 'usb-charging-hub',
+      categoryId: categories[2].id,
+      price: 34.99,
+      sku: 'HUB-USB-001',
+      description: 'Multi-port charging hub',
+      variants: [
+        { name: 'Standard', sku: 'HUB-USB-STD', price: 34.99 },
+      ],
+    },
+  ];
+
+  const products = await Promise.all(
+    productData.map(async (p) => {
+      const product = await prisma.product.create({
+        data: {
+          storeId: stores[0].id,
+          categoryId: p.categoryId,
+          brandId: p.brandId,
+          name: p.name,
+          slug: p.slug,
+          description: p.description,
+          shortDescription: p.description?.substring(0, 50),
+          price: p.price,
+          compareAtPrice: p.compareAtPrice,
+          costPrice: p.price * 0.5,
+          sku: p.sku,
+          trackInventory: true,
+          inventoryQty: Math.floor(Math.random() * 150) + 10,
+          lowStockThreshold: 10,
+          inventoryStatus: InventoryStatus.IN_STOCK,
+          images: JSON.stringify(['/placeholder.svg']),
+          status: ProductStatus.ACTIVE,
+          publishedAt: new Date(),
+          isFeatured: Math.random() > 0.6,
+        },
+      });
+
+      // Create variants for each product
+      await Promise.all(
+        p.variants.map((v) =>
+          prisma.productVariant.create({
+            data: {
+              productId: product.id,
+              name: v.name,
+              sku: v.sku,
+              price: v.price,
+              inventoryQty: Math.floor(Math.random() * 100) + 5,
+              lowStockThreshold: 5,
+              isDefault: p.variants.indexOf(v) === 0,
+            },
+          })
+        )
+      );
+
+      return product;
+    })
+  );
+  console.log(`✅ Created ${products.length} products with variants`);
+
+  // Create 15 customers
   console.log('👨‍👩‍👧‍👦 Creating customers...');
   const customers = await Promise.all([
     prisma.customer.create({
       data: {
-        storeId: store.id,
+        storeId: stores[0].id,
         email: 'john.doe@example.com',
         firstName: 'John',
         lastName: 'Doe',
         phone: '+1-555-0101',
         acceptsMarketing: true,
         marketingOptInAt: new Date(),
-        totalOrders: 0,
-        totalSpent: 0,
       },
     }),
     prisma.customer.create({
       data: {
-        storeId: store.id,
+        storeId: stores[0].id,
         email: 'jane.smith@example.com',
         firstName: 'Jane',
         lastName: 'Smith',
         phone: '+1-555-0102',
         acceptsMarketing: false,
-        totalOrders: 0,
-        totalSpent: 0,
       },
     }),
     prisma.customer.create({
       data: {
-        storeId: store.id,
+        storeId: stores[0].id,
         email: 'bob.wilson@example.com',
         firstName: 'Bob',
         lastName: 'Wilson',
         phone: '+1-555-0103',
         acceptsMarketing: true,
         marketingOptInAt: new Date(),
-        totalOrders: 0,
-        totalSpent: 0,
       },
     }),
     prisma.customer.create({
       data: {
-        storeId: store.id,
+        storeId: stores[0].id,
         email: 'alice.johnson@example.com',
         firstName: 'Alice',
         lastName: 'Johnson',
         phone: '+1-555-0104',
         acceptsMarketing: true,
         marketingOptInAt: new Date(),
-        totalOrders: 0,
-        totalSpent: 0,
       },
     }),
     prisma.customer.create({
       data: {
-        storeId: store.id,
+        storeId: stores[0].id,
         email: 'charlie.brown@example.com',
         firstName: 'Charlie',
         lastName: 'Brown',
         phone: '+1-555-0105',
         acceptsMarketing: false,
-        totalOrders: 0,
-        totalSpent: 0,
+      },
+    }),
+    prisma.customer.create({
+      data: {
+        storeId: stores[0].id,
+        email: 'diana.prince@example.com',
+        firstName: 'Diana',
+        lastName: 'Prince',
+        phone: '+1-555-0106',
+        acceptsMarketing: true,
+        marketingOptInAt: new Date(),
+      },
+    }),
+    prisma.customer.create({
+      data: {
+        storeId: stores[0].id,
+        email: 'evan.lee@example.com',
+        firstName: 'Evan',
+        lastName: 'Lee',
+        phone: '+1-555-0107',
+        acceptsMarketing: false,
+      },
+    }),
+    prisma.customer.create({
+      data: {
+        storeId: stores[0].id,
+        email: 'fiona.green@example.com',
+        firstName: 'Fiona',
+        lastName: 'Green',
+        phone: '+1-555-0108',
+        acceptsMarketing: true,
+        marketingOptInAt: new Date(),
+      },
+    }),
+    prisma.customer.create({
+      data: {
+        storeId: stores[0].id,
+        email: 'george.martin@example.com',
+        firstName: 'George',
+        lastName: 'Martin',
+        phone: '+1-555-0109',
+        acceptsMarketing: false,
+      },
+    }),
+    prisma.customer.create({
+      data: {
+        storeId: stores[0].id,
+        email: 'hannah.miller@example.com',
+        firstName: 'Hannah',
+        lastName: 'Miller',
+        phone: '+1-555-0110',
+        acceptsMarketing: true,
+        marketingOptInAt: new Date(),
+      },
+    }),
+    prisma.customer.create({
+      data: {
+        storeId: stores[0].id,
+        email: 'isaac.newton@example.com',
+        firstName: 'Isaac',
+        lastName: 'Newton',
+        phone: '+1-555-0111',
+        acceptsMarketing: false,
+      },
+    }),
+    prisma.customer.create({
+      data: {
+        storeId: stores[0].id,
+        email: 'julia.roberts@example.com',
+        firstName: 'Julia',
+        lastName: 'Roberts',
+        phone: '+1-555-0112',
+        acceptsMarketing: true,
+        marketingOptInAt: new Date(),
+      },
+    }),
+    prisma.customer.create({
+      data: {
+        storeId: stores[0].id,
+        email: 'kevin.hart@example.com',
+        firstName: 'Kevin',
+        lastName: 'Hart',
+        phone: '+1-555-0113',
+        acceptsMarketing: false,
+      },
+    }),
+    prisma.customer.create({
+      data: {
+        storeId: stores[0].id,
+        email: 'laura.palmer@example.com',
+        firstName: 'Laura',
+        lastName: 'Palmer',
+        phone: '+1-555-0114',
+        acceptsMarketing: true,
+        marketingOptInAt: new Date(),
+      },
+    }),
+    prisma.customer.create({
+      data: {
+        storeId: stores[0].id,
+        email: 'michael.scott@example.com',
+        firstName: 'Michael',
+        lastName: 'Scott',
+        phone: '+1-555-0115',
+        acceptsMarketing: true,
+        marketingOptInAt: new Date(),
       },
     }),
   ]);
@@ -685,6 +949,54 @@ async function main() {
   ]);
   console.log(`✅ Created ${orders.length} orders`);
 
+  // Create 10 reviews
+  console.log('⭐ Creating reviews...');
+  const reviews = await Promise.all(
+    Array.from({ length: 10 }).map(async (_, index) => {
+      const productIndex = index % products.length;
+      const customerIndex = index % customers.length;
+      const rating = (index % 5) + 1; // 1-5 stars
+
+      return prisma.review.create({
+        data: {
+          productId: products[productIndex].id,
+          customerId: customers[customerIndex].id,
+          rating,
+          title:
+            [
+              'Great product!',
+              'Highly recommend',
+              'Good value for money',
+              'Fast shipping',
+              'Not as expected',
+              'Excellent quality',
+              'Perfect fit',
+              'Amazing deal',
+              'Disappointed',
+              'Worth buying',
+            ][index % 10],
+          comment:
+            [
+              'This product exceeded my expectations. Great quality and fast shipping!',
+              'Very satisfied with my purchase. Would buy again.',
+              'Good product for the price. Delivery was quick.',
+              'Exactly as described. Highly satisfied.',
+              'Not quite what I expected but still decent.',
+              'Outstanding product quality. Highly recommend.',
+              'Perfect fit and great comfort.',
+              'Amazing deal on this product.',
+              'Arrived damaged, disappointed.',
+              'Best purchase I made this month!',
+            ][index % 10],
+          verified: Math.random() > 0.3,
+          helpful: Math.floor(Math.random() * 20),
+          unhelpful: Math.floor(Math.random() * 5),
+        },
+      });
+    })
+  );
+  console.log(`✅ Created ${reviews.length} reviews`);
+
   // Update customer statistics
   console.log('📊 Updating customer statistics...');
   for (const customer of customers) {
@@ -711,18 +1023,22 @@ async function main() {
 
   console.log('\n🎉 Database seeding completed successfully!');
   console.log('\n📊 Summary:');
-  console.log(`   - Users: 1`);
-  console.log(`   - Organizations: 1`);
-  console.log(`   - Stores: 1 (ID: ${store.id})`);
-  console.log(`   - Categories: 3`);
-  console.log(`   - Brands: 3`);
+  console.log(`   - Users: 3`);
+  console.log(`   - Organizations: 2`);
+  console.log(`   - Stores: 2`);
+  console.log(`   - Categories: 5`);
+  console.log(`   - Brands: 4`);
   console.log(`   - Products: ${products.length}`);
   console.log(`   - Customers: ${customers.length}`);
   console.log(`   - Orders: ${orders.length}`);
+  console.log(`   - Reviews: ${reviews.length}`);
   console.log('\n🔑 Test Credentials:');
   console.log(`   Email: test@example.com`);
   console.log(`   Password: Test123!@#`);
-  console.log(`   Store ID: ${store.id}`);
+  console.log(`   Seller Email: seller@example.com`);
+  console.log(`   Buyer Email: buyer@example.com`);
+  console.log(`   Store ID: ${stores[0].id}`);
+  console.log(`   Second Store ID: ${stores[1].id}`);
 }
 
 main()

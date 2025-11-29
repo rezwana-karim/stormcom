@@ -22,17 +22,23 @@ interface CustomerMetricsData {
 
 interface CustomerMetricsProps {
   timeRange: string;
+  storeId: string;
 }
 
-export function CustomerMetrics({ timeRange }: CustomerMetricsProps) {
+export function CustomerMetrics({ timeRange, storeId }: CustomerMetricsProps) {
   const [metrics, setMetrics] = useState<CustomerMetricsData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!storeId) {
+        setLoading(false);
+        return;
+      }
+      
       setLoading(true);
       try {
-        const response = await fetch(`/api/analytics/customers?range=${timeRange}`);
+        const response = await fetch(`/api/analytics/customers?storeId=${storeId}&range=${timeRange}`);
         if (!response.ok) throw new Error('Failed to fetch customer metrics');
         
         const result = await response.json();
@@ -46,7 +52,7 @@ export function CustomerMetrics({ timeRange }: CustomerMetricsProps) {
     };
 
     fetchData();
-  }, [timeRange]);
+  }, [timeRange, storeId]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {

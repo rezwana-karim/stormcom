@@ -58,7 +58,11 @@ interface ListResponse {
   };
 }
 
-export function CustomersList() {
+interface CustomersListProps {
+  storeId: string;
+}
+
+export function CustomersList({ storeId }: CustomersListProps) {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -76,11 +80,14 @@ export function CustomersList() {
   const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
 
   const fetchCustomers = async () => {
+    if (!storeId) return;
+    
     setLoading(true);
     try {
       const params = new URLSearchParams({
+        storeId,
         page: pagination.page.toString(),
-        limit: pagination.limit.toString(),
+        perPage: pagination.limit.toString(),
         ...(searchQuery && { search: searchQuery }),
       });
 
@@ -88,11 +95,11 @@ export function CustomersList() {
       if (!response.ok) throw new Error('Failed to fetch customers');
 
       const result: ListResponse = await response.json();
-      setCustomers(result.data);
+      setCustomers(result.data || []);
       setPagination((prev) => ({
         ...prev,
-        total: result.meta.total,
-        totalPages: result.meta.totalPages,
+        total: result.meta?.total || 0,
+        totalPages: result.meta?.totalPages || 0,
       }));
     } catch (error) {
       toast.error('Failed to load customers');
@@ -105,7 +112,7 @@ export function CustomersList() {
   useEffect(() => {
     fetchCustomers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.page, searchQuery]);
+  }, [storeId, pagination.page, searchQuery]);
 
   const refreshCustomers = () => {
     fetchCustomers();
