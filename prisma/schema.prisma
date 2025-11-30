@@ -798,6 +798,9 @@ enum NotificationType {
   ACCOUNT_SUSPENDED      // Account suspended
   STORE_CREATED          // Store created for user
   STORE_ASSIGNED         // User assigned to store
+  STORE_REQUEST_PENDING  // Admin notification: new store request
+  STORE_REQUEST_APPROVED // Store request approved
+  STORE_REQUEST_REJECTED // Store request rejected
   PASSWORD_RESET         // Password reset requested
   SECURITY_ALERT         // Security-related notification
   SYSTEM_ANNOUNCEMENT    // Platform-wide announcement
