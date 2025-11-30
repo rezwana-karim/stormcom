@@ -18,6 +18,7 @@ import {
   IconReport,
   IconSearch,
   IconSettings,
+  IconShieldCog,
   IconUsers,
 } from "@tabler/icons-react"
 
@@ -245,9 +246,9 @@ const navConfig = {
       permission: "integrations:read",
     },
     {
-      title: "Admin",
-      url: "/dashboard/admin",
-      icon: IconSettings,
+      title: "Admin Panel",
+      url: "/admin",
+      icon: IconShieldCog,
       requireSuperAdmin: true, // Only super admin
     },
     {
