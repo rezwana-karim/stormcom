@@ -61,6 +61,7 @@ interface CustomerDialogProps {
   onOpenChange: (open: boolean) => void;
   customer?: Customer;
   onSuccess: () => void;
+  storeId?: string;
 }
 
 export function CustomerDialog({
@@ -68,6 +69,7 @@ export function CustomerDialog({
   onOpenChange,
   customer,
   onSuccess,
+  storeId,
 }: CustomerDialogProps) {
   const [loading, setLoading] = useState(false);
   const isEditing = !!customer;
@@ -106,10 +108,13 @@ export function CustomerDialog({
       const url = isEditing ? `/api/customers/${customer.id}` : '/api/customers';
       const method = isEditing ? 'PATCH' : 'POST';
 
+      // Include storeId for creating new customers
+      const bodyData = isEditing ? data : { ...data, storeId, firstName: data.name.split(' ')[0], lastName: data.name.split(' ').slice(1).join(' ') || data.name.split(' ')[0] };
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(bodyData),
       });
 
       if (!response.ok) {

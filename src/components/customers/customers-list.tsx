@@ -35,6 +35,7 @@ import { toast } from 'sonner';
 import { CustomerDialog } from './customer-dialog';
 import { CustomerDetailDialog } from './customer-detail-dialog';
 import { DeleteCustomerDialog } from './delete-customer-dialog';
+import { StoreSelector } from '@/components/store-selector';
 
 interface Customer {
   id: string;
@@ -62,6 +63,7 @@ export function CustomersList() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [storeId, setStoreId] = useState<string>('');
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -76,11 +78,17 @@ export function CustomersList() {
   const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
 
   const fetchCustomers = async () => {
+    if (!storeId) {
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     try {
       const params = new URLSearchParams({
+        storeId,
         page: pagination.page.toString(),
-        limit: pagination.limit.toString(),
+        perPage: pagination.limit.toString(),
         ...(searchQuery && { search: searchQuery }),
       });
 
@@ -88,15 +96,16 @@ export function CustomersList() {
       if (!response.ok) throw new Error('Failed to fetch customers');
 
       const result: ListResponse = await response.json();
-      setCustomers(result.data);
+      setCustomers(result.data || []);
       setPagination((prev) => ({
         ...prev,
-        total: result.meta.total,
-        totalPages: result.meta.totalPages,
+        total: result.meta?.total || 0,
+        totalPages: result.meta?.totalPages || 0,
       }));
     } catch (error) {
       toast.error('Failed to load customers');
       console.error('Customers fetch error:', error);
+      setCustomers([]);
     } finally {
       setLoading(false);
     }
@@ -105,7 +114,7 @@ export function CustomersList() {
   useEffect(() => {
     fetchCustomers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.page, searchQuery]);
+  }, [pagination.page, searchQuery, storeId]);
 
   const refreshCustomers = () => {
     fetchCustomers();
@@ -150,33 +159,49 @@ export function CustomersList() {
 
   return (
     <div className="space-y-4">
-      {/* Header Actions */}
+      {/* Store Selector */}
       <Card className="p-4">
-        <div className="flex flex-col sm:flex-row gap-4 items-center">
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search customers by name or email..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setPagination((prev) => ({ ...prev, page: 1 }));
-              }}
-              className="pl-9"
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleExport}>
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-            <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Customer
-            </Button>
-          </div>
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-medium">Store:</span>
+          <StoreSelector onStoreChange={setStoreId} />
         </div>
       </Card>
+
+      {!storeId ? (
+        <Card className="p-8">
+          <div className="text-center text-muted-foreground">
+            Select a store to view customers
+          </div>
+        </Card>
+      ) : (
+        <>
+          {/* Header Actions */}
+          <Card className="p-4">
+            <div className="flex flex-col sm:flex-row gap-4 items-center">
+              <div className="relative flex-1 w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search customers by name or email..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setPagination((prev) => ({ ...prev, page: 1 }));
+                  }}
+                  className="pl-9"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={handleExport}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+                <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Customer
+                </Button>
+              </div>
+            </div>
+          </Card>
 
       {/* Customers Table */}
       <Card>
@@ -269,7 +294,7 @@ export function CustomersList() {
       </Card>
 
       {/* Pagination */}
-      {pagination.totalPages > 1 && (
+      {storeId && pagination.totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
             Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
@@ -296,12 +321,15 @@ export function CustomersList() {
           </div>
         </div>
       )}
+        </>
+      )}
 
       {/* Dialogs */}
       <CustomerDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         onSuccess={refreshCustomers}
+        storeId={storeId}
       />
 
       {editingCustomer && (
@@ -310,6 +338,7 @@ export function CustomersList() {
           onOpenChange={(open: boolean) => !open && setEditingCustomer(null)}
           customer={editingCustomer}
           onSuccess={refreshCustomers}
+          storeId={storeId}
         />
       )}
 

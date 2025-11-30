@@ -27,18 +27,39 @@ interface RevenueData {
 }
 
 interface RevenueChartProps {
+  storeId: string;
   timeRange: string;
 }
 
-export function RevenueChart({ timeRange }: RevenueChartProps) {
+// Helper to calculate date range from timeRange
+function getDateRange(timeRange: string): { from: string; to: string } {
+  const to = new Date();
+  const from = new Date();
+  switch (timeRange) {
+    case '7d': from.setDate(to.getDate() - 7); break;
+    case '30d': from.setDate(to.getDate() - 30); break;
+    case '90d': from.setDate(to.getDate() - 90); break;
+    case '1y': from.setFullYear(to.getFullYear() - 1); break;
+    default: from.setDate(to.getDate() - 30);
+  }
+  return {
+    from: from.toISOString().split('T')[0],
+    to: to.toISOString().split('T')[0],
+  };
+}
+
+export function RevenueChart({ storeId, timeRange }: RevenueChartProps) {
   const [data, setData] = useState<RevenueData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!storeId) return;
+    
     const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`/api/analytics/revenue?range=${timeRange}`);
+        const dateRange = getDateRange(timeRange);
+        const response = await fetch(`/api/analytics/revenue?storeId=${storeId}&from=${dateRange.from}&to=${dateRange.to}`);
         if (!response.ok) throw new Error('Failed to fetch revenue data');
         
         const result = await response.json();
@@ -52,7 +73,7 @@ export function RevenueChart({ timeRange }: RevenueChartProps) {
     };
 
     fetchData();
-  }, [timeRange]);
+  }, [storeId, timeRange]);
 
   if (loading) {
     return <div className="h-[350px] flex items-center justify-center">Loading chart...</div>;

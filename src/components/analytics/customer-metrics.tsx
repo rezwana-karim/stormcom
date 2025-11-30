@@ -21,18 +21,39 @@ interface CustomerMetricsData {
 }
 
 interface CustomerMetricsProps {
+  storeId: string;
   timeRange: string;
 }
 
-export function CustomerMetrics({ timeRange }: CustomerMetricsProps) {
+// Helper to calculate date range from timeRange
+function getDateRange(timeRange: string): { startDate: string; endDate: string } {
+  const endDate = new Date();
+  const startDate = new Date();
+  switch (timeRange) {
+    case '7d': startDate.setDate(endDate.getDate() - 7); break;
+    case '30d': startDate.setDate(endDate.getDate() - 30); break;
+    case '90d': startDate.setDate(endDate.getDate() - 90); break;
+    case '1y': startDate.setFullYear(endDate.getFullYear() - 1); break;
+    default: startDate.setDate(endDate.getDate() - 30);
+  }
+  return {
+    startDate: startDate.toISOString().split('T')[0],
+    endDate: endDate.toISOString().split('T')[0],
+  };
+}
+
+export function CustomerMetrics({ storeId, timeRange }: CustomerMetricsProps) {
   const [metrics, setMetrics] = useState<CustomerMetricsData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!storeId) return;
+    
     const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`/api/analytics/customers?range=${timeRange}`);
+        const dateRange = getDateRange(timeRange);
+        const response = await fetch(`/api/analytics/customers?storeId=${storeId}&startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`);
         if (!response.ok) throw new Error('Failed to fetch customer metrics');
         
         const result = await response.json();
@@ -46,17 +67,24 @@ export function CustomerMetrics({ timeRange }: CustomerMetricsProps) {
     };
 
     fetchData();
-  }, [timeRange]);
+  }, [storeId, timeRange]);
 
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (value: number | undefined | null) => {
+    if (value == null) return '$0.00';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
     }).format(value);
   };
 
-  const formatPercentage = (value: number) => {
+  const formatPercentage = (value: number | undefined | null) => {
+    if (value == null) return '0.0%';
     return `${value.toFixed(1)}%`;
+  };
+
+  const formatNumber = (value: number | undefined | null) => {
+    if (value == null) return '0';
+    return value.toLocaleString();
   };
 
   if (loading) {
@@ -79,7 +107,7 @@ export function CustomerMetrics({ timeRange }: CustomerMetricsProps) {
         </div>
         <div>
           <p className="text-sm text-muted-foreground">Total Customers</p>
-          <p className="text-2xl font-bold">{metrics.totalCustomers.toLocaleString()}</p>
+          <p className="text-2xl font-bold">{formatNumber(metrics.totalCustomers)}</p>
         </div>
       </div>
 
@@ -89,7 +117,7 @@ export function CustomerMetrics({ timeRange }: CustomerMetricsProps) {
         </div>
         <div>
           <p className="text-sm text-muted-foreground">New Customers</p>
-          <p className="text-2xl font-bold">{metrics.newCustomers.toLocaleString()}</p>
+          <p className="text-2xl font-bold">{formatNumber(metrics.newCustomers)}</p>
         </div>
       </div>
 
@@ -99,7 +127,7 @@ export function CustomerMetrics({ timeRange }: CustomerMetricsProps) {
         </div>
         <div>
           <p className="text-sm text-muted-foreground">Returning Customers</p>
-          <p className="text-2xl font-bold">{metrics.returningCustomers.toLocaleString()}</p>
+          <p className="text-2xl font-bold">{formatNumber(metrics.returningCustomers)}</p>
         </div>
       </div>
 

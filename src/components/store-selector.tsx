@@ -38,19 +38,25 @@ export function StoreSelector({ onStoreChange }: StoreSelectorProps) {
   useEffect(() => {
     async function fetchStores() {
       try {
-        // For now, create a mock store with valid CUID format
-        // In production, this would fetch from /api/stores
-        const mockStore: Store = {
-          id: 'clqm1j4k00000l8dw8z8r8z8r', // Valid CUID format
-          name: 'Demo Store',
-          slug: 'demo-store',
-        };
-        setStores([mockStore]);
-        setSelectedStore(mockStore.id);
-        // Use ref to call the callback
-        onStoreChangeRef.current?.(mockStore.id);
+        const response = await fetch('/api/stores');
+        if (!response.ok) {
+          throw new Error('Failed to fetch stores');
+        }
+        const result = await response.json();
+        const storeList: Store[] = result.data || result.stores || [];
+        
+        setStores(storeList);
+        
+        // Auto-select first store if available
+        if (storeList.length > 0 && !selectedStore) {
+          const firstStoreId = storeList[0].id;
+          setSelectedStore(firstStoreId);
+          onStoreChangeRef.current?.(firstStoreId);
+        }
       } catch (error) {
         console.error('Failed to fetch stores:', error);
+        // Fallback to empty array - UI will show "No stores available"
+        setStores([]);
       } finally {
         setLoading(false);
       }

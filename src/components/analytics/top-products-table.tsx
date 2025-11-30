@@ -21,18 +21,21 @@ interface TopProduct {
 }
 
 interface TopProductsTableProps {
+  storeId: string;
   timeRange: string;
 }
 
-export function TopProductsTable({ timeRange }: TopProductsTableProps) {
+export function TopProductsTable({ storeId, timeRange }: TopProductsTableProps) {
   const [products, setProducts] = useState<TopProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!storeId) return;
+    
     const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`/api/analytics/products/top?range=${timeRange}&limit=5`);
+        const response = await fetch(`/api/analytics/products/top?storeId=${storeId}&limit=5`);
         if (!response.ok) throw new Error('Failed to fetch top products');
         
         const result = await response.json();
@@ -46,7 +49,7 @@ export function TopProductsTable({ timeRange }: TopProductsTableProps) {
     };
 
     fetchData();
-  }, [timeRange]);
+  }, [storeId, timeRange]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {

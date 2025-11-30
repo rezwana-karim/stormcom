@@ -21,7 +21,9 @@ import {
 import { RevenueChart } from './revenue-chart';
 import { TopProductsTable } from './top-products-table';
 import { CustomerMetrics } from './customer-metrics';
+import { StoreSelector } from '@/components/store-selector';
 import { toast } from 'sonner';
+import { useSession } from 'next-auth/react';
 
 interface DashboardMetrics {
   revenue: {
@@ -32,12 +34,18 @@ interface DashboardMetrics {
   orders: {
     total: number;
     change: number;
+    trend?: 'up' | 'down';
   };
   customers: {
     total: number;
-    new: number;
+    change?: number;
+    new?: number;
   };
-  avgOrderValue: {
+  products?: {
+    total: number;
+    change?: number;
+  };
+  avgOrderValue?: {
     value: number;
     change: number;
   };
@@ -45,16 +53,63 @@ interface DashboardMetrics {
 
 type TimeRange = '7d' | '30d' | '90d' | '1y';
 
-export function AnalyticsDashboard() {
+// Helper to calculate date range based on time range
+function getDateRange(range: TimeRange): { from: string; to: string } {
+  const to = new Date();
+  const from = new Date();
+  
+  switch (range) {
+    case '7d':
+      from.setDate(from.getDate() - 7);
+      break;
+    case '30d':
+      from.setDate(from.getDate() - 30);
+      break;
+    case '90d':
+      from.setDate(from.getDate() - 90);
+      break;
+    case '1y':
+      from.setFullYear(from.getFullYear() - 1);
+      break;
+  }
+  
+  return {
+    from: from.toISOString().split('T')[0],
+    to: to.toISOString().split('T')[0],
+  };
+}
+
+interface AnalyticsDashboardProps {
+  storeId?: string;
+}
+
+export function AnalyticsDashboard({ storeId: propStoreId }: AnalyticsDashboardProps) {
+  const { data: session } = useSession();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
+  const [selectedStoreId, setSelectedStoreId] = useState<string>(propStoreId || '');
+  
+  // Get storeId from props, state, or session
+  const storeId = propStoreId || selectedStoreId || (session?.user as { storeId?: string })?.storeId;
 
   useEffect(() => {
     const fetchMetrics = async () => {
+      if (!storeId) {
+        setLoading(false);
+        return;
+      }
+      
       setLoading(true);
       try {
-        const response = await fetch(`/api/analytics/dashboard?range=${timeRange}`);
+        const { from, to } = getDateRange(timeRange);
+        const params = new URLSearchParams({
+          storeId,
+          from,
+          to,
+        });
+        
+        const response = await fetch(`/api/analytics/dashboard?${params}`);
         if (!response.ok) throw new Error('Failed to fetch analytics');
         
         const data = await response.json();
@@ -68,7 +123,7 @@ export function AnalyticsDashboard() {
     };
 
     fetchMetrics();
-  }, [timeRange]);
+  }, [timeRange, storeId]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -86,8 +141,30 @@ export function AnalyticsDashboard() {
     return <div className="text-center py-12">Loading analytics...</div>;
   }
 
+  if (!storeId) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-medium">Store:</span>
+          <StoreSelector onStoreChange={setSelectedStoreId} />
+        </div>
+        <div className="text-center py-12 text-muted-foreground">
+          <p>Select a store to view analytics.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Store Selector */}
+      {!propStoreId && (
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-medium">Store:</span>
+          <StoreSelector onStoreChange={setSelectedStoreId} />
+        </div>
+      )}
+      
       {/* Time Range Selector */}
       <Tabs value={timeRange} onValueChange={(value) => setTimeRange(value as TimeRange)}>
         <TabsList>
@@ -129,7 +206,7 @@ export function AnalyticsDashboard() {
                   {metrics?.orders.total.toLocaleString() || '---'}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {metrics && (
+                  {metrics && metrics.orders.change !== undefined && (
                     <span className={metrics.orders.change > 0 ? 'text-green-600' : 'text-red-600'}>
                       {formatChange(metrics.orders.change)} from last period
                     </span>
@@ -148,9 +225,9 @@ export function AnalyticsDashboard() {
                   {metrics?.customers.total.toLocaleString() || '---'}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {metrics && (
-                    <span className="text-green-600">
-                      +{metrics.customers.new} new this period
+                  {metrics && metrics.customers.change !== undefined && (
+                    <span className={metrics.customers.change > 0 ? 'text-green-600' : 'text-red-600'}>
+                      {formatChange(metrics.customers.change)} from last period
                     </span>
                   )}
                 </p>
@@ -159,19 +236,15 @@ export function AnalyticsDashboard() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Avg. Order Value</CardTitle>
+                <CardTitle className="text-sm font-medium">Products</CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {metrics ? formatCurrency(metrics.avgOrderValue.value) : '---'}
+                  {metrics?.products?.total?.toLocaleString() || '---'}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {metrics && (
-                    <span className={metrics.avgOrderValue.change > 0 ? 'text-green-600' : 'text-red-600'}>
-                      {formatChange(metrics.avgOrderValue.change)} from last period
-                    </span>
-                  )}
+                  Active products in store
                 </p>
               </CardContent>
             </Card>
@@ -187,7 +260,7 @@ export function AnalyticsDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <RevenueChart timeRange={timeRange} />
+                <RevenueChart storeId={storeId} timeRange={timeRange} />
               </CardContent>
             </Card>
 
@@ -199,7 +272,7 @@ export function AnalyticsDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <TopProductsTable timeRange={timeRange} />
+                <TopProductsTable storeId={storeId} timeRange={timeRange} />
               </CardContent>
             </Card>
           </div>
@@ -213,7 +286,7 @@ export function AnalyticsDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <CustomerMetrics timeRange={timeRange} />
+              <CustomerMetrics storeId={storeId} timeRange={timeRange} />
             </CardContent>
           </Card>
         </TabsContent>
