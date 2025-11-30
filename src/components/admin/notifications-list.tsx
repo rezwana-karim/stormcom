@@ -158,7 +158,7 @@ export function NotificationsList({ notifications: initialNotifications }: Notif
                           {notification.message}
                         </p>
                       </div>
-                      {!notification.isRead && (
+                      {!notification.read && (
                         <Badge variant="default" className="flex-shrink-0">
                           New
                         </Badge>
@@ -179,7 +179,7 @@ export function NotificationsList({ notifications: initialNotifications }: Notif
                           <ExternalLink className="size-3 ml-1" />
                         </Button>
                       )}
-                      {!notification.isRead && (
+                      {!notification.read && (
                         <Button
                           variant="ghost"
                           size="sm"

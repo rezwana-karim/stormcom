@@ -14,8 +14,7 @@ import prisma from '@/lib/prisma';
 import { z } from 'zod';
 
 const updateSchema = z.object({
-  isRead: z.boolean().optional(),
-  read: z.boolean().optional(), // Support both field names
+  read: z.boolean().optional(),
 });
 
 export async function PATCH(
@@ -39,8 +38,7 @@ export async function PATCH(
       );
     }
 
-    const { isRead, read } = validation.data;
-    const readValue = isRead ?? read;
+    const { read: readValue } = validation.data;
 
     // Verify notification belongs to user
     const notification = await prisma.notification.findUnique({
@@ -59,7 +57,7 @@ export async function PATCH(
     const updatedNotification = await prisma.notification.update({
       where: { id: params.id },
       data: {
-        isRead: readValue ?? notification.isRead,
+        read: readValue ?? notification.read,
         readAt: readValue ? new Date() : notification.readAt,
       },
     });
