@@ -10,6 +10,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
+import { sendRejectionEmail } from '@/lib/email-service';
 
 const rejectSchema = z.object({
   reason: z.string().min(1, 'Rejection reason is required').max(500),
@@ -120,6 +121,15 @@ export async function POST(
         metadata: JSON.stringify({ reason }),
       },
     });
+
+    // Send rejection email (async, don't block response)
+    if (targetUser.email) {
+      sendRejectionEmail(
+        targetUser.email,
+        targetUser.name || 'User',
+        reason
+      ).catch((err) => console.error('Failed to send rejection email:', err));
+    }
 
     return NextResponse.json({
       user: rejectedUser,
