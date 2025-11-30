@@ -494,11 +494,12 @@ export class OrderService {
       data: {
         status: OrderStatus.CANCELED,
         canceledAt: new Date(),
+        cancelReason: reason || 'Order canceled',
         adminNote: reason || 'Order canceled',
       },
     });
 
-    // Restore inventory for each item
+    // Restore inventory for each item using InventoryService
     const { InventoryService } = await import('./inventory.service');
     const inventoryService = InventoryService.getInstance();
 
@@ -506,15 +507,15 @@ export class OrderService {
       .filter(item => item.productId !== null)
       .map(item => ({
         productId: item.productId!,
+        variantId: item.variantId ?? undefined,
         quantity: item.quantity
       }));
 
     if (items.length > 0) {
-      await inventoryService.restoreStock(
+      await inventoryService.restoreStockForCancellation(
         storeId,
         items,
-        orderId,
-        'Cancellation'
+        orderId
       );
     }
 
@@ -563,7 +564,7 @@ export class OrderService {
       },
     });
 
-    // Restore inventory for each item
+    // Restore inventory for each item using InventoryService
     const { InventoryService } = await import('./inventory.service');
     const inventoryService = InventoryService.getInstance();
 
@@ -571,15 +572,15 @@ export class OrderService {
       .filter(item => item.productId !== null)
       .map(item => ({
         productId: item.productId!,
+        variantId: item.variantId ?? undefined,
         quantity: item.quantity
       }));
 
     if (items.length > 0) {
-      await inventoryService.restoreStock(
+      await inventoryService.restoreStockForReturn(
         storeId,
         items,
-        orderId,
-        'Refund'
+        orderId
       );
     }
 

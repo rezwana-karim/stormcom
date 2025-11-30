@@ -13,6 +13,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Search, Download, MoreHorizontal, Mail, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { getCustomerDisplayName } from '@/lib/utils/customer';
 import {
   Table,
   TableBody,
@@ -38,12 +39,13 @@ import { DeleteCustomerDialog } from './delete-customer-dialog';
 
 interface Customer {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone?: string;
   totalOrders: number;
   totalSpent: number;
-  joinedAt: string;
+  createdAt: string;
   lastOrderAt?: string;
   status: 'active' | 'inactive';
 }
@@ -58,7 +60,11 @@ interface ListResponse {
   };
 }
 
-export function CustomersList() {
+interface CustomersListProps {
+  storeId: string;
+}
+
+export function CustomersList({ storeId }: CustomersListProps) {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -76,11 +82,14 @@ export function CustomersList() {
   const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
 
   const fetchCustomers = async () => {
+    if (!storeId) return;
+    
     setLoading(true);
     try {
       const params = new URLSearchParams({
+        storeId,
         page: pagination.page.toString(),
-        limit: pagination.limit.toString(),
+        perPage: pagination.limit.toString(),
         ...(searchQuery && { search: searchQuery }),
       });
 
@@ -88,11 +97,11 @@ export function CustomersList() {
       if (!response.ok) throw new Error('Failed to fetch customers');
 
       const result: ListResponse = await response.json();
-      setCustomers(result.data);
+      setCustomers(result.data || []);
       setPagination((prev) => ({
         ...prev,
-        total: result.meta.total,
-        totalPages: result.meta.totalPages,
+        total: result.meta?.total || 0,
+        totalPages: result.meta?.totalPages || 0,
       }));
     } catch (error) {
       toast.error('Failed to load customers');
@@ -105,7 +114,7 @@ export function CustomersList() {
   useEffect(() => {
     fetchCustomers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.page, searchQuery]);
+  }, [storeId, pagination.page, searchQuery]);
 
   const refreshCustomers = () => {
     fetchCustomers();
@@ -202,7 +211,9 @@ export function CustomersList() {
                 <TableRow key={customer.id}>
                   <TableCell>
                     <div>
-                      <p className="font-medium">{customer.name}</p>
+                      <p className="font-medium">
+                        {getCustomerDisplayName(customer)}
+                      </p>
                       {customer.lastOrderAt && (
                         <p className="text-xs text-muted-foreground">
                           Last order: {formatDate(customer.lastOrderAt)}
@@ -229,7 +240,7 @@ export function CustomersList() {
                     {formatCurrency(customer.totalSpent)}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {formatDate(customer.joinedAt)}
+                    {customer.createdAt ? formatDate(customer.createdAt) : '-'}
                   </TableCell>
                   <TableCell>
                     <Badge variant={customer.status === 'active' ? 'default' : 'secondary'}>

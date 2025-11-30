@@ -355,6 +355,7 @@ model ProductVariant {
   isDefault Boolean  @default(false)
   
   orderItems OrderItem[]
+  inventoryLogs InventoryLog[] @relation("VariantInventoryLogs")
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -603,11 +604,14 @@ model InventoryLog {
   store       Store    @relation("StoreInventoryLogs", fields: [storeId], references: [id], onDelete: Cascade)
   productId   String
   product     Product  @relation("InventoryLogs", fields: [productId], references: [id], onDelete: Cascade)
+  variantId   String?
+  variant     ProductVariant? @relation("VariantInventoryLogs", fields: [variantId], references: [id], onDelete: SetNull)
+  orderId     String?
   
   previousQty Int
   newQty      Int
   changeQty   Int
-  reason      String
+  reason      String   // String value from InventoryAdjustmentReason enum (stored as raw string, not TypeScript enum)
   note        String?
   
   userId      String?
@@ -617,7 +621,10 @@ model InventoryLog {
   
   @@index([storeId, productId, createdAt])
   @@index([productId, createdAt])
+  @@index([variantId, createdAt])
+  @@index([orderId])
   @@index([userId, createdAt])
+  @@index([reason])
 }
 
 // Audit log model (for tracking all system actions)
