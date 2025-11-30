@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
 
     // Get user stats
-    const [totalUsers, activeUsers, newUsers, previousNewUsers] = await Promise.all([
+    const [totalUsers, activeUsers, newUsers, previousNewUsers, pendingUsers, approvedUsers, suspendedUsers] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({
         where: {
@@ -52,6 +52,15 @@ export async function GET(request: NextRequest) {
         where: {
           createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo },
         },
+      }),
+      prisma.user.count({
+        where: { accountStatus: 'PENDING' },
+      }),
+      prisma.user.count({
+        where: { accountStatus: 'APPROVED' },
+      }),
+      prisma.user.count({
+        where: { accountStatus: 'SUSPENDED' },
       }),
     ]);
 
@@ -117,6 +126,9 @@ export async function GET(request: NextRequest) {
         total: totalUsers,
         active: activeUsers,
         new: newUsers,
+        pending: pendingUsers,
+        approved: approvedUsers,
+        suspended: suspendedUsers,
         growth: userGrowth,
       },
       stores: {
