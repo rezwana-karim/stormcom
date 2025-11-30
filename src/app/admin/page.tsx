@@ -29,6 +29,7 @@ async function getAdminStats() {
     approvedUsers,
     suspendedUsers,
     totalStores,
+    pendingStoreRequests,
     recentActivity,
   ] = await Promise.all([
     prisma.user.count(),
@@ -36,6 +37,7 @@ async function getAdminStats() {
     prisma.user.count({ where: { accountStatus: 'APPROVED' } }),
     prisma.user.count({ where: { accountStatus: 'SUSPENDED' } }),
     prisma.store.count(),
+    prisma.storeRequest.count({ where: { status: 'PENDING' } }),
     prisma.platformActivity.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' },
@@ -60,6 +62,7 @@ async function getAdminStats() {
     approvedUsers,
     suspendedUsers,
     totalStores,
+    pendingStoreRequests,
     recentRegistrations,
     recentActivity,
   };
@@ -99,7 +102,7 @@ async function StatsCards() {
   const stats = await getAdminStats();
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -115,13 +118,26 @@ async function StatsCards() {
 
       <Card className={stats.pendingUsers > 0 ? "border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30" : ""}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Pending Approval</CardTitle>
+          <CardTitle className="text-sm font-medium">Pending Users</CardTitle>
           <Clock className="h-4 w-4 text-amber-600" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{stats.pendingUsers}</div>
           <p className="text-xs text-muted-foreground">
             {stats.pendingUsers > 0 ? "Awaiting review" : "All caught up!"}
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card className={stats.pendingStoreRequests > 0 ? "border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-950/30" : ""}>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Store Requests</CardTitle>
+          <Store className="h-4 w-4 text-purple-600" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.pendingStoreRequests}</div>
+          <p className="text-xs text-muted-foreground">
+            {stats.pendingStoreRequests > 0 ? "Pending approval" : "No requests"}
           </p>
         </CardContent>
       </Card>
@@ -291,8 +307,8 @@ export default async function AdminDashboardPage() {
       </div>
 
       <Suspense fallback={
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => <StatsCardSkeleton key={i} />)}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          {[...Array(5)].map((_, i) => <StatsCardSkeleton key={i} />)}
         </div>
       }>
         <StatsCards />

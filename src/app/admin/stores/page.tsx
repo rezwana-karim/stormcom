@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Store, Users, Package, ShoppingCart } from "lucide-react";
+import { ClipboardList, Store, Users, Package, ShoppingCart } from "lucide-react";
 
 async function getStores() {
   return prisma.store.findMany({
@@ -63,12 +63,12 @@ async function StoresContent() {
         <Store className="h-16 w-16 text-muted-foreground mb-4" />
         <h3 className="text-lg font-semibold">No Stores Yet</h3>
         <p className="text-muted-foreground mb-4">
-          Create a store for an approved user to get started
+          Stores are created when you approve store requests from users
         </p>
-        <Link href="/admin/stores/create">
+        <Link href="/admin/stores/requests">
           <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Create First Store
+            <ClipboardList className="h-4 w-4 mr-2" />
+            View Store Requests
           </Button>
         </Link>
       </div>
@@ -148,10 +148,10 @@ export default async function AdminStoresPage() {
             Manage all stores on the platform
           </p>
         </div>
-        <Link href="/admin/stores/create">
+        <Link href="/admin/stores/requests">
           <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Store
+            <ClipboardList className="h-4 w-4 mr-2" />
+            Store Requests
           </Button>
         </Link>
       </div>
