@@ -3,6 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useSession } from "next-auth/react"
 import {
   IconChartBar,
   IconDashboard,
@@ -82,6 +83,13 @@ const adminSecondaryItems = [
 
 export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
+  const { data: session } = useSession()
+
+  const user = {
+    name: session?.user?.name || "Admin User",
+    email: session?.user?.email || "admin@example.com",
+    avatar: session?.user?.image || "",
+  }
 
   return (
     <Sidebar variant="inset" {...props}>
@@ -146,7 +154,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <NavUser />
+        <NavUser user={user} />
       </SidebarFooter>
     </Sidebar>
   )

@@ -24,9 +24,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Building2, User, Store } from "lucide-react";
+import { Loader2, User, Store } from "lucide-react";
 import { toast } from "sonner";
 
 const formSchema = z.object({
@@ -71,8 +71,8 @@ export function CreateStoreForm({ approvedUsers, selectedUser }: CreateStoreForm
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<FormValues, unknown, FormValues>({
+    resolver: zodResolver(formSchema) as never,
     defaultValues: {
       userId: selectedUser?.id || "",
       name: selectedUser?.businessName || "",

@@ -246,7 +246,7 @@ export function PendingUsersList({ users: initialUsers }: PendingUsersListProps)
 
       {filteredUsers.length === 0 && search && (
         <div className="text-center py-8 text-muted-foreground">
-          No users found matching "{search}"
+          No users found matching &quot;{search}&quot;
         </div>
       )}
 
@@ -256,7 +256,7 @@ export function PendingUsersList({ users: initialUsers }: PendingUsersListProps)
           <AlertDialogHeader>
             <AlertDialogTitle>Reject User Application</AlertDialogTitle>
             <AlertDialogDescription>
-              Please provide a reason for rejecting {selectedUser?.name || selectedUser?.email}'s application. 
+              Please provide a reason for rejecting {selectedUser?.name || selectedUser?.email}&apos;s application. 
               This will be sent to the user.
             </AlertDialogDescription>
           </AlertDialogHeader>
