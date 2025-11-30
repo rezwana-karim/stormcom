@@ -9,7 +9,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
-import { SiteHeader } from "@/components/site-header";
+import { AdminHeader } from "@/components/admin/admin-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 export default async function AdminLayout({
@@ -37,7 +37,7 @@ export default async function AdminLayout({
     <SidebarProvider>
       <AdminSidebar />
       <SidebarInset>
-        <SiteHeader />
+        <AdminHeader />
         <div className="flex flex-1 flex-col">
           <main className="flex-1 p-4 md:p-6 lg:p-8">
             {children}

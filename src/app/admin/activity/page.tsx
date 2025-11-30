@@ -1,26 +1,76 @@
 /**
  * Admin Activity Page
  * 
- * Shows platform-wide activity feed.
+ * Shows platform-wide activity feed with filters and export.
  */
 
 import { Suspense } from "react";
 import prisma from "@/lib/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Store, 
-  CheckCircle2, 
-  XCircle, 
-  AlertTriangle,
-  Activity,
-  UserPlus,
-} from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { Activity } from "lucide-react";
+import { ActivityFilters } from "@/components/admin/activity-filters";
+import { ActivityFeed } from "@/components/admin/activity-feed";
 
-async function getActivity() {
+interface PageProps {
+  searchParams: Promise<{
+    action?: string;
+    actor?: string;
+    store?: string;
+    from?: string;
+    to?: string;
+  }>;
+}
+
+async function getFilterOptions() {
+  const [actors, stores] = await Promise.all([
+    prisma.user.findMany({
+      where: { isSuperAdmin: true },
+      select: { id: true, name: true, email: true },
+      take: 100,
+    }),
+    prisma.store.findMany({
+      select: { id: true, name: true },
+      take: 100,
+    }),
+  ]);
+
+  return { actors, stores };
+}
+
+async function getActivity(filters: {
+  action?: string;
+  actor?: string;
+  store?: string;
+  from?: string;
+  to?: string;
+}) {
+  const where: Record<string, unknown> = {};
+
+  if (filters.action) {
+    where.action = filters.action;
+  }
+
+  if (filters.actor) {
+    where.actorId = filters.actor;
+  }
+
+  if (filters.store) {
+    where.storeId = filters.store;
+  }
+
+  if (filters.from || filters.to) {
+    where.createdAt = {};
+    if (filters.from) {
+      (where.createdAt as Record<string, Date>).gte = new Date(filters.from);
+    }
+    if (filters.to) {
+      (where.createdAt as Record<string, Date>).lte = new Date(filters.to);
+    }
+  }
+
   return prisma.platformActivity.findMany({
+    where,
     take: 50,
     orderBy: { createdAt: 'desc' },
     include: {
@@ -44,106 +94,40 @@ function ActivitySkeleton() {
   );
 }
 
-const actionConfig: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
-  USER_REGISTERED: {
-    icon: <UserPlus className="h-5 w-5" />,
-    color: "text-blue-500 bg-blue-100",
-    label: "User Registered",
-  },
-  USER_APPROVED: {
-    icon: <CheckCircle2 className="h-5 w-5" />,
-    color: "text-green-500 bg-green-100",
-    label: "User Approved",
-  },
-  USER_REJECTED: {
-    icon: <XCircle className="h-5 w-5" />,
-    color: "text-red-500 bg-red-100",
-    label: "User Rejected",
-  },
-  USER_SUSPENDED: {
-    icon: <AlertTriangle className="h-5 w-5" />,
-    color: "text-orange-500 bg-orange-100",
-    label: "User Suspended",
-  },
-  USER_UNSUSPENDED: {
-    icon: <CheckCircle2 className="h-5 w-5" />,
-    color: "text-green-500 bg-green-100",
-    label: "User Reactivated",
-  },
-  STORE_CREATED: {
-    icon: <Store className="h-5 w-5" />,
-    color: "text-purple-500 bg-purple-100",
-    label: "Store Created",
-  },
-};
-
-async function ActivityContent() {
-  const activities = await getActivity();
-
-  if (activities.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <Activity className="h-16 w-16 text-muted-foreground mb-4" />
-        <h3 className="text-lg font-semibold">No Activity Yet</h3>
-        <p className="text-muted-foreground">
-          Platform activities will appear here
-        </p>
-      </div>
-    );
-  }
+async function ActivityContent({ filters }: { filters: PageProps["searchParams"] }) {
+  const resolvedFilters = await filters;
+  const [activities, filterOptions] = await Promise.all([
+    getActivity(resolvedFilters),
+    getFilterOptions(),
+  ]);
 
   return (
-    <div className="space-y-4">
-      {activities.map((activity) => {
-        const config = actionConfig[activity.action] || {
-          icon: <Activity className="h-5 w-5" />,
-          color: "text-gray-500 bg-gray-100",
-          label: activity.action,
-        };
-
-        return (
-          <div 
-            key={activity.id} 
-            className="flex items-start gap-4 p-4 border rounded-lg hover:bg-muted/30 transition-colors"
-          >
-            <div className={`p-2 rounded-full ${config.color}`}>
-              {config.icon}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="outline">{config.label}</Badge>
-                {activity.store && (
-                  <Badge variant="secondary" className="flex items-center gap-1">
-                    <Store className="h-3 w-3" />
-                    {activity.store.name}
-                  </Badge>
-                )}
-              </div>
-              <p className="mt-1 text-sm">{activity.description}</p>
-              <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
-                {activity.actor && (
-                  <span>
-                    By: {activity.actor.name || activity.actor.email}
-                  </span>
-                )}
-                {activity.targetUser && (
-                  <span>
-                    Target: {activity.targetUser.name || activity.targetUser.email}
-                  </span>
-                )}
-                <span>
-                  {formatDistanceToNow(new Date(activity.createdAt), { addSuffix: true })}
-                </span>
-              </div>
-            </div>
+    <>
+      <ActivityFilters 
+        actorOptions={filterOptions.actors} 
+        storeOptions={filterOptions.stores} 
+      />
+      
+      <div className="mt-4">
+        {activities.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Activity className="h-16 w-16 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold">No Activity Found</h3>
+            <p className="text-muted-foreground">
+              {Object.values(resolvedFilters).some(Boolean) 
+                ? "No activities match your filters"
+                : "Platform activities will appear here"}
+            </p>
           </div>
-        );
-      })}
-    </div>
+        ) : (
+          <ActivityFeed activities={activities} />
+        )}
+      </div>
+    </>
   );
 }
 
-export default async function AdminActivityPage() {
+export default async function AdminActivityPage({ searchParams }: PageProps) {
   return (
     <div className="space-y-6">
       <div>
@@ -157,16 +141,17 @@ export default async function AdminActivityPage() {
         <CardHeader>
           <CardTitle>Activity Feed</CardTitle>
           <CardDescription>
-            Recent platform-wide activities
+            Recent platform-wide activities with filters and export
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Suspense fallback={
             <div className="space-y-4">
+              <Skeleton className="h-10 w-full" />
               {[...Array(5)].map((_, i) => <ActivitySkeleton key={i} />)}
             </div>
           }>
-            <ActivityContent />
+            <ActivityContent filters={searchParams} />
           </Suspense>
         </CardContent>
       </Card>
