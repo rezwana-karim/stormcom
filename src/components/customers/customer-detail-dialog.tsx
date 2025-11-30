@@ -21,9 +21,8 @@ import { getCustomerDisplayName } from '@/lib/utils/customer';
 
 interface Customer {
   id: string;
-  name?: string;
-  firstName?: string;
-  lastName?: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone?: string;
   totalOrders: number;
