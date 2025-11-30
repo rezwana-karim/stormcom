@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { sendApprovalEmail } from '@/lib/email-service';
 
 /**
  * POST /api/admin/users/[id]/approve
@@ -102,6 +103,14 @@ export async function POST(
         description: `Approved user account for ${targetUser.name || targetUser.email}`,
       },
     });
+
+    // Send approval email (async, don't block response)
+    if (targetUser.email) {
+      sendApprovalEmail(
+        targetUser.email,
+        targetUser.name || 'User'
+      ).catch((err) => console.error('Failed to send approval email:', err));
+    }
 
     return NextResponse.json({
       user: approvedUser,
