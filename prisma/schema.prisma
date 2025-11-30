@@ -60,6 +60,14 @@ model User {
   inventoryLogs InventoryLog[] @relation("InventoryUserLogs")
   auditLogs     AuditLog[]     @relation("AuditUserLogs")
   notifications Notification[] @relation("UserNotifications")
+  
+  // Platform activity relations
+  activitiesPerformed PlatformActivity[] @relation("PlatformActivityActor")
+  activitiesReceived  PlatformActivity[] @relation("PlatformActivityTarget")
+  
+  // Store request relations
+  storeRequests       StoreRequest[]     @relation("UserStoreRequests")
+  reviewedStoreRequests StoreRequest[]   @relation("StoreRequestReviewer")
 
   accounts      Account[]
   sessions      Session[]
@@ -317,6 +325,10 @@ model Store {
   auditLogs      AuditLog[]
   inventoryLogs  InventoryLog[] @relation("StoreInventoryLogs")
   staff          StoreStaff[] // Store staff assignments
+  
+  // Platform management
+  platformActivities PlatformActivity[]
+  createdFromRequest StoreRequest? @relation("CreatedFromRequest")
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -772,4 +784,124 @@ model RateLimit {
   @@index([identifier, endpoint, windowStart])
   @@index([windowStart])
   @@map("rate_limits")
+}
+
+// ============================================================================
+// NOTIFICATION & PLATFORM MANAGEMENT MODELS
+// ============================================================================
+
+// Notification types enum
+enum NotificationType {
+  ACCOUNT_PENDING        // Account awaiting approval
+  ACCOUNT_APPROVED       // Account approved by admin
+  ACCOUNT_REJECTED       // Account rejected by admin
+  ACCOUNT_SUSPENDED      // Account suspended
+  STORE_CREATED          // Store created for user
+  STORE_ASSIGNED         // User assigned to store
+  PASSWORD_RESET         // Password reset requested
+  SECURITY_ALERT         // Security-related notification
+  SYSTEM_ANNOUNCEMENT    // Platform-wide announcement
+  NEW_USER_REGISTERED    // Admin notification: new user signup
+  STORE_REQUEST          // Admin notification: store request
+}
+
+// User notifications
+model Notification {
+  id        String           @id @default(cuid())
+  
+  userId    String
+  user      User             @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  
+  type      NotificationType
+  title     String
+  message   String
+  data      String?          // JSON data for additional context
+  
+  read      Boolean          @default(false)
+  readAt    DateTime?
+  
+  // Action tracking
+  actionUrl   String?        // URL to navigate when clicked
+  actionLabel String?        // Button label for action
+  
+  createdAt DateTime         @default(now())
+  
+  @@index([userId, read, createdAt])
+  @@index([userId, type, createdAt])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// Platform activity log (Super Admin monitoring)
+model PlatformActivity {
+  id          String   @id @default(cuid())
+  
+  actorId     String?  // User who performed the action (null for system)
+  actor       User?    @relation("PlatformActivityActor", fields: [actorId], references: [id], onDelete: SetNull)
+  
+  targetUserId String? // User affected by the action
+  targetUser   User?   @relation("PlatformActivityTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+  
+  storeId     String?  // Store involved (if any)
+  store       Store?   @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  
+  action      String   // e.g., "USER_REGISTERED", "USER_APPROVED", "STORE_CREATED"
+  entityType  String   // e.g., "User", "Store", "StoreUser"
+  entityId    String?
+  
+  description String   // Human-readable description
+  metadata    String?  // JSON additional data
+  
+  ipAddress   String?
+  userAgent   String?
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([actorId, createdAt])
+  @@index([targetUserId, createdAt])
+  @@index([storeId, createdAt])
+  @@index([action, createdAt])
+  @@index([createdAt])
+  @@map("platform_activities")
+}
+
+// Store creation requests (user-initiated)
+model StoreRequest {
+  id            String   @id @default(cuid())
+  
+  userId        String
+  user          User     @relation("UserStoreRequests", fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Requested store details
+  storeName     String
+  storeSlug     String?
+  storeDescription String?
+  
+  // Business information
+  businessName    String?
+  businessCategory String?
+  businessAddress String?
+  businessPhone   String?
+  businessEmail   String?
+  
+  // Request status
+  status        String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  
+  // Admin response
+  reviewedBy    String?
+  reviewer      User?    @relation("StoreRequestReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
+  reviewedAt    DateTime?
+  rejectionReason String?
+  
+  // If approved, link to created store
+  createdStoreId String?  @unique
+  createdStore   Store?   @relation("CreatedFromRequest", fields: [createdStoreId], references: [id], onDelete: SetNull)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([userId, status])
+  @@index([status, createdAt])
+  @@index([reviewedBy])
+  @@map("store_requests")
 }
