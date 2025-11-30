@@ -33,14 +33,17 @@ interface DashboardMetrics {
   orders: {
     total: number;
     change: number;
+    trend: 'up' | 'down';
   };
   customers: {
     total: number;
-    new: number;
-  };
-  avgOrderValue: {
-    value: number;
     change: number;
+    trend: 'up' | 'down';
+  };
+  products: {
+    total: number;
+    change: number;
+    trend: 'up' | 'down';
   };
 }
 
@@ -178,8 +181,8 @@ export function AnalyticsDashboard() {
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {metrics && (
-                    <span className="text-green-600">
-                      +{metrics.customers.new} new this period
+                    <span className={metrics.customers.change > 0 ? 'text-green-600' : 'text-red-600'}>
+                      {formatChange(metrics.customers.change)} from last period
                     </span>
                   )}
                 </p>
@@ -188,17 +191,17 @@ export function AnalyticsDashboard() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Avg. Order Value</CardTitle>
+                <CardTitle className="text-sm font-medium">Products</CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {metrics ? formatCurrency(metrics.avgOrderValue.value) : '---'}
+                  {metrics ? metrics.products.total.toLocaleString() : '---'}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {metrics && (
-                    <span className={metrics.avgOrderValue.change > 0 ? 'text-green-600' : 'text-red-600'}>
-                      {formatChange(metrics.avgOrderValue.change)} from last period
+                    <span className="text-green-600">
+                      Active in catalog
                     </span>
                   )}
                 </p>

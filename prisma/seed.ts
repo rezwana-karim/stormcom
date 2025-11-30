@@ -483,6 +483,7 @@ async function main() {
               inventoryQty: Math.floor(Math.random() * 100) + 5,
               lowStockThreshold: 5,
               isDefault: p.variants.indexOf(v) === 0,
+              options: '{}',
             },
           })
         )
@@ -677,7 +678,7 @@ async function main() {
     // PENDING order
     prisma.order.create({
       data: {
-        storeId: store.id,
+        storeId: stores[0].id,
         customerId: customers[0].id,
         orderNumber: 'ORD-00001',
         status: OrderStatus.PENDING,
@@ -712,7 +713,7 @@ async function main() {
     // PAID order (ready to process)
     prisma.order.create({
       data: {
-        storeId: store.id,
+        storeId: stores[0].id,
         customerId: customers[1].id,
         orderNumber: 'ORD-00002',
         status: OrderStatus.PAID,
@@ -748,7 +749,7 @@ async function main() {
     // PROCESSING order
     prisma.order.create({
       data: {
-        storeId: store.id,
+        storeId: stores[0].id,
         customerId: customers[2].id,
         orderNumber: 'ORD-00003',
         status: OrderStatus.PROCESSING,
@@ -792,7 +793,7 @@ async function main() {
     // SHIPPED order
     prisma.order.create({
       data: {
-        storeId: store.id,
+        storeId: stores[0].id,
         customerId: customers[3].id,
         orderNumber: 'ORD-00004',
         status: OrderStatus.SHIPPED,
@@ -828,7 +829,7 @@ async function main() {
     // DELIVERED order
     prisma.order.create({
       data: {
-        storeId: store.id,
+        storeId: stores[0].id,
         customerId: customers[4].id,
         orderNumber: 'ORD-00005',
         status: OrderStatus.DELIVERED,
@@ -865,7 +866,7 @@ async function main() {
     // CANCELED order
     prisma.order.create({
       data: {
-        storeId: store.id,
+        storeId: stores[0].id,
         customerId: customers[0].id,
         orderNumber: 'ORD-00006',
         status: OrderStatus.CANCELED,
@@ -902,7 +903,7 @@ async function main() {
     // Multiple items order
     prisma.order.create({
       data: {
-        storeId: store.id,
+        storeId: stores[0].id,
         customerId: customers[1].id,
         orderNumber: 'ORD-00007',
         status: OrderStatus.PROCESSING,
@@ -959,6 +960,7 @@ async function main() {
 
       return prisma.review.create({
         data: {
+          storeId: stores[0].id,
           productId: products[productIndex].id,
           customerId: customers[customerIndex].id,
           rating,
@@ -988,9 +990,8 @@ async function main() {
               'Arrived damaged, disappointed.',
               'Best purchase I made this month!',
             ][index % 10],
-          verified: Math.random() > 0.3,
-          helpful: Math.floor(Math.random() * 20),
-          unhelpful: Math.floor(Math.random() * 5),
+          isVerifiedPurchase: Math.random() > 0.3,
+          isApproved: true,
         },
       });
     })

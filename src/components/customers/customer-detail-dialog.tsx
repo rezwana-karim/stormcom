@@ -17,15 +17,17 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Mail, Phone, Calendar, ShoppingCart, DollarSign } from 'lucide-react';
+import { getCustomerDisplayName } from '@/lib/utils/customer';
 
 interface Customer {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone?: string;
   totalOrders: number;
   totalSpent: number;
-  joinedAt: string;
+  createdAt: string;
   lastOrderAt?: string;
   status: 'active' | 'inactive';
 }
@@ -62,7 +64,9 @@ export function CustomerDetailDialog({
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div>
-              <DialogTitle className="text-2xl">{customer.name}</DialogTitle>
+              <DialogTitle className="text-2xl">
+                {getCustomerDisplayName(customer)}
+              </DialogTitle>
               <DialogDescription>Customer details and activity</DialogDescription>
             </div>
             <Badge variant={customer.status === 'active' ? 'default' : 'secondary'}>
@@ -114,7 +118,7 @@ export function CustomerDetailDialog({
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">Joined</span>
                 </div>
-                <p className="text-sm">{formatDate(customer.joinedAt)}</p>
+                <p className="text-sm">{customer.createdAt ? formatDate(customer.createdAt) : '-'}</p>
               </div>
 
               {customer.lastOrderAt && (

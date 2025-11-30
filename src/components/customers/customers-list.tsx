@@ -13,6 +13,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Search, Download, MoreHorizontal, Mail, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { getCustomerDisplayName } from '@/lib/utils/customer';
 import {
   Table,
   TableBody,
@@ -38,12 +39,13 @@ import { DeleteCustomerDialog } from './delete-customer-dialog';
 
 interface Customer {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone?: string;
   totalOrders: number;
   totalSpent: number;
-  joinedAt: string;
+  createdAt: string;
   lastOrderAt?: string;
   status: 'active' | 'inactive';
 }
@@ -209,7 +211,9 @@ export function CustomersList({ storeId }: CustomersListProps) {
                 <TableRow key={customer.id}>
                   <TableCell>
                     <div>
-                      <p className="font-medium">{customer.name}</p>
+                      <p className="font-medium">
+                        {getCustomerDisplayName(customer)}
+                      </p>
                       {customer.lastOrderAt && (
                         <p className="text-xs text-muted-foreground">
                           Last order: {formatDate(customer.lastOrderAt)}
@@ -236,7 +240,7 @@ export function CustomersList({ storeId }: CustomersListProps) {
                     {formatCurrency(customer.totalSpent)}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {formatDate(customer.joinedAt)}
+                    {customer.createdAt ? formatDate(customer.createdAt) : '-'}
                   </TableCell>
                   <TableCell>
                     <Badge variant={customer.status === 'active' ? 'default' : 'secondary'}>
