@@ -10,6 +10,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
+import { sendSuspensionEmail, sendApprovalEmail } from '@/lib/email-service';
 
 const suspendSchema = z.object({
   reason: z.string().min(1, 'Suspension reason is required').max(500),
@@ -136,6 +137,15 @@ export async function POST(
       },
     });
 
+    // Send suspension email (async, don't block response)
+    if (targetUser.email) {
+      sendSuspensionEmail(
+        targetUser.email,
+        targetUser.name || 'User',
+        reason
+      ).catch((err) => console.error('Failed to send suspension email:', err));
+    }
+
     return NextResponse.json({
       user: suspendedUser,
       message: 'User suspended successfully',
@@ -239,6 +249,14 @@ export async function DELETE(
         description: `Reactivated user account for ${targetUser.name || targetUser.email}`,
       },
     });
+
+    // Send reactivation email (async, don't block response)
+    if (targetUser.email) {
+      sendApprovalEmail(
+        targetUser.email,
+        targetUser.name || 'User'
+      ).catch((err) => console.error('Failed to send reactivation email:', err));
+    }
 
     return NextResponse.json({
       user: reactivatedUser,

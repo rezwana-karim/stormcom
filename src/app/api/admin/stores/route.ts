@@ -9,6 +9,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
+import { sendStoreCreatedEmail } from '@/lib/email-service';
 
 const createStoreSchema = z.object({
   userId: z.string().min(1, 'User ID is required'),
@@ -299,6 +300,16 @@ export async function POST(request: NextRequest) {
         description: `Created store "${data.name}" for ${targetUser.name || targetUser.email}`,
       },
     });
+
+    // Send store created email (async, don't block response)
+    if (targetUser.email) {
+      sendStoreCreatedEmail(
+        targetUser.email,
+        targetUser.name || 'User',
+        data.name,
+        data.slug
+      ).catch((err) => console.error('Failed to send store created email:', err));
+    }
 
     return NextResponse.json({
       store: {
