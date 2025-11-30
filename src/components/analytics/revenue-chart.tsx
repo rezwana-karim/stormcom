@@ -28,17 +28,23 @@ interface RevenueData {
 
 interface RevenueChartProps {
   timeRange: string;
+  storeId: string;
 }
 
-export function RevenueChart({ timeRange }: RevenueChartProps) {
+export function RevenueChart({ timeRange, storeId }: RevenueChartProps) {
   const [data, setData] = useState<RevenueData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!storeId) {
+        setLoading(false);
+        return;
+      }
+      
       setLoading(true);
       try {
-        const response = await fetch(`/api/analytics/revenue?range=${timeRange}`);
+        const response = await fetch(`/api/analytics/revenue?storeId=${storeId}&range=${timeRange}`);
         if (!response.ok) throw new Error('Failed to fetch revenue data');
         
         const result = await response.json();
@@ -52,7 +58,7 @@ export function RevenueChart({ timeRange }: RevenueChartProps) {
     };
 
     fetchData();
-  }, [timeRange]);
+  }, [timeRange, storeId]);
 
   if (loading) {
     return <div className="h-[350px] flex items-center justify-center">Loading chart...</div>;

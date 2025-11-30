@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 
 export const metadata = {
-  title: 'Analytics | Dashboard | StormCom',
+  title: 'Analytics | Dashboard',
   description: 'Business analytics and insights',
 };
 

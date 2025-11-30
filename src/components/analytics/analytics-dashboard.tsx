@@ -21,6 +21,7 @@ import {
 import { RevenueChart } from './revenue-chart';
 import { TopProductsTable } from './top-products-table';
 import { CustomerMetrics } from './customer-metrics';
+import { StoreSelector } from '@/components/store-selector';
 import { toast } from 'sonner';
 
 interface DashboardMetrics {
@@ -32,14 +33,17 @@ interface DashboardMetrics {
   orders: {
     total: number;
     change: number;
+    trend: 'up' | 'down';
   };
   customers: {
     total: number;
-    new: number;
-  };
-  avgOrderValue: {
-    value: number;
     change: number;
+    trend: 'up' | 'down';
+  };
+  products: {
+    total: number;
+    change: number;
+    trend: 'up' | 'down';
   };
 }
 
@@ -49,12 +53,18 @@ export function AnalyticsDashboard() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
+  const [storeId, setStoreId] = useState<string>('');
 
   useEffect(() => {
     const fetchMetrics = async () => {
+      if (!storeId) {
+        setLoading(false);
+        return;
+      }
+      
       setLoading(true);
       try {
-        const response = await fetch(`/api/analytics/dashboard?range=${timeRange}`);
+        const response = await fetch(`/api/analytics/dashboard?storeId=${storeId}&range=${timeRange}`);
         if (!response.ok) throw new Error('Failed to fetch analytics');
         
         const data = await response.json();
@@ -68,7 +78,7 @@ export function AnalyticsDashboard() {
     };
 
     fetchMetrics();
-  }, [timeRange]);
+  }, [timeRange, storeId]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -86,8 +96,30 @@ export function AnalyticsDashboard() {
     return <div className="text-center py-12">Loading analytics...</div>;
   }
 
+  if (!storeId) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <label className="text-sm font-medium">Store:</label>
+          <StoreSelector onStoreChange={setStoreId} />
+        </div>
+        <div className="rounded-lg border bg-card p-12 text-center">
+          <p className="text-sm text-muted-foreground">
+            Select a store to view analytics
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Store Selector */}
+      <div className="flex items-center gap-4">
+        <label className="text-sm font-medium">Store:</label>
+        <StoreSelector onStoreChange={setStoreId} />
+      </div>
+
       {/* Time Range Selector */}
       <Tabs value={timeRange} onValueChange={(value) => setTimeRange(value as TimeRange)}>
         <TabsList>
@@ -149,8 +181,8 @@ export function AnalyticsDashboard() {
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {metrics && (
-                    <span className="text-green-600">
-                      +{metrics.customers.new} new this period
+                    <span className={metrics.customers.change > 0 ? 'text-green-600' : 'text-red-600'}>
+                      {formatChange(metrics.customers.change)} from last period
                     </span>
                   )}
                 </p>
@@ -159,17 +191,17 @@ export function AnalyticsDashboard() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Avg. Order Value</CardTitle>
+                <CardTitle className="text-sm font-medium">Products</CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {metrics ? formatCurrency(metrics.avgOrderValue.value) : '---'}
+                  {metrics ? metrics.products.total.toLocaleString() : '---'}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {metrics && (
-                    <span className={metrics.avgOrderValue.change > 0 ? 'text-green-600' : 'text-red-600'}>
-                      {formatChange(metrics.avgOrderValue.change)} from last period
+                    <span className="text-green-600">
+                      Active in catalog
                     </span>
                   )}
                 </p>
@@ -187,7 +219,7 @@ export function AnalyticsDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <RevenueChart timeRange={timeRange} />
+                <RevenueChart timeRange={timeRange} storeId={storeId} />
               </CardContent>
             </Card>
 
@@ -199,7 +231,7 @@ export function AnalyticsDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <TopProductsTable timeRange={timeRange} />
+                <TopProductsTable timeRange={timeRange} storeId={storeId} />
               </CardContent>
             </Card>
           </div>
@@ -213,7 +245,7 @@ export function AnalyticsDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <CustomerMetrics timeRange={timeRange} />
+              <CustomerMetrics timeRange={timeRange} storeId={storeId} />
             </CardContent>
           </Card>
         </TabsContent>

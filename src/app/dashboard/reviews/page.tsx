@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/sidebar";
 
 export const metadata = {
-  title: 'Reviews | Dashboard | StormCom',
+  title: 'Reviews | Dashboard',
   description: 'Manage product reviews and ratings',
 };
 
