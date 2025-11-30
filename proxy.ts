@@ -4,7 +4,8 @@ import { getToken } from "next-auth/jwt";
 
 /**
  * Simple in-memory cache with TTL support
- * Used in Edge Runtime (middleware) where Prisma isn't available
+ * Used in Proxy (formerly Middleware) where Prisma isn't available
+ * Note: In production, consider using a distributed cache like Redis or Vercel KV
  */
 class EdgeCache {
   private cache = new Map<string, { data: unknown; expires: number }>();
@@ -150,7 +151,7 @@ function shouldSkipSubdomainRouting(
 }
 
 /**
- * Fetch store data via API (Edge Runtime compatible)
+ * Fetch store data via API (compatible with Proxy runtime)
  */
 async function getStoreBySubdomainOrDomain(
   subdomain: string | null,
@@ -177,7 +178,7 @@ async function getStoreBySubdomainOrDomain(
       { 
         method: "GET",
         headers: { "Content-Type": "application/json" },
-        // Use short timeout for middleware - 1.5 seconds
+        // Use short timeout for proxy - 1.5 seconds
         signal: AbortSignal.timeout(1500),
       }
     );
@@ -196,15 +197,20 @@ async function getStoreBySubdomainOrDomain(
     return null;
   } catch (err) {
     // Don't block on cache/fetch errors - allow request to continue
-    console.error("[middleware] Store lookup failed:", err);
+    console.error("[proxy] Store lookup failed:", err);
     return null;
   }
 }
 
 /**
- * Middleware handler for subdomain routing and auth protection
+ * Proxy handler for subdomain routing and auth protection
+ * 
+ * Note: In Next.js 16, Middleware has been renamed to Proxy to better reflect its purpose.
+ * The function name is now `proxy` instead of `middleware`.
+ * 
+ * @see https://nextjs.org/docs/app/getting-started/proxy
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const url = request.nextUrl;
   const hostname = request.headers.get("host") || "";
   const pathname = url.pathname;

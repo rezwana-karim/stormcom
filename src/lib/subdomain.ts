@@ -1,6 +1,10 @@
 /**
  * Subdomain routing utilities for multi-tenant store routing
  * Handles subdomain extraction, custom domain lookup, and store data caching
+ * 
+ * Note: These utilities are used by the Proxy (proxy.ts) and server-side code.
+ * In Next.js 16, Middleware has been renamed to Proxy.
+ * @see https://nextjs.org/docs/app/getting-started/proxy
  */
 
 import prisma from "@/lib/prisma";
