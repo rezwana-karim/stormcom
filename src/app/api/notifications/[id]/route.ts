@@ -10,10 +10,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import prisma from '@/lib/prisma';
 import { z } from 'zod';
 
 const updateSchema = z.object({
-  read: z.boolean(),
+  isRead: z.boolean().optional(),
+  read: z.boolean().optional(), // Support both field names
 });
 
 export async function PATCH(
@@ -37,16 +39,34 @@ export async function PATCH(
       );
     }
 
-    const { read } = validation.data;
+    const { isRead, read } = validation.data;
+    const readValue = isRead ?? read;
 
-    // Mock update (in production, update database)
+    // Verify notification belongs to user
+    const notification = await prisma.notification.findUnique({
+      where: { id: params.id },
+    });
+
+    if (!notification) {
+      return NextResponse.json({ error: 'Notification not found' }, { status: 404 });
+    }
+
+    if (notification.userId !== session.user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Update notification
+    const updatedNotification = await prisma.notification.update({
+      where: { id: params.id },
+      data: {
+        isRead: readValue ?? notification.isRead,
+        readAt: readValue ? new Date() : notification.readAt,
+      },
+    });
+
     return NextResponse.json({
       message: 'Notification updated',
-      data: {
-        id: params.id,
-        read,
-        updatedAt: new Date().toISOString(),
-      },
+      notification: updatedNotification,
     });
   } catch (error) {
     console.error('Update notification error:', error);
@@ -68,7 +88,23 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Mock deletion (in production, delete from database)
+    // Verify notification belongs to user
+    const notification = await prisma.notification.findUnique({
+      where: { id: params.id },
+    });
+
+    if (!notification) {
+      return NextResponse.json({ error: 'Notification not found' }, { status: 404 });
+    }
+
+    if (notification.userId !== session.user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    await prisma.notification.delete({
+      where: { id: params.id },
+    });
+
     return NextResponse.json({
       message: 'Notification deleted',
       data: { id: params.id },
