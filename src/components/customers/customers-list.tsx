@@ -121,8 +121,13 @@ export function CustomersList() {
   };
 
   const handleExport = async () => {
+    if (!storeId) {
+      toast.error('Please select a store first');
+      return;
+    }
+    
     try {
-      const response = await fetch('/api/customers/export');
+      const response = await fetch(`/api/customers/export?storeId=${storeId}`);
       if (!response.ok) throw new Error('Failed to export customers');
 
       const blob = await response.blob();
