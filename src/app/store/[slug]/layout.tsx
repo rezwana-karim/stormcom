@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import Link from "next/link";
+import Image from "next/image";
 import type { Metadata } from "next";
 
 interface StoreLayoutProps {
@@ -90,10 +91,13 @@ export default async function StoreLayout({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               {store.logo && (
-                <img
+                <Image
                   src={store.logo}
                   alt={store.name}
-                  className="h-10 w-auto"
+                  width={40}
+                  height={40}
+                  className="h-10 w-auto object-contain"
+                  unoptimized
                 />
               )}
               <h1 className="text-2xl font-bold">{store.name}</h1>

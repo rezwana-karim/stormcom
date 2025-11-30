@@ -213,7 +213,6 @@ enum SubscriptionStatus {
 }
 
 // Store model (E-commerce tenant - extends Organization)
-// Store model (E-commerce tenant - extends Organization)
 model Store {
   id             String   @id @default(cuid())
   organizationId String   @unique

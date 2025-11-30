@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
 import { getProductImageUrl } from "@/lib/utils";
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 
 interface StoreHomePageProps {
@@ -106,11 +107,13 @@ export default async function StoreHomePage({ params }: StoreHomePageProps) {
                 className="group relative rounded-lg overflow-hidden border hover:border-primary transition-colors"
               >
                 {category.image ? (
-                  <div className="aspect-square bg-muted">
-                    <img
+                  <div className="aspect-square bg-muted relative">
+                    <Image
                       src={category.image}
                       alt={category.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform"
+                      unoptimized
                     />
                   </div>
                 ) : (
@@ -158,10 +161,12 @@ export default async function StoreHomePage({ params }: StoreHomePageProps) {
                   {/* Product Image */}
                   <div className="aspect-square bg-muted relative overflow-hidden">
                     {imageUrl ? (
-                      <img
+                      <Image
                         src={imageUrl}
                         alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform"
+                        unoptimized
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">

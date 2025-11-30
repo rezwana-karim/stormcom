@@ -2,8 +2,10 @@ import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
 import { getProductImageUrl } from "@/lib/utils";
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import type { Prisma } from "@prisma/client";
 
 interface StoreProductsPageProps {
   params: Promise<{ slug: string }>;
@@ -44,8 +46,9 @@ export default async function StoreProductsPage({
     notFound();
   }
 
-  // Parse pagination and filters from search params
-  const page = typeof search.page === "string" ? parseInt(search.page) : 1;
+  // Parse pagination and filters from search params with validation
+  const pageNum = typeof search.page === "string" ? parseInt(search.page) : 1;
+  const page = !isNaN(pageNum) && pageNum > 0 ? pageNum : 1;
   const limit = 12;
   const skip = (page - 1) * limit;
 
@@ -54,8 +57,8 @@ export default async function StoreProductsPage({
   const sortBy = typeof search.sort === "string" ? search.sort : "newest";
   const searchQuery = typeof search.q === "string" ? search.q : undefined;
 
-  // Build where clause
-  const whereClause: Record<string, unknown> = {
+  // Build where clause with proper Prisma types
+  const whereClause: Prisma.ProductWhereInput = {
     storeId: store.id,
     status: "ACTIVE",
     deletedAt: null,
@@ -88,8 +91,8 @@ export default async function StoreProductsPage({
     ];
   }
 
-  // Build order by
-  let orderBy: Record<string, string> = { createdAt: "desc" };
+  // Build order by with proper Prisma type
+  let orderBy: Prisma.ProductOrderByWithRelationInput = { createdAt: "desc" };
   if (sortBy === "price-asc") {
     orderBy = { price: "asc" };
   } else if (sortBy === "price-desc") {
@@ -173,7 +176,7 @@ export default async function StoreProductsPage({
             <label htmlFor="search" className="text-sm font-medium mb-2 block">
               Search
             </label>
-            <form action={`/store/${store.slug}/products`} method="get">
+            <form action={`/store/${store.slug}/products`} method="get" className="flex flex-col gap-2">
               <input
                 type="text"
                 id="search"
@@ -182,6 +185,12 @@ export default async function StoreProductsPage({
                 placeholder="Search products..."
                 className="w-full px-3 py-2 border rounded-md text-sm"
               />
+              <button
+                type="submit"
+                className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90"
+              >
+                Search
+              </button>
             </form>
           </div>
 
@@ -253,9 +262,9 @@ export default async function StoreProductsPage({
 
             {/* Sort */}
             <div className="flex items-center gap-2">
-              <label htmlFor="sort" className="text-sm text-muted-foreground">
+              <span className="text-sm text-muted-foreground">
                 Sort by:
-              </label>
+              </span>
               <div className="flex gap-2">
                 <Link
                   href={buildFilterUrl({ sort: "newest" })}
@@ -311,10 +320,12 @@ export default async function StoreProductsPage({
                   >
                     <div className="aspect-square bg-muted relative overflow-hidden">
                       {imageUrl ? (
-                        <img
+                        <Image
                           src={imageUrl}
                           alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform"
+                          unoptimized
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">

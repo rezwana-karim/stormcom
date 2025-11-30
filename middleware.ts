@@ -66,19 +66,33 @@ function extractSubdomain(hostname: string): string | null {
 }
 
 /**
- * Check if hostname is a potential custom domain (not a subdomain)
+ * List of known platform domains
+ * Custom domains are any domain not in this list
+ */
+const PLATFORM_DOMAINS = [
+  "localhost",
+  "stormcom.app",
+  "stormcom.com",
+  "vercel.app",
+];
+
+/**
+ * Check if hostname is a potential custom domain (not a subdomain of platform)
  */
 function isCustomDomain(hostname: string): boolean {
   const host = hostname.split(":")[0];
   
-  // Not localhost
-  if (host === "localhost" || host.endsWith(".localhost")) {
+  // Not localhost or platform domain
+  if (
+    host === "localhost" ||
+    host.endsWith(".localhost") ||
+    PLATFORM_DOMAINS.some((domain) => host === domain || host.endsWith("." + domain))
+  ) {
     return false;
   }
-  
-  // Custom domain: vendor.com (2 parts)
-  const parts = host.split(".");
-  return parts.length === 2;
+
+  // Anything not matching platform domains is considered a custom domain
+  return true;
 }
 
 /**
@@ -112,9 +126,9 @@ function shouldSkipSubdomainRouting(
   // Skip Next.js internal routes
   if (pathname.startsWith("/_next")) return true;
 
-  // Skip static files (common file extensions)
+  // Skip static files (common file extensions; extend as needed)
   if (pathname.startsWith("/favicon")) return true;
-  if (pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|webp|avif|json|xml|txt|map)$/i)) return true;
+  if (pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|webp|avif|json|xml|txt|map|webmanifest|pdf)$/i)) return true;
 
   // Skip checkout routes
   if (pathname.startsWith("/checkout")) return true;
@@ -170,8 +184,9 @@ async function getStoreBySubdomainOrDomain(
     }
 
     return null;
-  } catch {
+  } catch (err) {
     // Don't block on cache/fetch errors - allow request to continue
+    console.error("[middleware] Store lookup failed:", err);
     return null;
   }
 }

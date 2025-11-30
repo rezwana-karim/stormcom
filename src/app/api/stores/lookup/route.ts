@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!store) {
-      return NextResponse.json(null, { status: 404 });
+      return NextResponse.json({ error: "Store not found" }, { status: 404 });
     }
 
     return NextResponse.json({
