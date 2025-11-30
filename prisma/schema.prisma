@@ -36,6 +36,22 @@ model User {
   passwordHash  String?  // For email/password authentication
   isSuperAdmin  Boolean  @default(false) // Platform-level administrator
 
+  // Account status for approval workflow
+  accountStatus     AccountStatus @default(PENDING)
+  statusChangedAt   DateTime?
+  statusChangedBy   String?       // SuperAdmin userId who changed status
+  rejectionReason   String?
+  
+  // Store request information (filled during registration)
+  businessName        String?
+  businessDescription String?
+  businessCategory    String?
+  phoneNumber         String?
+  
+  // Approval tracking
+  approvedAt        DateTime?
+  approvedBy        String?       // SuperAdmin userId who approved
+
   // Multi-tenancy relations
   memberships   Membership[]
   projectMembers ProjectMember[]
@@ -43,12 +59,22 @@ model User {
   customer      Customer?     // E-commerce customer profile
   inventoryLogs InventoryLog[] @relation("InventoryUserLogs")
   auditLogs     AuditLog[]     @relation("AuditUserLogs")
+  notifications Notification[] @relation("UserNotifications")
 
   accounts      Account[]
   sessions      Session[]
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+// Account status for user approval workflow
+enum AccountStatus {
+  PENDING     // Awaiting Super Admin review
+  APPROVED    // Can have store created
+  REJECTED    // Application denied
+  SUSPENDED   // Temporarily disabled
+  DELETED     // Soft deleted
 }
 
 model Account {
