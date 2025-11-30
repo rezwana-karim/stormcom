@@ -68,6 +68,22 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid email or password");
         }
 
+        // Check account status - only allow APPROVED users and Super Admins to sign in
+        if (!user.isSuperAdmin && user.accountStatus !== 'APPROVED') {
+          if (user.accountStatus === 'PENDING') {
+            throw new Error("Your account is pending approval. Please wait for admin review.");
+          }
+          if (user.accountStatus === 'REJECTED') {
+            throw new Error("Your account application was not approved. Please contact support.");
+          }
+          if (user.accountStatus === 'SUSPENDED') {
+            throw new Error("Your account has been suspended. Please contact support.");
+          }
+          if (user.accountStatus === 'DELETED') {
+            throw new Error("This account has been deleted.");
+          }
+        }
+
         // Return user object with isSuperAdmin field
         return {
           id: user.id,
@@ -117,6 +133,7 @@ export const authOptions: NextAuthOptions = {
           const storeStaff = user.storeStaff[0];
 
           (session.user as any).isSuperAdmin = user.isSuperAdmin;
+          (session.user as any).accountStatus = user.accountStatus;
           (session.user as any).organizationRole = membership?.role;
           (session.user as any).organizationId = membership?.organizationId;
           (session.user as any).storeRole = storeStaff?.role;
