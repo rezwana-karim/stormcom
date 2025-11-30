@@ -77,6 +77,15 @@ const PLATFORM_DOMAINS = [
 ];
 
 /**
+ * Static file extensions to skip in subdomain routing
+ */
+const STATIC_FILE_EXTENSIONS = [
+  "js", "css", "png", "jpg", "jpeg", "gif", "svg", "ico",
+  "woff", "woff2", "ttf", "eot", "webp", "avif",
+  "json", "xml", "txt", "map", "webmanifest", "pdf",
+];
+
+/**
  * Check if hostname is a potential custom domain (not a subdomain of platform)
  */
 function isCustomDomain(hostname: string): boolean {
@@ -126,9 +135,10 @@ function shouldSkipSubdomainRouting(
   // Skip Next.js internal routes
   if (pathname.startsWith("/_next")) return true;
 
-  // Skip static files (common file extensions; extend as needed)
+  // Skip static files using maintainable extension list
   if (pathname.startsWith("/favicon")) return true;
-  if (pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|webp|avif|json|xml|txt|map|webmanifest|pdf)$/i)) return true;
+  const extension = pathname.split(".").pop()?.toLowerCase();
+  if (extension && STATIC_FILE_EXTENSIONS.includes(extension)) return true;
 
   // Skip checkout routes
   if (pathname.startsWith("/checkout")) return true;
