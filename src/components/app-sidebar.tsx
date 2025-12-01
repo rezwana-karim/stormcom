@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useSession } from "next-auth/react"
 import {
   IconCamera,
   IconChartBar,
@@ -37,11 +38,12 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
+const { data: session } = useSession()
 const navConfig = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    name: session?.user?.name || "Guest",
+    email: session?.user?.email || "",
+    avatar: session?.user?.image || "/avatars/default.svg",
   },
   navMain: [
     {

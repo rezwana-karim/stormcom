@@ -21,19 +21,24 @@ interface CreateCategoryDialogProps {
   onSuccess?: () => void;
 }
 
+interface Category {
+  id: string;
+  name: string;
+}
+
 export function CreateCategoryDialog({ open, onOpenChange, onSuccess }: CreateCategoryDialogProps) {
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
-  const [parentId, setParentId] = useState<string | 'none'>('none');
+  const [parentId, setParentId] = useState<string>('none');
   const [loading, setLoading] = useState(false);
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
     if (!open) return;
     // fetch existing categories for parent selection
     fetch('/api/categories')
       .then((r) => r.json())
-      .then((data) => setCategories((data.categories || []).map((c: any) => ({ id: c.id, name: c.name }))))
+      .then((data) => setCategories((data.categories || []).map((c: Category) => ({ id: c.id, name: c.name }))))
       .catch(() => {});
   }, [open]);
 
@@ -99,7 +104,7 @@ export function CreateCategoryDialog({ open, onOpenChange, onSuccess }: CreateCa
 
             <div>
               <Label htmlFor="cat-parent">Parent</Label>
-              <Select value={parentId} onValueChange={(v) => setParentId(v as any)}>
+              <Select value={parentId} onValueChange={(v) => setParentId(v)}>
                 <SelectTrigger id="cat-parent"><SelectValue placeholder="None (root)" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">None (root)</SelectItem>

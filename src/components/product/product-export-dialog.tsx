@@ -24,6 +24,22 @@ interface ProductExportDialogProps {
   trigger?: React.ReactNode;
 }
 
+interface ExportProduct {
+  id: string;
+  name?: string;
+  sku?: string;
+  price?: number;
+  compareAtPrice?: number | null;
+  costPrice?: number | null;
+  inventoryQty?: number;
+  status?: string;
+  description?: string;
+  category?: { name: string } | null;
+  brand?: { name: string } | null;
+  slug?: string;
+  images?: string | string[];
+}
+
 export function ProductExportDialog({ storeId, trigger }: ProductExportDialogProps) {
   const [open, setOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -73,7 +89,7 @@ export function ProductExportDialog({ storeId, trigger }: ProductExportDialogPro
         headers.push('Images');
       }
 
-      const rows = products.map((product: any) => {
+      const rows = products.map((product: ExportProduct) => {
         const row = [
           product.id,
           `"${(product.name || '').replace(/"/g, '""')}"`,

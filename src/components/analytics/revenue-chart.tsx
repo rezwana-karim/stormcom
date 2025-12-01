@@ -29,6 +29,7 @@ interface RevenueData {
 interface RevenueChartProps {
   storeId: string;
   timeRange: string;
+  storeId: string;
 }
 
 // Helper to calculate date range from timeRange
@@ -56,6 +57,11 @@ export function RevenueChart({ storeId, timeRange }: RevenueChartProps) {
     if (!storeId) return;
     
     const fetchData = async () => {
+      if (!storeId) {
+        setLoading(false);
+        return;
+      }
+      
       setLoading(true);
       try {
         const dateRange = getDateRange(timeRange);

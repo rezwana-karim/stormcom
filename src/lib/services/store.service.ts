@@ -99,7 +99,7 @@ export class StoreService {
   /**
    * Create a new store
    */
-  async create(input: CreateStoreInput, userId: string) {
+  async create(input: CreateStoreInput, _userId: string) {
     // Validate slug uniqueness
     const existingStore = await prisma.store.findUnique({
       where: { slug: input.slug },

@@ -6,12 +6,10 @@
  * @module app/dashboard/customers/page
  */
 
-import { Suspense } from 'react';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { CustomersList } from '@/components/customers/customers-list';
-import { Skeleton } from '@/components/ui/skeleton';
+import { CustomersPageClient } from '@/components/customers/customers-page-client';
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import {
@@ -20,7 +18,7 @@ import {
 } from "@/components/ui/sidebar";
 
 export const metadata = {
-  title: 'Customers | Dashboard | StormCom',
+  title: 'Customers | Dashboard',
   description: 'Manage your customers',
 };
 
@@ -55,9 +53,7 @@ export default async function CustomersPage() {
                     </div>
                   </div>
 
-                  <Suspense fallback={<LoadingSkeleton />}>
-                    <CustomersList />
-                  </Suspense>
+                  <CustomersPageClient />
                 </div>
               </div>
             </div>
@@ -65,17 +61,5 @@ export default async function CustomersPage() {
         </div>
       </SidebarInset>
     </SidebarProvider>
-  );
-}
-
-function LoadingSkeleton() {
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <Skeleton className="h-10 flex-1" />
-        <Skeleton className="h-10 w-32" />
-      </div>
-      <Skeleton className="h-96" />
-    </div>
   );
 }

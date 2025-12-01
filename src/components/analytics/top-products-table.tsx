@@ -23,6 +23,7 @@ interface TopProduct {
 interface TopProductsTableProps {
   storeId: string;
   timeRange: string;
+  storeId: string;
 }
 
 export function TopProductsTable({ storeId, timeRange }: TopProductsTableProps) {
@@ -33,9 +34,14 @@ export function TopProductsTable({ storeId, timeRange }: TopProductsTableProps) 
     if (!storeId) return;
     
     const fetchData = async () => {
+      if (!storeId) {
+        setLoading(false);
+        return;
+      }
+      
       setLoading(true);
       try {
-        const response = await fetch(`/api/analytics/products/top?storeId=${storeId}&limit=5`);
+        const response = await fetch(`/api/analytics/products/top?storeId=${storeId}&range=${timeRange}&limit=5`);
         if (!response.ok) throw new Error('Failed to fetch top products');
         
         const result = await response.json();

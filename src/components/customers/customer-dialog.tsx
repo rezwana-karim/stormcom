@@ -40,7 +40,8 @@ import {
 import { toast } from 'sonner';
 
 const customerSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Invalid email address'),
   phone: z.string().optional(),
   status: z.enum(['active', 'inactive']),
@@ -50,7 +51,8 @@ type CustomerFormData = z.infer<typeof customerSchema>;
 
 interface Customer {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone?: string;
   status: 'active' | 'inactive';
@@ -77,7 +79,8 @@ export function CustomerDialog({
   const form = useForm<CustomerFormData>({
     resolver: zodResolver(customerSchema),
     defaultValues: {
-      name: '',
+      firstName: '',
+      lastName: '',
       email: '',
       phone: '',
       status: 'active',
@@ -87,14 +90,16 @@ export function CustomerDialog({
   useEffect(() => {
     if (customer) {
       form.reset({
-        name: customer.name,
+        firstName: customer.firstName,
+        lastName: customer.lastName,
         email: customer.email,
         phone: customer.phone || '',
         status: customer.status,
       });
     } else {
       form.reset({
-        name: '',
+        firstName: '',
+        lastName: '',
         email: '',
         phone: '',
         status: 'active',
@@ -149,19 +154,35 @@ export function CustomerDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="firstName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>First Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="John" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Last Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Doe" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}

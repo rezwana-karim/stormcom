@@ -13,6 +13,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Search, Download, MoreHorizontal, Mail, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { getCustomerDisplayName } from '@/lib/utils/customer';
 import {
   Table,
   TableBody,
@@ -39,12 +40,13 @@ import { StoreSelector } from '@/components/store-selector';
 
 interface Customer {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone?: string;
   totalOrders: number;
   totalSpent: number;
-  joinedAt: string;
+  createdAt: string;
   lastOrderAt?: string;
   status: 'active' | 'inactive';
 }
@@ -59,7 +61,11 @@ interface ListResponse {
   };
 }
 
-export function CustomersList() {
+interface CustomersListProps {
+  storeId: string;
+}
+
+export function CustomersList({ storeId }: CustomersListProps) {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -232,7 +238,9 @@ export function CustomersList() {
                 <TableRow key={customer.id}>
                   <TableCell>
                     <div>
-                      <p className="font-medium">{customer.name}</p>
+                      <p className="font-medium">
+                        {getCustomerDisplayName(customer)}
+                      </p>
                       {customer.lastOrderAt && (
                         <p className="text-xs text-muted-foreground">
                           Last order: {formatDate(customer.lastOrderAt)}
@@ -259,7 +267,7 @@ export function CustomersList() {
                     {formatCurrency(customer.totalSpent)}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {formatDate(customer.joinedAt)}
+                    {customer.createdAt ? formatDate(customer.createdAt) : '-'}
                   </TableCell>
                   <TableCell>
                     <Badge variant={customer.status === 'active' ? 'default' : 'secondary'}>

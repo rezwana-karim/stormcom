@@ -27,7 +27,7 @@ export interface ProductAttribute {
 }
 
 interface AttributesManagerProps {
-  storeId: string;
+  storeId?: string; // Optional - reserved for future API fetch
   attributes: ProductAttribute[];
   onChange: (attributes: ProductAttribute[]) => void;
   disabled?: boolean;
@@ -40,7 +40,7 @@ interface StoreAttribute {
 }
 
 export function AttributesManager({
-  storeId,
+  storeId: _storeId, // Reserved for future use to fetch attributes from API
   attributes,
   onChange,
   disabled = false,
