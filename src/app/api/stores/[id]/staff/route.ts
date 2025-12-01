@@ -12,9 +12,7 @@ import prisma from '@/lib/prisma';
 import { z } from 'zod';
 import { ROLE_PERMISSIONS } from '@/lib/permissions';
 import { sendStaffInvitationEmail } from '@/lib/email-service';
-
-// Predefined roles available for staff (matching Prisma Role enum)
-const PREDEFINED_ROLES = ['STORE_ADMIN', 'SALES_MANAGER', 'INVENTORY_MANAGER', 'CUSTOMER_SERVICE', 'CONTENT_MANAGER', 'MARKETING_MANAGER', 'DELIVERY_BOY'] as const;
+import { PREDEFINED_STORE_ROLES } from '@/lib/constants';
 
 const inviteStaffSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -159,7 +157,7 @@ export async function GET(
     }
     
     if (roleFilter) {
-      if (PREDEFINED_ROLES.includes(roleFilter as typeof PREDEFINED_ROLES[number])) {
+      if (PREDEFINED_STORE_ROLES.includes(roleFilter as typeof PREDEFINED_STORE_ROLES[number])) {
         where.role = roleFilter;
       }
     }

@@ -74,19 +74,30 @@ export async function GET(request: NextRequest) {
       take: limit,
     });
 
-    // Format response
-    const formattedNotifications = notifications.map(n => ({
-      id: n.id,
-      type: n.type,
-      title: n.title,
-      message: n.message,
-      data: n.data ? JSON.parse(n.data) : null,
-      read: n.read,
-      readAt: n.readAt?.toISOString() || null,
-      actionUrl: n.actionUrl,
-      actionLabel: n.actionLabel,
-      createdAt: n.createdAt.toISOString(),
-    }));
+    // Format response with safe JSON parsing
+    const formattedNotifications = notifications.map(n => {
+      let parsedData = null;
+      if (n.data) {
+        try {
+          parsedData = JSON.parse(n.data);
+        } catch (e) {
+          console.error('Failed to parse notification data:', e);
+          parsedData = null;
+        }
+      }
+      return {
+        id: n.id,
+        type: n.type,
+        title: n.title,
+        message: n.message,
+        data: parsedData,
+        read: n.read,
+        readAt: n.readAt?.toISOString() || null,
+        actionUrl: n.actionUrl,
+        actionLabel: n.actionLabel,
+        createdAt: n.createdAt.toISOString(),
+      };
+    });
 
     return NextResponse.json({
       success: true,

@@ -6,6 +6,7 @@ import { Resend } from "resend";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { ORG_ROLE_PRIORITY, STORE_ROLE_PRIORITY } from "@/lib/constants";
 
 const fromEmail = process.env.EMAIL_FROM ?? "no-reply@example.com";
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -125,30 +126,16 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (user) {
-          // Prioritize memberships: OWNER > ADMIN > MEMBER > VIEWER
-          const rolePriority: Record<string, number> = {
-            OWNER: 4,
-            ADMIN: 3,
-            MEMBER: 2,
-            VIEWER: 1,
-          };
-
+          // Prioritize memberships using shared priority constants
           const sortedMemberships = [...user.memberships].sort((a, b) => {
-            const priorityDiff = (rolePriority[b.role] || 0) - (rolePriority[a.role] || 0);
+            const priorityDiff = (ORG_ROLE_PRIORITY[b.role] || 0) - (ORG_ROLE_PRIORITY[a.role] || 0);
             if (priorityDiff !== 0) return priorityDiff;
             return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
           });
 
-          // Prioritize store staff: STORE_ADMIN > others
-          const storeRolePriority: Record<string, number> = {
-            STORE_ADMIN: 4,
-            SALES_MANAGER: 3,
-            INVENTORY_MANAGER: 2,
-            CUSTOMER_SERVICE: 1,
-          };
-
+          // Prioritize store staff using shared priority constants
           const sortedStoreStaff = [...user.storeStaff].sort((a, b) => {
-            const priorityDiff = (storeRolePriority[b.role || ''] || 0) - (storeRolePriority[a.role || ''] || 0);
+            const priorityDiff = (STORE_ROLE_PRIORITY[b.role || ''] || 0) - (STORE_ROLE_PRIORITY[a.role || ''] || 0);
             if (priorityDiff !== 0) return priorityDiff;
             return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
           });

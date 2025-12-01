@@ -92,8 +92,8 @@ export async function RoleRequestsList({ storeId, userId }: RoleRequestsListProp
   return (
     <div className="space-y-4">
       {requests.map((request) => {
-        const config = statusConfig[request.status as keyof typeof statusConfig];
-        const StatusIcon = config?.icon || IconClock;
+        const config = statusConfig[request.status as keyof typeof statusConfig] || statusConfig.PENDING;
+        const StatusIcon = config.icon;
         let permissions: string[] = [];
         try {
           permissions = JSON.parse(request.permissions);

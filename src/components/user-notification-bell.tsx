@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import { DEFAULT_NOTIFICATION_LIMIT } from "@/lib/constants";
 
 interface Notification {
   id: string;
@@ -102,7 +103,7 @@ export function UserNotificationBell() {
 
   const fetchNotifications = async () => {
     try {
-      const response = await fetch("/api/notifications?limit=10");
+      const response = await fetch(`/api/notifications?limit=${DEFAULT_NOTIFICATION_LIMIT}`);
       if (response.ok) {
         const data = await response.json();
         setNotifications(data.notifications || []);
