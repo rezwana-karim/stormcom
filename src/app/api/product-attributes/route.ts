@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 // Simple in-memory store for development/demo purposes
-// eslint-disable-next-line prefer-const
+// eslint-disable-next-line prefer-const -- Mutated in POST handler
 let demoAttributes = [
   { id: '1', attributeId: '1', name: 'Color', value: 'Red' },
   { id: '2', attributeId: '2', name: 'Size', value: 'M' },
