@@ -20,9 +20,7 @@ export const metadata: Metadata = {
 };
 
 async function getPlatformSettings() {
-  let settings = await prisma.platformSettings.findFirst({
-    orderBy: { createdAt: "asc" },
-  });
+  let settings = await prisma.platformSettings.findFirst();
   
   if (!settings) {
     // Create default settings if none exist
@@ -30,12 +28,12 @@ async function getPlatformSettings() {
       data: {
         defaultCustomRoleLimit: 5,
         maxCustomRoleLimit: 50,
-        customRoleLimitsByPlan: {
+        customRoleLimitsByPlan: JSON.stringify({
           FREE: 3,
           BASIC: 5,
           PROFESSIONAL: 10,
           ENTERPRISE: 25,
-        },
+        }),
       },
     });
   }
@@ -96,7 +94,9 @@ export default async function AdminPlatformSettingsPage() {
               id: settings.id,
               defaultCustomRoleLimit: settings.defaultCustomRoleLimit,
               maxCustomRoleLimit: settings.maxCustomRoleLimit,
-              customRoleLimitsByPlan: settings.customRoleLimitsByPlan as Record<string, number>,
+              customRoleLimitsByPlan: typeof settings.customRoleLimitsByPlan === 'string' 
+                ? JSON.parse(settings.customRoleLimitsByPlan) 
+                : (settings.customRoleLimitsByPlan as Record<string, number>),
             }}
           />
         </CardContent>

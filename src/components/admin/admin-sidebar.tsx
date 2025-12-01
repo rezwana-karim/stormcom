@@ -59,6 +59,11 @@ const adminNavItems = [
     icon: IconUserShield,
   },
   {
+    title: "Custom Roles",
+    url: "/admin/custom-roles",
+    icon: IconUserShield,
+  },
+  {
     title: "Stores",
     url: "/admin/stores",
     icon: IconBuildingStore,
