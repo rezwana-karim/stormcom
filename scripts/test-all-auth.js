@@ -47,7 +47,7 @@ async function testRole(email, expectedPassword) {
 
     const isValid = await bcrypt.compare(expectedPassword, user.passwordHash);
     if (!isValid) {
-      console.log(`❌ Password invalid (expected: ${expectedPassword})`);
+      console.log('❌ Password invalid');
       return false;
     }
 
