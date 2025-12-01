@@ -29,9 +29,7 @@ interface RevenueData {
 interface RevenueChartProps {
   storeId: string;
   timeRange: string;
-  storeId: string;
 }
-
 // Helper to calculate date range from timeRange
 function getDateRange(timeRange: string): { from: string; to: string } {
   const to = new Date();
