@@ -67,7 +67,10 @@ interface CustomRoleWithCount {
   description: string | null;
   permissions: string;
   isActive: boolean;
-  approvedBy: string | null;
+  createdById: string | null;
+  lastModifiedById: string | null;
+  lastModifiedAt: Date | null;
+  approvedById: string | null;
   approvedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;

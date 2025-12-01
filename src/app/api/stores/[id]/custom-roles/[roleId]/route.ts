@@ -465,7 +465,7 @@ export async function DELETE(
       action: CustomRoleAction.ROLE_DELETED,
       actorId: session.user.id,
       storeId,
-      customRoleId: null, // Role is deleted
+      customRoleId: undefined, // Role is deleted
       roleName,
       details: { 
         permissions: rolePermissions,

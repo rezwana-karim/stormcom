@@ -135,8 +135,9 @@ export async function POST(
           name: roleRequest.roleName,
           description: roleRequest.roleDescription,
           permissions: JSON.stringify(finalPermissions),
-          approvedBy: session.user.id,
+          approvedById: session.user.id,
           approvedAt: new Date(),
+          createdById: roleRequest.userId,
           isActive: true,
         },
       });
