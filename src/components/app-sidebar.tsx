@@ -5,6 +5,7 @@ import Link from "next/link"
 import {
   IconCamera,
   IconChartBar,
+  IconCreditCard,
   IconDashboard,
   IconDatabase,
   IconFileAi,
@@ -95,7 +96,16 @@ const data = {
           title: "Cart",
           url: "/dashboard/cart",
         },
+        {
+          title: "Payments",
+          url: "/dashboard/payments",
+        },
       ],
+    },
+    {
+      title: "Payments",
+      url: "/dashboard/payments",
+      icon: IconCreditCard,
     },
     {
       title: "Customers",
