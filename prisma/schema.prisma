@@ -676,3 +676,69 @@ model AuditLog {
   @@index([entityType, entityId, createdAt])
   @@map("audit_logs")
 }
+
+// ============================================================================
+// PAYMENT STATE MACHINE MODELS
+// ============================================================================
+
+// Payment attempt status enum - lifecycle states for payment flow
+enum PaymentAttemptStatus {
+  INITIATED     // Payment attempt created, awaiting provider authorization
+  AUTHORIZING   // Authorization in progress with provider
+  AUTHORIZED    // Payment authorized, ready for capture
+  CAPTURED      // Payment captured successfully
+  FAILED        // Terminal failure state
+  CANCELED      // Payment attempt was canceled (before capture)
+}
+
+// Payment transaction type enum - types of financial transactions
+enum PaymentTransactionType {
+  AUTH          // Authorization transaction
+  CAPTURE       // Capture of authorized funds
+  REFUND        // Refund of captured funds
+  VOID          // Void of authorization (before capture)
+}
+
+// PaymentAttempt model - tracks individual payment attempts with state machine
+model PaymentAttempt {
+  id                String               @id @default(cuid())
+  storeId           String
+  orderId           String
+  provider          String               // stripe, bkash, cod
+  providerReference String?              @unique  // Stripe payment intent ID, etc.
+  status            PaymentAttemptStatus @default(INITIATED)
+  amount            Int                  // Amount in minor units (cents/paisa)
+  currency          String               // ISO 4217 currency code (e.g., USD, BDT)
+  idempotencyKey    String?              @unique  // Client-provided idempotency key
+  attemptCount      Int                  @default(1)
+  lastErrorCode     String?              // Provider error code
+  lastErrorMessage  String?              // Human-readable error message
+  nextRetryAt       DateTime?            // Scheduled retry time for failed attempts
+
+  transactions      PaymentTransaction[]
+
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  @@index([storeId, orderId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// PaymentTransaction model - records individual financial transactions within an attempt
+model PaymentTransaction {
+  id                String                 @id @default(cuid())
+  attemptId         String
+  storeId           String
+  type              PaymentTransactionType
+  amount            Int                    // Amount in minor units
+  currency          String                 // ISO 4217 currency code
+  providerReference String?                // Provider transaction reference
+
+  attempt           PaymentAttempt         @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  createdAt         DateTime               @default(now())
+
+  @@index([storeId, attemptId])
+  @@index([attemptId, type])
+}

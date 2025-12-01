@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react"
 import {
   IconCamera,
   IconChartBar,
+  IconCreditCard,
   IconDashboard,
   IconDatabase,
   IconFileAi,
@@ -92,6 +93,11 @@ const data = {
           url: "/dashboard/cart",
         },
       ],
+    },
+    {
+      title: "Payments",
+      url: "/dashboard/payments",
+      icon: IconCreditCard,
     },
     {
       title: "Customers",
