@@ -98,19 +98,19 @@ export async function GET(request: NextRequest) {
     // Calculate growth percentages
     const userGrowth = previousNewUsers > 0
       ? Math.round(((newUsers - previousNewUsers) / previousNewUsers) * 100)
-      : 100;
+      : 0;
     
     const storeGrowth = previousActiveStores > 0
       ? Math.round(((activeStores - previousActiveStores) / previousActiveStores) * 100)
-      : 100;
+      : 0;
     
     const productGrowth = previousPublishedProducts > 0
       ? Math.round(((publishedProducts - previousPublishedProducts) / previousPublishedProducts) * 100)
-      : 100;
+      : 0;
     
     const revenueGrowth = previousMonthlyRevenue > 0
       ? Math.round(((monthlyRevenue - previousMonthlyRevenue) / previousMonthlyRevenue) * 100)
-      : 100;
+      : 0;
 
     const stats = {
       users: {

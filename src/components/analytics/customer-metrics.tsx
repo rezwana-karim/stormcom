@@ -70,7 +70,7 @@ export function CustomerMetrics({ storeId, timeRange }: CustomerMetricsProps) {
   }, [storeId, timeRange]);
 
   const formatCurrency = (value: number | undefined | null) => {
-    if (value == null) return '$0.00';
+    if (value === null || value === undefined) return '$0.00';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -78,12 +78,12 @@ export function CustomerMetrics({ storeId, timeRange }: CustomerMetricsProps) {
   };
 
   const formatPercentage = (value: number | undefined | null) => {
-    if (value == null) return '0.0%';
+    if (value === null || value === undefined) return '0.0%';
     return `${value.toFixed(1)}%`;
   };
 
   const formatNumber = (value: number | undefined | null) => {
-    if (value == null) return '0';
+    if (value === null || value === undefined) return '0';
     return value.toLocaleString();
   };
 
