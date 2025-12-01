@@ -149,17 +149,17 @@ export async function GET(
     });
     
     // Format counts with proper type safety
-    const statusCounts = {
+    type Status = keyof typeof statusCounts;
+    type GroupByResult = { status: Status; _count: number };
+    const statusCounts: Record<Status, number> = {
       PENDING: 0,
       APPROVED: 0,
       REJECTED: 0,
       CANCELLED: 0,
       INFO_REQUESTED: 0,
     };
-    counts.forEach((c: { status: string; _count: number }) => {
-      if (c.status in statusCounts) {
-        statusCounts[c.status as keyof typeof statusCounts] = c._count;
-      }
+    (counts as GroupByResult[]).forEach((c) => {
+      statusCounts[c.status] = c._count;
     });
     
     return NextResponse.json({
