@@ -59,7 +59,7 @@ export async function PATCH(
       data: {
         ...(readValue !== undefined && {
           read: readValue,
-          readAt: readValue ? new Date() : null,
+          readAt: readValue ? new Date() : notification.readAt,
         }),
       },
     });
