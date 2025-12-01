@@ -72,6 +72,13 @@ model User {
   // Custom role request relations
   customRoleRequests        CustomRoleRequest[]  @relation("UserCustomRoleRequests")
   reviewedCustomRoleRequests CustomRoleRequest[] @relation("CustomRoleRequestReviewer")
+  
+  // Custom role management relations
+  createdCustomRoles    CustomRole[]         @relation("CreatedCustomRoles")
+  modifiedCustomRoles   CustomRole[]         @relation("ModifiedCustomRoles")
+  approvedCustomRoles   CustomRole[]         @relation("ApprovedCustomRoles")
+  customRoleActivities  CustomRoleActivity[]
+  platformSettingsUpdates PlatformSettings[]
 
   accounts      Account[]
   sessions      Session[]
@@ -317,8 +324,9 @@ model Store {
   subscriptionEndsAt DateTime?
   
   // Limits
-  productLimit   Int      @default(10)
-  orderLimit     Int      @default(100)
+  productLimit     Int      @default(10)
+  orderLimit       Int      @default(100)
+  customRoleLimit  Int      @default(5)  // Max custom roles for this store
   
   products       Product[]
   categories     Category[]
@@ -331,8 +339,9 @@ model Store {
   staff          StoreStaff[] // Store staff assignments
   
   // Custom role management
-  customRoles        CustomRole[]
-  customRoleRequests CustomRoleRequest[]
+  customRoles           CustomRole[]
+  customRoleRequests    CustomRoleRequest[]
+  customRoleActivities  CustomRoleActivity[]  // Audit trail
   
   // Platform management
   platformActivities PlatformActivity[]
@@ -431,7 +440,7 @@ model CustomRoleRequest {
   @@map("custom_role_requests")
 }
 
-// Custom role (created when request is approved)
+// Custom role (created when request is approved or directly by store owner)
 model CustomRole {
   id          String   @id @default(cuid())
   
@@ -447,22 +456,100 @@ model CustomRole {
   // Status
   isActive    Boolean  @default(true)
   
-  // Approval info
-  approvedBy  String?
-  approvedAt  DateTime?
+  // Creator tracking
+  createdById      String?
+  createdByUser    User?    @relation("CreatedCustomRoles", fields: [createdById], references: [id], onDelete: SetNull)
   
-  // Source request
+  // Last modified tracking
+  lastModifiedById String?
+  lastModifiedBy   User?    @relation("ModifiedCustomRoles", fields: [lastModifiedById], references: [id], onDelete: SetNull)
+  lastModifiedAt   DateTime?
+  
+  // Approval info (for request-based workflow)
+  approvedById String?
+  approvedBy   User?    @relation("ApprovedCustomRoles", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvedAt   DateTime?
+  
+  // Source request (if created via request workflow)
   request     CustomRoleRequest?
   
   // Staff assigned to this role
   staffAssignments StoreStaff[]
+  
+  // Activity log
+  activities  CustomRoleActivity[]
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
   @@unique([storeId, name])
   @@index([storeId, isActive])
+  @@index([createdById])
   @@map("custom_roles")
+}
+
+// Platform-wide settings (singleton)
+model PlatformSettings {
+  id                      String   @id @default("global")
+  
+  // Custom Role Limits
+  defaultCustomRoleLimit  Int      @default(5)   // Default limit for new stores
+  maxCustomRoleLimit      Int      @default(20)  // Absolute maximum
+  
+  // Limits by subscription plan (JSON)
+  customRoleLimitsByPlan  String   @default("{\"FREE\": 3, \"BASIC\": 5, \"PRO\": 10, \"ENTERPRISE\": 20}")
+  
+  updatedAt               DateTime @updatedAt
+  updatedById             String?
+  updatedBy               User?    @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+  
+  @@map("platform_settings")
+}
+
+// Custom role activity audit log
+model CustomRoleActivity {
+  id          String   @id @default(cuid())
+  
+  // Action type
+  action      CustomRoleAction
+  
+  // Who did it
+  actorId     String
+  actor       User     @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  
+  // Which role (may be null if role was deleted)
+  customRoleId String?
+  customRole   CustomRole? @relation(fields: [customRoleId], references: [id], onDelete: SetNull)
+  
+  // Which store
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  // Details
+  roleName    String   // Captured role name (in case role is deleted)
+  details     String?  // JSON with additional details
+  previousValue String? // Previous state (for edits)
+  newValue    String?  // New state (for edits)
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([storeId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([customRoleId])
+  @@map("custom_role_activities")
+}
+
+// Custom role activity types
+enum CustomRoleAction {
+  ROLE_CREATED
+  ROLE_UPDATED
+  ROLE_DELETED
+  ROLE_DEACTIVATED
+  ROLE_REACTIVATED
+  PERMISSIONS_CHANGED
+  LIMIT_CHANGED
+  ROLE_ASSIGNED
+  ROLE_UNASSIGNED
 }
 
 // Product models
