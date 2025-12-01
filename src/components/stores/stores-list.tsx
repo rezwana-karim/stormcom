@@ -36,7 +36,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Plus, Search, MoreVertical, Edit, Trash2, Store as StoreIcon } from 'lucide-react';
+import { Plus, Search, MoreVertical, Edit, Trash2, Store as StoreIcon, Users, Shield } from 'lucide-react';
+import Link from 'next/link';
 import { StoreFormDialog } from './store-form-dialog';
 import { DeleteStoreDialog } from './delete-store-dialog';
 import { toast } from 'sonner';
@@ -298,6 +299,19 @@ export function StoresList() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link href={`/dashboard/stores/${store.id}/staff`}>
+                            <Users className="h-4 w-4 mr-2" />
+                            Manage Staff
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/dashboard/stores/${store.id}/roles`}>
+                            <Shield className="h-4 w-4 mr-2" />
+                            Manage Roles
+                          </Link>
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         {/* Only show edit/delete for users with update/delete permissions */}
                         {(isSuperAdmin || can('stores:update')) && (
