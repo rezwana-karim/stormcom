@@ -8,21 +8,17 @@
     "start": "next start",
     "lint": "eslint",
     "type-check": "tsc --noEmit --incremental",
-    "type-check:save": "powershell -ExecutionPolicy Bypass -File ./scripts/collect-type-errors.ps1",
-    "lint:save": "powershell -ExecutionPolicy Bypass -File ./scripts/collect-lint-errors.ps1",
-    "prisma:generate": "prisma generate --schema=prisma/schema.prisma",
-    "prisma:migrate:dev": "prisma migrate dev --schema=prisma/schema.prisma",
-    "prisma:migrate:deploy": "prisma migrate deploy --schema=prisma/schema.postgres.prisma",
-    "prisma:migrate:postgres": "node scripts/migrate-postgres.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:reset": "prisma migrate reset --force",
+    "prisma:push": "prisma db push",
     "prisma:seed": "node prisma/seed.mjs",
-    "prisma:seed:production": "node scripts/seed-production.js",
     "prisma:studio": "prisma studio",
     "db:seed": "npm run prisma:seed",
-    "db:switch:sqlite": "node scripts/switch-db-provider.js sqlite",
-    "db:switch:postgres": "node scripts/switch-db-provider.js postgresql",
     "postinstall": "node scripts/postinstall.js"
   },
   "prisma": {
+    "schema": "prisma/schema.prisma",
     "seed": "node prisma/seed.mjs"
   },
   "dependencies": {
