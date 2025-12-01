@@ -4,8 +4,7 @@
  * Lists all stores with their custom role usage
  */
 
-import { Suspense } from "react";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Metadata } from "next";
 import { getServerSession } from "next-auth";
@@ -18,7 +17,7 @@ import {
   IconUserShield,
   IconAlertTriangle,
 } from "@tabler/icons-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

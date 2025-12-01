@@ -16,11 +16,9 @@ import {
   IconUserShield,
   IconUsers,
   IconActivity,
-  IconSettings,
 } from "@tabler/icons-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
@@ -39,8 +37,18 @@ async function getStoreData(storeId: string) {
   const store = await prisma.store.findUnique({
     where: { id: storeId },
     include: {
-      owner: {
-        select: { id: true, name: true, email: true },
+      organization: {
+        include: {
+          memberships: {
+            where: { role: "OWNER" },
+            include: {
+              user: {
+                select: { id: true, name: true, email: true },
+              },
+            },
+            take: 1,
+          },
+        },
       },
       customRoles: {
         include: {
@@ -73,6 +81,7 @@ async function getStoreData(storeId: string) {
   const activeRoles = store.customRoles.filter((r) => r.isActive).length;
   const usagePercent = (store.customRoles.length / store.customRoleLimit) * 100;
   const totalStaffWithRoles = store.customRoles.reduce((sum, r) => sum + r._count.staffAssignments, 0);
+  const owner = store.organization.memberships[0]?.user || null;
   
   return {
     store: {
@@ -81,7 +90,7 @@ async function getStoreData(storeId: string) {
       slug: store.slug,
       subscriptionPlan: store.subscriptionPlan,
       customRoleLimit: store.customRoleLimit,
-      owner: store.owner,
+      owner,
       createdAt: store.createdAt,
     },
     stats: {
@@ -96,7 +105,7 @@ async function getStoreData(storeId: string) {
       id: role.id,
       name: role.name,
       description: role.description,
-      permissions: role.permissions as unknown as string[],
+      permissions: JSON.parse(role.permissions) as string[],
       isActive: role.isActive,
       staffCount: role._count.staffAssignments,
       createdBy: role.createdByUser,
@@ -108,7 +117,7 @@ async function getStoreData(storeId: string) {
       id: a.id,
       action: a.action,
       roleName: a.roleName,
-      changes: a.changes as Record<string, unknown> | null,
+      details: a.details ? (JSON.parse(a.details) as Record<string, unknown>) : null,
       actor: a.actor,
       createdAt: a.createdAt,
     })),
@@ -345,9 +354,9 @@ export default async function AdminStoreCustomRolesPage({ params }: PageProps) {
                         <p className="text-xs text-muted-foreground">
                           {format(new Date(activity.createdAt), "PPp")}
                         </p>
-                        {activity.changes && (
+                        {activity.details && (
                           <pre className="text-xs bg-muted p-2 rounded mt-1 overflow-x-auto">
-                            {JSON.stringify(activity.changes, null, 2)}
+                            {JSON.stringify(activity.details, null, 2)}
                           </pre>
                         )}
                       </div>
