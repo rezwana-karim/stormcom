@@ -25,6 +25,9 @@ model User {
   customer      Customer?     // E-commerce customer profile
   inventoryLogs InventoryLog[] @relation("InventoryUserLogs")
   auditLogs     AuditLog[]     @relation("AuditUserLogs")
+  
+  // Vendor relationship (user can be a vendor)
+  vendors       Vendor[]
 
   accounts      Account[]
   sessions      Session[]
@@ -197,6 +200,61 @@ enum DiscountType {
   FREE_SHIPPING
 }
 
+// ============================================================================
+// VENDOR MARKETPLACE ENUMS
+// ============================================================================
+
+enum VendorStatus {
+  PENDING        // Initial application submitted
+  UNDER_REVIEW   // Admin reviewing application
+  APPROVED       // Vendor approved and active
+  SUSPENDED      // Temporarily suspended
+  REJECTED       // Application rejected
+  DEACTIVATED    // Vendor deactivated their account
+}
+
+enum VendorPayoutMethod {
+  BANK_TRANSFER
+  BKASH
+  NAGAD
+  PAYPAL
+  STRIPE_CONNECT
+}
+
+enum PayoutStatus {
+  PENDING        // Scheduled but not yet processed
+  PROCESSING     // Currently being processed
+  COMPLETED      // Successfully paid out
+  FAILED         // Payout failed
+  ON_HOLD        // Manually held (dispute, etc.)
+}
+
+enum PayoutFrequency {
+  WEEKLY
+  BI_WEEKLY
+  MONTHLY
+}
+
+enum VendorDocumentType {
+  TRADE_LICENSE
+  NID_PASSPORT
+  TAX_CERTIFICATE
+  BANK_STATEMENT
+  OTHER
+}
+
+enum DocumentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ProductApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum SubscriptionPlan {
   FREE
   BASIC
@@ -248,6 +306,13 @@ model Store {
   productLimit   Int      @default(10)
   orderLimit     Int      @default(100)
   
+  // Marketplace settings
+  isMarketplace         Boolean  @default(false)  // Enable multi-vendor marketplace mode
+  defaultCommissionRate Float    @default(0.15)   // Default commission rate (15%)
+  vendorAutoApprove     Boolean  @default(false)  // Auto-approve new vendors
+  productAutoApprove    Boolean  @default(false)  // Auto-approve vendor products
+  payoutHoldDays        Int      @default(7)      // Days to hold payment after delivery
+  
   products       Product[]
   categories     Category[]
   brands         Brand[]
@@ -256,6 +321,9 @@ model Store {
   attributes     ProductAttribute[]
   auditLogs      AuditLog[]
   inventoryLogs  InventoryLog[] @relation("StoreInventoryLogs")
+  vendors        Vendor[]
+  commissionRules CommissionRule[]
+  vendorPayouts  VendorPayout[]
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -264,6 +332,7 @@ model Store {
   @@index([slug])
   @@index([subscriptionPlan])
   @@index([subscriptionStatus])
+  @@index([isMarketplace])
 }
 
 // Product models
@@ -271,6 +340,14 @@ model Product {
   id          String        @id @default(cuid())
   storeId     String
   store       Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  // Vendor (marketplace mode)
+  vendorId    String?
+  vendor      Vendor?       @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  approvalStatus ProductApprovalStatus @default(PENDING)
+  approvedAt  DateTime?
+  approvedBy  String?       // User ID of admin who approved
+  rejectionReason String?
   
   name        String
   slug        String
@@ -324,8 +401,10 @@ model Product {
   @@index([storeId, status])
   @@index([storeId, categoryId])
   @@index([storeId, brandId])
+  @@index([storeId, vendorId])
   @@index([categoryId, status])
   @@index([brandId, status])
+  @@index([vendorId, approvalStatus])
 }
 
 model ProductVariant {
@@ -472,6 +551,8 @@ model Customer {
   
   orders    Order[]
   reviews   Review[]
+  vendorReviews    VendorReview[]
+  vendorFollowing  VendorFollower[]
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -546,6 +627,10 @@ model OrderItem {
   variantId String?
   variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
   
+  // Vendor information (for marketplace)
+  vendorId  String?
+  vendor    Vendor?  @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  
   productName String
   variantName String?
   sku         String
@@ -558,11 +643,23 @@ model OrderItem {
   discountAmount Float @default(0)
   totalAmount Float
   
+  // Commission tracking (marketplace)
+  commissionRate     Float   @default(0)    // Commission rate at time of order
+  commissionAmount   Float   @default(0)    // Calculated commission
+  vendorEarnings     Float   @default(0)    // Vendor's net earnings
+  
+  // Vendor fulfillment (for multi-vendor orders)
+  vendorFulfilled    Boolean @default(false)
+  vendorFulfilledAt  DateTime?
+  vendorTrackingNumber String?
+  vendorTrackingUrl  String?
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
   @@index([orderId])
   @@index([productId])
+  @@index([vendorId])
 }
 
 // Review model
@@ -648,4 +745,302 @@ model AuditLog {
   @@index([userId, createdAt])
   @@index([entityType, entityId, createdAt])
   @@map("audit_logs")
+}
+
+// ============================================================================
+// VENDOR MARKETPLACE MODELS
+// ============================================================================
+
+// Vendor model (seller in marketplace)
+model Vendor {
+  id        String   @id @default(cuid())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  // User association (vendor owner)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Business information
+  businessName     String
+  slug             String
+  businessEmail    String
+  businessPhone    String?
+  taxId            String?    // Tax identification number
+  
+  // Profile
+  logo             String?
+  banner           String?
+  description      String?
+  shortDescription String?
+  
+  // Address
+  address          String?
+  city             String?
+  state            String?
+  postalCode       String?
+  country          String     @default("US")
+  
+  // Banking & payout info
+  payoutMethod     VendorPayoutMethod @default(BANK_TRANSFER)
+  bankName         String?
+  bankAccountName  String?
+  bankAccountNumber String?
+  bankRoutingNumber String?
+  bkashNumber      String?    // Bangladesh mobile banking
+  nagadNumber      String?    // Bangladesh mobile banking
+  paypalEmail      String?
+  stripeConnectId  String?    // Stripe Connect account ID
+  
+  // Commission settings (can override store default)
+  commissionRate   Float?     // null = use store default
+  
+  // Payout settings
+  payoutFrequency  PayoutFrequency @default(BI_WEEKLY)
+  minimumPayout    Float      @default(50)  // Minimum balance to trigger payout
+  
+  // Status & verification
+  status           VendorStatus @default(PENDING)
+  statusReason     String?      // Reason for rejection/suspension
+  appliedAt        DateTime     @default(now())
+  approvedAt       DateTime?
+  approvedBy       String?      // User ID of admin who approved
+  
+  // KYC verification
+  kycVerified      Boolean    @default(false)
+  kycVerifiedAt    DateTime?
+  kycProvider      String?    // e.g., "stripe_identity", "manual"
+  
+  // Terms acceptance
+  termsAcceptedAt  DateTime?
+  termsVersion     String?
+  
+  // Statistics (denormalized for performance)
+  totalProducts    Int        @default(0)
+  totalOrders      Int        @default(0)
+  totalSales       Float      @default(0)
+  totalEarnings    Float      @default(0)
+  totalPayouts     Float      @default(0)
+  pendingBalance   Float      @default(0)
+  averageRating    Float      @default(0)
+  totalReviews     Int        @default(0)
+  
+  // Performance metrics
+  onTimeDeliveryRate Float    @default(100)
+  returnRate         Float    @default(0)
+  responseTime       Int      @default(0)   // Average response time in hours
+  
+  // SEO
+  metaTitle        String?
+  metaDescription  String?
+  
+  // Relations
+  products         Product[]
+  orderItems       OrderItem[]
+  documents        VendorDocument[]
+  payouts          VendorPayout[]
+  reviews          VendorReview[]
+  followers        VendorFollower[]
+  notifications    VendorNotification[]
+  
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  deletedAt        DateTime?
+  
+  @@unique([storeId, slug])
+  @@unique([storeId, userId])
+  @@index([storeId, status])
+  @@index([userId])
+  @@index([status])
+  @@index([storeId, averageRating])
+}
+
+// Vendor KYC documents
+model VendorDocument {
+  id        String   @id @default(cuid())
+  vendorId  String
+  vendor    Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  
+  type      VendorDocumentType
+  name      String              // Original filename or description
+  url       String              // Document URL
+  mimeType  String?
+  fileSize  Int?
+  
+  status    DocumentStatus @default(PENDING)
+  reviewedAt DateTime?
+  reviewedBy String?      // User ID of reviewer
+  rejectionReason String?
+  
+  expiresAt DateTime?     // Some documents may expire (e.g., licenses)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([vendorId, type])
+  @@index([vendorId, status])
+}
+
+// Commission rules (tiered, category-based)
+model CommissionRule {
+  id        String   @id @default(cuid())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  name      String
+  
+  // Rule type
+  ruleType  String   // "vendor", "category", "tiered", "global"
+  
+  // Conditions (JSON)
+  // For vendor: { "vendorId": "xxx" }
+  // For category: { "categoryId": "xxx" }
+  // For tiered: { "minSales": 10000, "maxSales": 20000 }
+  conditions String?  // JSON
+  
+  // Commission
+  commissionRate Float  // Rate as decimal (0.15 = 15%)
+  
+  // Priority (higher = evaluated first)
+  priority  Int      @default(0)
+  
+  isActive  Boolean  @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([storeId, isActive])
+  @@index([storeId, ruleType])
+}
+
+// Vendor payouts
+model VendorPayout {
+  id        String   @id @default(cuid())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  vendorId  String
+  vendor    Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  
+  // Payout details
+  amount         Float
+  currency       String     @default("USD")
+  method         VendorPayoutMethod
+  
+  // Status
+  status         PayoutStatus @default(PENDING)
+  statusReason   String?
+  
+  // Period
+  periodStart    DateTime
+  periodEnd      DateTime
+  
+  // Transaction details
+  transactionId  String?    // External payment provider transaction ID
+  transactionRef String?    // Internal reference number
+  
+  // Breakdown (JSON)
+  // { "grossSales": 1000, "commission": 150, "refunds": 20, "adjustments": 0 }
+  breakdown      String?    // JSON
+  
+  // Processing
+  processedAt    DateTime?
+  processedBy    String?    // User ID or "system"
+  failureReason  String?
+  
+  // Notes
+  notes          String?
+  
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  
+  @@index([storeId, vendorId])
+  @@index([vendorId, status])
+  @@index([storeId, status])
+  @@index([vendorId, periodEnd])
+}
+
+// Vendor reviews (customer reviews for vendors, not products)
+model VendorReview {
+  id        String   @id @default(cuid())
+  vendorId  String
+  vendor    Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  
+  orderId   String?   // Optional link to order
+  
+  rating    Int       // 1-5
+  title     String?
+  comment   String
+  
+  // Sub-ratings (optional)
+  productQualityRating  Int?  // 1-5
+  deliverySpeedRating   Int?  // 1-5
+  communicationRating   Int?  // 1-5
+  
+  // Vendor response
+  vendorResponse        String?
+  vendorRespondedAt     DateTime?
+  
+  // Moderation
+  isApproved Boolean   @default(false)
+  approvedAt DateTime?
+  approvedBy String?
+  isFlagged  Boolean   @default(false)
+  flagReason String?
+  
+  isVerifiedPurchase Boolean @default(false)
+  
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  deletedAt DateTime?
+  
+  @@index([vendorId, isApproved])
+  @@index([customerId])
+  @@index([vendorId, rating])
+}
+
+// Vendor followers
+model VendorFollower {
+  id        String   @id @default(cuid())
+  vendorId  String
+  vendor    Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  
+  // Notification preferences
+  notifyNewProducts  Boolean @default(true)
+  notifyPromotions   Boolean @default(true)
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([vendorId, customerId])
+  @@index([vendorId])
+  @@index([customerId])
+}
+
+// Vendor notifications
+model VendorNotification {
+  id        String   @id @default(cuid())
+  vendorId  String
+  vendor    Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  
+  type      String   // "new_order", "review", "payout", "product_approved", etc.
+  title     String
+  message   String
+  data      String?  // JSON with additional context
+  
+  isRead    Boolean  @default(false)
+  readAt    DateTime?
+  
+  // Email sent
+  emailSent Boolean  @default(false)
+  emailSentAt DateTime?
+  
+  createdAt DateTime @default(now())
+  
+  @@index([vendorId, isRead])
+  @@index([vendorId, createdAt])
 }
