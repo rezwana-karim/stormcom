@@ -23,9 +23,7 @@ interface CustomerMetricsData {
 interface CustomerMetricsProps {
   storeId: string;
   timeRange: string;
-  storeId: string;
 }
-
 // Helper to calculate date range from timeRange
 function getDateRange(timeRange: string): { startDate: string; endDate: string } {
   const endDate = new Date();

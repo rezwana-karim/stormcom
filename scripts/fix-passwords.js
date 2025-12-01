@@ -39,7 +39,6 @@ async function main() {
       });
 
       console.log(`✅ Updated password for: ${userData.email}`);
-      console.log(`   New password: ${userData.newPassword}`);
     } catch (error) {
       console.error(`❌ Error updating ${userData.email}:`, error.message);
     }
