@@ -14,8 +14,8 @@ import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
 const QuerySchema = z.object({
-  page: z.string().nullish().transform(val => parseInt(val || '1')),
-  limit: z.string().nullish().transform(val => parseInt(val || '20')),
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(20),
   type: z.string().nullish(),
   unreadOnly: z.string().nullish().transform(val => val === 'true'),
 });
