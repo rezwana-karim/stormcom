@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const entityType = searchParams.get('resource') || undefined;
 
     // Get audit logs directly from database with includes
-    const whereClause: Record<string, string | undefined> = {};
+    const whereClause: Record<string, unknown> = {};
     if (userId) whereClause.userId = userId;
     if (action) whereClause.action = action;
     if (entityType) whereClause.entityType = entityType;
