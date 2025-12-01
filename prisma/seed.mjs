@@ -26,6 +26,22 @@ async function main() {
   await prisma.account.deleteMany();
   await prisma.user.deleteMany();
 
+  // Create Super Admin user
+  console.log('👑 Creating Super Admin...');
+  const superAdminPasswordHash = await bcrypt.hash('SuperAdmin123!@#', 10);
+  const superAdmin = await prisma.user.create({
+    data: {
+      id: 'clqm1j4k00000l8dw8z8r8z8s', // Fixed super admin ID
+      email: 'superadmin@example.com',
+      name: 'Super Admin',
+      emailVerified: new Date(),
+      passwordHash: superAdminPasswordHash,
+      isSuperAdmin: true,
+      accountStatus: 'APPROVED',
+    },
+  });
+  console.log(`✅ Created Super Admin: ${superAdmin.email}`);
+
   // Create test user with password
   console.log('👤 Creating test user...');
   const passwordHash = await bcrypt.hash('Test123!@#', 10);
@@ -36,6 +52,7 @@ async function main() {
       name: 'Test User',
       emailVerified: new Date(),
       passwordHash,
+      accountStatus: 'APPROVED',
     },
   });
   console.log(`✅ Created user: ${user.email}`);
@@ -711,7 +728,7 @@ async function main() {
 
   console.log('\n🎉 Database seeding completed successfully!');
   console.log('\n📊 Summary:');
-  console.log(`   - Users: 1`);
+  console.log(`   - Users: 2 (including Super Admin)`);
   console.log(`   - Organizations: 1`);
   console.log(`   - Stores: 1 (ID: ${store.id})`);
   console.log(`   - Categories: 3`);
@@ -719,7 +736,10 @@ async function main() {
   console.log(`   - Products: ${products.length}`);
   console.log(`   - Customers: ${customers.length}`);
   console.log(`   - Orders: ${orders.length}`);
-  console.log('\n🔑 Test Credentials:');
+  console.log('\n🔑 Super Admin Credentials:');
+  console.log(`   Email: superadmin@example.com`);
+  console.log(`   Password: SuperAdmin123!@#`);
+  console.log('\n🔑 Test User Credentials:');
   console.log(`   Email: test@example.com`);
   console.log(`   Password: Test123!@#`);
   console.log(`   Store ID: ${store.id}`);

@@ -277,6 +277,347 @@ export function suspensionEmail({ userName, reason, appUrl = 'https://stormcom.a
 }
 
 /**
+ * Staff invitation email
+ */
+export function staffInvitationEmail({ 
+  userName, 
+  storeName, 
+  roleName, 
+  inviterName,
+  appUrl = 'https://stormcom.app' 
+}: {
+  userName: string;
+  storeName: string;
+  roleName: string;
+  inviterName: string;
+  appUrl?: string;
+}): string {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Staff Invitation - StormCom</title>
+  <style>${baseStyles}</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">StormCom</div>
+    </div>
+    <div class="content">
+      <h1>👋 You're Invited!</h1>
+      <p>Hi ${userName},</p>
+      <p>${inviterName} has invited you to join <strong>"${storeName}"</strong> as a team member.</p>
+      
+      <div class="info-box">
+        <h3 style="margin-top: 0;">Invitation Details</h3>
+        <p><strong>Store:</strong> ${storeName}</p>
+        <p><strong>Role:</strong> ${roleName}</p>
+        <p style="margin-bottom: 0;"><strong>Invited by:</strong> ${inviterName}</p>
+      </div>
+      
+      <p>As a team member, you'll be able to help manage the store based on your assigned role and permissions.</p>
+      
+      <p style="text-align: center; margin-top: 30px;">
+        <a href="${appUrl}/dashboard/notifications" class="button">View Invitation</a>
+      </p>
+      
+      <p style="color: #666; font-size: 14px; margin-top: 20px;">
+        You can accept or decline this invitation from your dashboard notifications.
+      </p>
+    </div>
+    <div class="footer">
+      <p>© ${new Date().getFullYear()} StormCom. All rights reserved.</p>
+      <p>You're receiving this email because someone invited you to join their store.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+/**
+ * Staff invitation accepted email (sent to store owner)
+ */
+export function staffAcceptedEmail({ 
+  ownerName, 
+  staffName,
+  storeName, 
+  roleName, 
+  appUrl = 'https://stormcom.app' 
+}: {
+  ownerName: string;
+  staffName: string;
+  storeName: string;
+  roleName: string;
+  appUrl?: string;
+}): string {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Staff Invitation Accepted - StormCom</title>
+  <style>${baseStyles}</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">StormCom</div>
+    </div>
+    <div class="content">
+      <h1>✅ Invitation Accepted!</h1>
+      <p>Hi ${ownerName},</p>
+      <p>Great news! <strong>${staffName}</strong> has accepted your invitation to join <strong>"${storeName}"</strong>.</p>
+      
+      <div class="info-box">
+        <h3 style="margin-top: 0;">New Team Member</h3>
+        <p><strong>Name:</strong> ${staffName}</p>
+        <p style="margin-bottom: 0;"><strong>Role:</strong> ${roleName}</p>
+      </div>
+      
+      <p>They now have access to the store based on their assigned role and permissions.</p>
+      
+      <p style="text-align: center; margin-top: 30px;">
+        <a href="${appUrl}/dashboard/stores" class="button">Manage Team</a>
+      </p>
+    </div>
+    <div class="footer">
+      <p>© ${new Date().getFullYear()} StormCom. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+/**
+ * Custom role request submitted email (sent to admin)
+ */
+export function roleRequestSubmittedEmail({ 
+  adminName, 
+  storeName, 
+  roleName, 
+  requestedBy,
+  permissions,
+  appUrl = 'https://stormcom.app' 
+}: {
+  adminName: string;
+  storeName: string;
+  roleName: string;
+  requestedBy: string;
+  permissions: string[];
+  appUrl?: string;
+}): string {
+  const permissionList = permissions.slice(0, 5).join(', ') + (permissions.length > 5 ? ` and ${permissions.length - 5} more` : '');
+  
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Role Request - StormCom Admin</title>
+  <style>${baseStyles}</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">StormCom Admin</div>
+    </div>
+    <div class="content">
+      <h1>📋 New Custom Role Request</h1>
+      <p>Hi ${adminName},</p>
+      <p>A new custom role request has been submitted and requires your review.</p>
+      
+      <div class="info-box">
+        <h3 style="margin-top: 0;">Request Details</h3>
+        <p><strong>Store:</strong> ${storeName}</p>
+        <p><strong>Requested Role:</strong> ${roleName}</p>
+        <p><strong>Submitted by:</strong> ${requestedBy}</p>
+        <p style="margin-bottom: 0;"><strong>Permissions:</strong> ${permissionList}</p>
+      </div>
+      
+      <p style="text-align: center; margin-top: 30px;">
+        <a href="${appUrl}/admin/roles/requests" class="button">Review Request</a>
+      </p>
+    </div>
+    <div class="footer">
+      <p>© ${new Date().getFullYear()} StormCom Admin Notification</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+/**
+ * Custom role approved email (sent to store owner)
+ */
+export function roleApprovedEmail({ 
+  userName, 
+  storeName, 
+  roleName, 
+  appUrl = 'https://stormcom.app' 
+}: {
+  userName: string;
+  storeName: string;
+  roleName: string;
+  appUrl?: string;
+}): string {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom Role Approved - StormCom</title>
+  <style>${baseStyles}</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">StormCom</div>
+    </div>
+    <div class="content">
+      <h1>🎉 Role Approved!</h1>
+      <p>Hi ${userName},</p>
+      <p>Great news! Your custom role request for <strong>"${storeName}"</strong> has been <span class="status-approved"><strong>approved</strong></span>.</p>
+      
+      <div class="info-box">
+        <h3 style="margin-top: 0;">Approved Role</h3>
+        <p style="margin-bottom: 0;"><strong>${roleName}</strong> is now available to assign to staff members in your store.</p>
+      </div>
+      
+      <p>You can now use this role when inviting new staff members to your store.</p>
+      
+      <p style="text-align: center; margin-top: 30px;">
+        <a href="${appUrl}/dashboard/stores" class="button">Manage Roles</a>
+      </p>
+    </div>
+    <div class="footer">
+      <p>© ${new Date().getFullYear()} StormCom. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+/**
+ * Custom role rejected email (sent to store owner)
+ */
+export function roleRejectedEmail({ 
+  userName, 
+  storeName, 
+  roleName, 
+  reason,
+  appUrl = 'https://stormcom.app' 
+}: {
+  userName: string;
+  storeName: string;
+  roleName: string;
+  reason: string;
+  appUrl?: string;
+}): string {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom Role Request Update - StormCom</title>
+  <style>${baseStyles}</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">StormCom</div>
+    </div>
+    <div class="content">
+      <h1>Role Request Update</h1>
+      <p>Hi ${userName},</p>
+      <p>Your custom role request "<strong>${roleName}</strong>" for <strong>"${storeName}"</strong> has been <span class="status-rejected"><strong>rejected</strong></span>.</p>
+      
+      <div class="info-box">
+        <h3 style="margin-top: 0;">Reason</h3>
+        <p style="margin-bottom: 0;">${reason}</p>
+      </div>
+      
+      <p>You can submit a new role request with modifications based on the feedback provided.</p>
+      
+      <p style="text-align: center; margin-top: 30px;">
+        <a href="${appUrl}/dashboard/stores" class="button">Submit New Request</a>
+      </p>
+    </div>
+    <div class="footer">
+      <p>© ${new Date().getFullYear()} StormCom. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+/**
+ * Custom role modification requested email (sent to store owner)
+ */
+export function roleModificationRequestedEmail({ 
+  userName, 
+  storeName, 
+  roleName, 
+  feedback,
+  appUrl = 'https://stormcom.app' 
+}: {
+  userName: string;
+  storeName: string;
+  roleName: string;
+  feedback: string;
+  appUrl?: string;
+}): string {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modification Requested - StormCom</title>
+  <style>${baseStyles}</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">StormCom</div>
+    </div>
+    <div class="content">
+      <h1>⚠️ Modification Requested</h1>
+      <p>Hi ${userName},</p>
+      <p>Your custom role request "<strong>${roleName}</strong>" for <strong>"${storeName}"</strong> requires some modifications.</p>
+      
+      <div class="info-box">
+        <h3 style="margin-top: 0;">Admin Feedback</h3>
+        <p style="margin-bottom: 0;">${feedback}</p>
+      </div>
+      
+      <p>Please review the feedback and update your role request accordingly.</p>
+      
+      <p style="text-align: center; margin-top: 30px;">
+        <a href="${appUrl}/dashboard/stores" class="button">Update Request</a>
+      </p>
+    </div>
+    <div class="footer">
+      <p>© ${new Date().getFullYear()} StormCom. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+/**
  * Admin notification for new user signup
  */
 export function adminNewUserEmail({ userName, userEmail, businessName, businessCategory }: {

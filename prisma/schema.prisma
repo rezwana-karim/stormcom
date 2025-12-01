@@ -68,6 +68,10 @@ model User {
   // Store request relations
   storeRequests       StoreRequest[]     @relation("UserStoreRequests")
   reviewedStoreRequests StoreRequest[]   @relation("StoreRequestReviewer")
+  
+  // Custom role request relations
+  customRoleRequests        CustomRoleRequest[]  @relation("UserCustomRoleRequests")
+  reviewedCustomRoleRequests CustomRoleRequest[] @relation("CustomRoleRequestReviewer")
 
   accounts      Account[]
   sessions      Session[]
@@ -326,6 +330,10 @@ model Store {
   inventoryLogs  InventoryLog[] @relation("StoreInventoryLogs")
   staff          StoreStaff[] // Store staff assignments
   
+  // Custom role management
+  customRoles        CustomRole[]
+  customRoleRequests CustomRoleRequest[]
+  
   // Platform management
   platformActivities PlatformActivity[]
   createdFromRequest StoreRequest? @relation("CreatedFromRequest")
@@ -344,11 +352,18 @@ model StoreStaff {
   id        String   @id @default(cuid())
   userId    String
   storeId   String
-  role      Role     // Store-level roles: STORE_ADMIN, SALES_MANAGER, etc.
+  role      Role?    // Predefined role (null if using custom role)
+  customRoleId String? // Custom role reference (null if using predefined role)
   isActive  Boolean  @default(true)
   
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  // Invitation tracking
+  invitedBy String?
+  invitedAt DateTime @default(now())
+  acceptedAt DateTime?
+  
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customRole CustomRole? @relation(fields: [customRoleId], references: [id], onDelete: SetNull)
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -357,6 +372,97 @@ model StoreStaff {
   @@index([storeId, isActive])
   @@index([userId, isActive])
   @@index([storeId, role])
+  @@index([customRoleId])
+}
+
+// ============================================================================
+// CUSTOM ROLE SYSTEM
+// ============================================================================
+
+// Request status for approval workflows
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  INFO_REQUESTED
+}
+
+// Custom role request (submitted by store owner, approved by super admin)
+model CustomRoleRequest {
+  id          String   @id @default(cuid())
+  
+  // Requester
+  userId      String
+  user        User     @relation("UserCustomRoleRequests", fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Store this role is for
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  // Role details
+  roleName    String
+  roleDescription String?
+  permissions String   // JSON array of permission strings
+  justification String? // Why this role is needed
+  
+  // Request status
+  status      RequestStatus @default(PENDING)
+  
+  // Admin response
+  reviewedBy  String?
+  reviewer    User?    @relation("CustomRoleRequestReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
+  reviewedAt  DateTime?
+  rejectionReason String?
+  adminNotes  String?
+  modifiedPermissions String? // JSON array if admin modified permissions
+  
+  // Created role (after approval)
+  customRoleId String?  @unique
+  customRole   CustomRole? @relation(fields: [customRoleId], references: [id], onDelete: SetNull)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([userId, status])
+  @@index([storeId, status])
+  @@index([status, createdAt])
+  @@index([reviewedBy])
+  @@map("custom_role_requests")
+}
+
+// Custom role (created when request is approved)
+model CustomRole {
+  id          String   @id @default(cuid())
+  
+  // Store this role belongs to
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  // Role details
+  name        String
+  description String?
+  permissions String   // JSON array of permission strings
+  
+  // Status
+  isActive    Boolean  @default(true)
+  
+  // Approval info
+  approvedBy  String?
+  approvedAt  DateTime?
+  
+  // Source request
+  request     CustomRoleRequest?
+  
+  // Staff assigned to this role
+  staffAssignments StoreStaff[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([storeId, name])
+  @@index([storeId, isActive])
+  @@map("custom_roles")
 }
 
 // Product models
@@ -806,6 +912,21 @@ enum NotificationType {
   SYSTEM_ANNOUNCEMENT    // Platform-wide announcement
   NEW_USER_REGISTERED    // Admin notification: new user signup
   STORE_REQUEST          // Admin notification: store request
+  
+  // Custom Role Request notifications
+  ROLE_REQUEST_PENDING   // Admin notification: new role request
+  ROLE_REQUEST_APPROVED  // Role request approved
+  ROLE_REQUEST_REJECTED  // Role request rejected
+  ROLE_REQUEST_MODIFIED  // Role approved with modifications
+  
+  // Staff notifications
+  STAFF_INVITED          // Staff member invited
+  STAFF_ROLE_CHANGED     // Staff role changed
+  STAFF_ROLE_UPDATED     // Staff role updated (alias for role changed)
+  STAFF_DEACTIVATED      // Staff member deactivated
+  STAFF_REMOVED          // Staff member removed from store
+  STAFF_JOINED           // Staff member accepted invitation
+  STAFF_DECLINED         // Staff member declined invitation
 }
 
 // User notifications

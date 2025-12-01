@@ -119,6 +119,37 @@ export async function signup(state: FormState, formData: FormData): Promise<Form
       },
     })
 
+    // If business name is provided, automatically create a store request
+    // This streamlines the flow: one approval creates both user access and store
+    let storeRequest = null;
+    if (businessName) {
+      // Generate a slug from the business name
+      const storeSlug = businessName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      
+      // Check if slug is unique
+      const existingStore = await prisma.store.findUnique({ where: { slug: storeSlug } });
+      const existingRequest = await prisma.storeRequest.findFirst({ 
+        where: { storeSlug, status: 'PENDING' } 
+      });
+      
+      // Only create if slug is available
+      if (!existingStore && !existingRequest) {
+        storeRequest = await prisma.storeRequest.create({
+          data: {
+            userId: user.id,
+            storeName: businessName,
+            storeSlug,
+            storeDescription: businessDescription || null,
+            businessName: businessName,
+            businessCategory: businessCategory || null,
+            businessEmail: email,
+            businessPhone: phoneNumber || null,
+            status: 'PENDING',
+          },
+        });
+      }
+    }
+
     // Log platform activity - notify super admins
     await prisma.platformActivity.create({
       data: {
@@ -126,10 +157,11 @@ export async function signup(state: FormState, formData: FormData): Promise<Form
         action: 'USER_REGISTERED',
         entityType: 'User',
         entityId: user.id,
-        description: `New user registration: ${name} (${email})`,
+        description: `New user registration: ${name} (${email})${storeRequest ? ' with store request' : ''}`,
         metadata: JSON.stringify({
           businessName: businessName || null,
           businessCategory: businessCategory || null,
+          storeRequestId: storeRequest?.id || null,
         }),
       },
     })
@@ -141,18 +173,31 @@ export async function signup(state: FormState, formData: FormData): Promise<Form
     })
 
     if (superAdmins.length > 0) {
+      // If store request was created, notify about that (it's actionable)
+      // Otherwise notify about user registration
+      const notificationData = storeRequest ? {
+        type: 'STORE_REQUEST_PENDING' as const,
+        title: 'New Store Request',
+        message: `New user "${name}" (${email}) has registered with store request "${businessName}".`,
+        actionUrl: '/admin/stores/requests',
+        actionLabel: 'Review Store Request',
+      } : {
+        type: 'NEW_USER_REGISTERED' as const,
+        title: 'New User Registration',
+        message: `New user "${name}" (${email}) has registered and is waiting for approval.`,
+        actionUrl: '/admin/users/pending',
+        actionLabel: 'Review',
+      };
+
       await prisma.notification.createMany({
         data: superAdmins.map(admin => ({
           userId: admin.id,
-          type: 'NEW_USER_REGISTERED',
-          title: 'New User Registration',
-          message: `New user "${name}" (${email}) has registered and is waiting for approval.`,
+          ...notificationData,
           data: JSON.stringify({
             userId: user.id,
             businessName: businessName || null,
+            storeRequestId: storeRequest?.id || null,
           }),
-          actionUrl: '/admin/users/pending',
-          actionLabel: 'Review',
         })),
       })
     }

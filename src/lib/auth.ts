@@ -116,21 +116,45 @@ export const authOptions: NextAuthOptions = {
                   include: { store: true },
                 },
               },
-              orderBy: { createdAt: 'asc' },
-              take: 1,
             },
             storeStaff: {
               where: { isActive: true },
               include: { store: true },
-              orderBy: { createdAt: 'asc' },
-              take: 1,
             },
           },
         });
 
         if (user) {
-          const membership = user.memberships[0];
-          const storeStaff = user.storeStaff[0];
+          // Prioritize memberships: OWNER > ADMIN > MEMBER > VIEWER
+          const rolePriority: Record<string, number> = {
+            OWNER: 4,
+            ADMIN: 3,
+            MEMBER: 2,
+            VIEWER: 1,
+          };
+
+          const sortedMemberships = [...user.memberships].sort((a, b) => {
+            const priorityDiff = (rolePriority[b.role] || 0) - (rolePriority[a.role] || 0);
+            if (priorityDiff !== 0) return priorityDiff;
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          });
+
+          // Prioritize store staff: STORE_ADMIN > others
+          const storeRolePriority: Record<string, number> = {
+            STORE_ADMIN: 4,
+            SALES_MANAGER: 3,
+            INVENTORY_MANAGER: 2,
+            CUSTOMER_SERVICE: 1,
+          };
+
+          const sortedStoreStaff = [...user.storeStaff].sort((a, b) => {
+            const priorityDiff = (storeRolePriority[b.role || ''] || 0) - (storeRolePriority[a.role || ''] || 0);
+            if (priorityDiff !== 0) return priorityDiff;
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          });
+
+          const membership = sortedMemberships[0];
+          const storeStaff = sortedStoreStaff[0];
 
           (session.user as any).isSuperAdmin = user.isSuperAdmin;
           (session.user as any).accountStatus = user.accountStatus;

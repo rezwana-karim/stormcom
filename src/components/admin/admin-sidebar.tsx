@@ -15,6 +15,7 @@ import {
   IconShieldCheck,
   IconBell,
   IconClipboardList,
+  IconUserShield,
 } from "@tabler/icons-react"
 
 import { NavUser } from "@/components/nav-user"
@@ -51,6 +52,11 @@ const adminNavItems = [
     title: "Store Requests",
     url: "/admin/stores/requests",
     icon: IconClipboardList,
+  },
+  {
+    title: "Role Requests",
+    url: "/admin/roles/requests",
+    icon: IconUserShield,
   },
   {
     title: "Stores",

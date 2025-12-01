@@ -47,6 +47,7 @@ export async function getUserContext(): Promise<UserContext | null> {
   const userId = session.user.id;
 
   // Get user with memberships and store staff assignments
+  // Fetch ALL memberships and store staff, then prioritize in code
   const user = await prisma.user.findUnique({
     where: { id: userId },
     include: {
@@ -58,10 +59,6 @@ export async function getUserContext(): Promise<UserContext | null> {
             },
           },
         },
-        orderBy: {
-          createdAt: 'asc',
-        },
-        take: 1, // Get first/default membership
       },
       storeStaff: {
         where: {
@@ -70,10 +67,6 @@ export async function getUserContext(): Promise<UserContext | null> {
         include: {
           store: true,
         },
-        orderBy: {
-          createdAt: 'asc',
-        },
-        take: 1, // Get first/default store assignment
       },
     },
   });
@@ -82,9 +75,39 @@ export async function getUserContext(): Promise<UserContext | null> {
     return null;
   }
 
-  // Determine roles
-  const membership = user.memberships[0];
-  const storeStaff = user.storeStaff[0];
+  // Prioritize memberships: OWNER > ADMIN > MEMBER > VIEWER
+  // This ensures store owners always see their stores
+  const rolePriority: Record<string, number> = {
+    OWNER: 4,
+    ADMIN: 3,
+    MEMBER: 2,
+    VIEWER: 1,
+  };
+
+  // Sort memberships by role priority (highest first), then by createdAt (newest first)
+  const sortedMemberships = [...user.memberships].sort((a, b) => {
+    const priorityDiff = (rolePriority[b.role] || 0) - (rolePriority[a.role] || 0);
+    if (priorityDiff !== 0) return priorityDiff;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+
+  // Prioritize store staff: STORE_ADMIN > SALES_MANAGER > others
+  const storeRolePriority: Record<string, number> = {
+    STORE_ADMIN: 4,
+    SALES_MANAGER: 3,
+    INVENTORY_MANAGER: 2,
+    CUSTOMER_SUPPORT: 1,
+  };
+
+  const sortedStoreStaff = [...user.storeStaff].sort((a, b) => {
+    const priorityDiff = (storeRolePriority[b.role || ''] || 0) - (storeRolePriority[a.role || ''] || 0);
+    if (priorityDiff !== 0) return priorityDiff;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+
+  // Determine roles - use the highest priority membership/staff
+  const membership = sortedMemberships[0];
+  const storeStaff = sortedStoreStaff[0];
 
   const organizationRole = membership?.role;
   const organizationId = membership?.organizationId;
@@ -111,7 +134,7 @@ export async function getUserContext(): Promise<UserContext | null> {
     isSuperAdmin: user.isSuperAdmin,
     organizationRole,
     organizationId,
-    storeRole,
+    storeRole: storeRole ?? undefined,
     storeId,
     permissions,
   };

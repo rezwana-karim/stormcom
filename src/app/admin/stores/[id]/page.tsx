@@ -377,7 +377,7 @@ export default async function StoreDetailPage({ params }: PageProps) {
                           {staff.user.name || staff.user.email}
                         </p>
                         <Badge variant="outline" className="text-xs">
-                          {staff.role.replace('_', ' ')}
+                          {staff.role?.replace('_', ' ') || 'Staff'}
                         </Badge>
                       </div>
                     </Link>

@@ -310,7 +310,7 @@ export default async function UserDetailPage({ params }: PageProps) {
                       <p className="font-medium">{staff.store.name}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <Badge variant="outline" className="text-xs">
-                          {staff.role.replace('_', ' ')}
+                          {staff.role?.replace('_', ' ') || 'Staff'}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
                           /{staff.store.slug}

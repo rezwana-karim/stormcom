@@ -41,6 +41,13 @@ export default function SignupPage() {
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [businessCategory, setBusinessCategory] = useState("");
   
+  // Step 1 data storage (persisted across steps)
+  const [step1Data, setStep1Data] = useState({
+    name: '',
+    email: '',
+    password: '',
+  });
+  
   // Password signup with server action
   const [state, action, isPending] = useActionState(signup, undefined);
 
@@ -121,6 +128,8 @@ export default function SignupPage() {
                         placeholder="John Doe"
                         required
                         autoComplete="name"
+                        value={step1Data.name}
+                        onChange={(e) => setStep1Data(prev => ({ ...prev, name: e.target.value }))}
                       />
                       {state?.errors?.name && (
                         <p className="text-sm text-destructive">{state.errors.name[0]}</p>
@@ -139,6 +148,8 @@ export default function SignupPage() {
                         placeholder="you@example.com"
                         required
                         autoComplete="email"
+                        value={step1Data.email}
+                        onChange={(e) => setStep1Data(prev => ({ ...prev, email: e.target.value }))}
                       />
                       {state?.errors?.email && (
                         <p className="text-sm text-destructive">{state.errors.email[0]}</p>
@@ -157,6 +168,8 @@ export default function SignupPage() {
                         placeholder="••••••••"
                         required
                         autoComplete="new-password"
+                        value={step1Data.password}
+                        onChange={(e) => setStep1Data(prev => ({ ...prev, password: e.target.value }))}
                       />
                       {state?.errors?.password && (
                         <div className="space-y-1">
@@ -183,6 +196,11 @@ export default function SignupPage() {
                   </>
                 ) : (
                   <>
+                    {/* Hidden fields for step 1 data */}
+                    <input type="hidden" name="name" value={step1Data.name} />
+                    <input type="hidden" name="email" value={step1Data.email} />
+                    <input type="hidden" name="password" value={step1Data.password} />
+                    
                     {/* Business Information */}
                     <div className="space-y-2">
                       <Label htmlFor="businessName" className="flex items-center gap-2">

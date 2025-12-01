@@ -30,11 +30,11 @@ import { toast } from "sonner";
 const storeRequestSchema = z.object({
   storeName: z.string().min(2, "Store name must be at least 2 characters").max(100),
   storeSlug: z.string().min(2).max(50).regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric with hyphens only").optional().or(z.literal("")),
-  storeDescription: z.string().max(500).optional(),
-  businessName: z.string().max(200).optional(),
-  businessCategory: z.string().optional(),
-  businessAddress: z.string().max(300).optional(),
-  businessPhone: z.string().max(20).optional(),
+  storeDescription: z.string().max(500).optional().or(z.literal("")),
+  businessName: z.string().max(200).optional().or(z.literal("")),
+  businessCategory: z.string().optional().or(z.literal("")),
+  businessAddress: z.string().max(300).optional().or(z.literal("")),
+  businessPhone: z.string().max(20).optional().or(z.literal("")),
   businessEmail: z.string().email("Invalid email").optional().or(z.literal("")),
 });
 

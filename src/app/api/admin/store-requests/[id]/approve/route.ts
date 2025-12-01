@@ -149,6 +149,18 @@ export async function POST(
         },
       });
 
+      // Update user's account status to APPROVED (so they can login)
+      await tx.user.update({
+        where: { id: storeRequest.userId },
+        data: {
+          accountStatus: 'APPROVED',
+          statusChangedAt: new Date(),
+          statusChangedBy: session.user.id,
+          approvedAt: new Date(),
+          approvedBy: session.user.id,
+        },
+      });
+
       return { organization, store };
     });
 

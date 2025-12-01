@@ -1,7 +1,10 @@
+"use client";
+
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { UserNotificationBell } from "@/components/user-notification-bell"
 
 export function SiteHeader() {
   return (
@@ -32,6 +35,7 @@ export function SiteHeader() {
         </DropdownMenu>
         <h1 className="text-base font-medium ml-2">Documents</h1>
         <div className="ml-auto flex items-center gap-2">
+          <UserNotificationBell />
           <Button variant="ghost" asChild size="sm" className="hidden sm:flex">
             <a
               href="https://github.com/shadcn-ui/ui/tree/main/apps/v4/app/(examples)/dashboard"

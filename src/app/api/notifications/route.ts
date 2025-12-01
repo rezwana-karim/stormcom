@@ -14,10 +14,10 @@ import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
 const QuerySchema = z.object({
-  page: z.string().optional().transform(val => parseInt(val || '1')),
-  limit: z.string().optional().transform(val => parseInt(val || '20')),
-  type: z.string().optional(),
-  unreadOnly: z.string().optional().transform(val => val === 'true'),
+  page: z.string().nullish().transform(val => parseInt(val || '1')),
+  limit: z.string().nullish().transform(val => parseInt(val || '20')),
+  type: z.string().nullish(),
+  unreadOnly: z.string().nullish().transform(val => val === 'true'),
 });
 
 export async function GET(request: NextRequest) {

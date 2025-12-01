@@ -13,13 +13,13 @@ import { z } from 'zod';
 
 const createStoreRequestSchema = z.object({
   storeName: z.string().min(2, 'Store name must be at least 2 characters').max(100),
-  storeSlug: z.string().min(2).max(50).regex(/^[a-z0-9-]+$/, 'Slug must be lowercase alphanumeric with hyphens').optional(),
-  storeDescription: z.string().max(500).optional(),
-  businessName: z.string().max(200).optional(),
-  businessCategory: z.string().max(100).optional(),
-  businessAddress: z.string().max(300).optional(),
-  businessPhone: z.string().max(20).optional(),
-  businessEmail: z.string().email('Invalid email address').optional(),
+  storeSlug: z.string().min(2).max(50).regex(/^[a-z0-9-]+$/, 'Slug must be lowercase alphanumeric with hyphens').optional().or(z.literal('')),
+  storeDescription: z.string().max(500).optional().or(z.literal('')),
+  businessName: z.string().max(200).optional().or(z.literal('')),
+  businessCategory: z.string().max(100).optional().or(z.literal('')),
+  businessAddress: z.string().max(300).optional().or(z.literal('')),
+  businessPhone: z.string().max(20).optional().or(z.literal('')),
+  businessEmail: z.string().email('Invalid email address').optional().or(z.literal('')),
 });
 
 /**
