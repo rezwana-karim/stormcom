@@ -148,7 +148,7 @@ export async function GET(
       orderBy: { name: 'asc' },
     });
     
-    // Format counts
+    // Format counts with proper type safety
     const statusCounts = {
       PENDING: 0,
       APPROVED: 0,
@@ -156,8 +156,10 @@ export async function GET(
       CANCELLED: 0,
       INFO_REQUESTED: 0,
     };
-    (counts as CountResult[]).forEach((c: CountResult) => {
-      statusCounts[c.status as keyof typeof statusCounts] = c._count;
+    counts.forEach((c: { status: string; _count: number }) => {
+      if (c.status in statusCounts) {
+        statusCounts[c.status as keyof typeof statusCounts] = c._count;
+      }
     });
     
     return NextResponse.json({

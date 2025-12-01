@@ -17,6 +17,7 @@ import {
   Permission,
 } from './permissions';
 import { logPermissionCheck } from './audit-logger';
+import { ORG_ROLE_PRIORITY } from './constants';
 
 /**
  * User context with roles and permissions
@@ -75,18 +76,12 @@ export async function getUserContext(): Promise<UserContext | null> {
     return null;
   }
 
-  // Prioritize memberships: OWNER > ADMIN > MEMBER > VIEWER
+  // Prioritize memberships using shared priority constants
   // This ensures store owners always see their stores
-  const rolePriority: Record<string, number> = {
-    OWNER: 4,
-    ADMIN: 3,
-    MEMBER: 2,
-    VIEWER: 1,
-  };
 
   // Sort memberships by role priority (highest first), then by createdAt (newest first)
   const sortedMemberships = [...user.memberships].sort((a, b) => {
-    const priorityDiff = (rolePriority[b.role] || 0) - (rolePriority[a.role] || 0);
+    const priorityDiff = (ORG_ROLE_PRIORITY[b.role] || 0) - (ORG_ROLE_PRIORITY[a.role] || 0);
     if (priorityDiff !== 0) return priorityDiff;
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
