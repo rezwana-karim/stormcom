@@ -2,10 +2,12 @@
  * Roles List Component for Store
  */
 
+import Link from 'next/link';
 import prisma from '@/lib/prisma';
 import { format } from 'date-fns';
-import { IconCheck, IconUsers } from '@tabler/icons-react';
+import { IconCheck, IconUsers, IconPencil, IconX } from '@tabler/icons-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -57,16 +59,21 @@ export async function RolesList({ storeId, isOwner }: RolesListProps) {
         }
         
         return (
-          <Card key={role.id}>
+          <Card key={role.id} className={!role.isActive ? 'opacity-70' : ''}>
             <CardHeader className="pb-2">
               <div className="flex items-start justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     {role.name}
-                    {role.isActive && (
+                    {role.isActive ? (
                       <Badge variant="outline" className="text-green-600 border-green-600">
                         <IconCheck className="h-3 w-3 mr-1" />
                         Active
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-gray-500 border-gray-400">
+                        <IconX className="h-3 w-3 mr-1" />
+                        Inactive
                       </Badge>
                     )}
                   </CardTitle>
@@ -77,9 +84,19 @@ export async function RolesList({ storeId, isOwner }: RolesListProps) {
                   )}
                 </div>
                 
-                <div className="flex items-center gap-1 text-muted-foreground">
-                  <IconUsers className="h-4 w-4" />
-                  <span className="text-sm">{role._count.staffAssignments}</span>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <IconUsers className="h-4 w-4" />
+                    <span className="text-sm">{role._count.staffAssignments}</span>
+                  </div>
+                  {isOwner && (
+                    <Link href={`/dashboard/stores/${storeId}/roles/${role.id}`}>
+                      <Button variant="outline" size="sm">
+                        <IconPencil className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                    </Link>
+                  )}
                 </div>
               </div>
             </CardHeader>
