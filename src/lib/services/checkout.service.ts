@@ -86,6 +86,7 @@ export interface CreateOrderInput {
   ipAddress?: string;
   paymentMethod?: string;
   paymentGateway?: string;
+  cartId?: string; // For inventory reservation consumption
 }
 
 /**
@@ -348,6 +349,8 @@ export class CheckoutService {
 
     // Import InventoryAdjustmentReason for audit logging
     const { InventoryAdjustmentReason } = await import('./inventory.service');
+    // Import InventoryReservationService for consuming reservations
+    const { InventoryReservationService } = await import('./inventory-reservation.service');
 
     // Create order with items AND deduct inventory in single transaction
     // CRITICAL: This ensures atomicity - if inventory deduction fails, order is rolled back
@@ -375,6 +378,18 @@ export class CheckoutService {
           ipAddress: input.ipAddress,
         },
       });
+
+      // If cartId is provided, consume any active reservations
+      // This prevents double-deduction when reservations were already created
+      if (input.cartId) {
+        const reservationService = InventoryReservationService.getInstance();
+        await reservationService.consumeReservations(
+          tx,
+          input.storeId,
+          input.cartId,
+          newOrder.id
+        );
+      }
 
       // Create order items
       const orderItems = await Promise.all(

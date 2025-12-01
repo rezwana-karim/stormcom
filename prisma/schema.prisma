@@ -228,6 +228,13 @@ enum SubscriptionStatus {
   PAUSED
 }
 
+enum ReservationStatus {
+  ACTIVE
+  CONSUMED
+  EXPIRED
+  RELEASED
+}
+
 // Store model (E-commerce tenant - extends Organization)
 model Store {
   id             String   @id @default(cuid())
@@ -272,6 +279,7 @@ model Store {
   attributes     ProductAttribute[]
   auditLogs      AuditLog[]
   inventoryLogs  InventoryLog[] @relation("StoreInventoryLogs")
+  inventoryReservations InventoryReservation[]
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -333,6 +341,7 @@ model Product {
   attributes  ProductAttributeValue[]
   reviews     Review[]
   inventoryLogs InventoryLog[] @relation("InventoryLogs")
+  inventoryReservations InventoryReservation[]
   
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
@@ -372,6 +381,7 @@ model ProductVariant {
   
   orderItems OrderItem[]
   inventoryLogs InventoryLog[] @relation("VariantInventoryLogs")
+  inventoryReservations InventoryReservation[]
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -675,4 +685,32 @@ model AuditLog {
   @@index([userId, createdAt])
   @@index([entityType, entityId, createdAt])
   @@map("audit_logs")
+}
+
+// Inventory Reservation model (for cart hold / soft allocation)
+model InventoryReservation {
+  id          String            @id @default(cuid())
+  storeId     String
+  store       Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId   String?
+  variant     ProductVariant?   @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  quantity    Int
+  status      ReservationStatus @default(ACTIVE)
+  cartId      String?           // Cart session reference
+  orderId     String?           // Set when consumed by order
+  expiresAt   DateTime          // When reservation expires (default 15 min TTL)
+  extendedAt  DateTime?         // Set when reservation is extended (only once allowed)
+  
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([storeId, productId])
+  @@index([storeId, variantId])
+  @@index([expiresAt])
+  @@index([status])
+  @@index([cartId])
+  @@index([orderId])
+  @@map("inventory_reservations")
 }

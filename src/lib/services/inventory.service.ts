@@ -4,7 +4,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { caseInsensitiveStringFilter } from '@/lib/prisma-utils';
-import { InventoryStatus, Prisma } from '@prisma/client';
+import { InventoryStatus, Prisma, ReservationStatus } from '@prisma/client';
 
 // ============================================================================
 // INVENTORY ADJUSTMENT REASON CODES
@@ -280,6 +280,7 @@ export class InventoryService {
 
   /**
    * Get products with low stock alerts
+   * Excludes reserved quantity for accurate alert calculation
    */
   async getLowStockItems(storeId: string, threshold?: number): Promise<LowStockAlert[]> {
     const products = await prisma.product.findMany({
@@ -326,32 +327,73 @@ export class InventoryService {
         { inventoryStatus: 'asc' },
         { inventoryQty: 'asc' },
       ],
+      // Limit to reasonable number to prevent memory issues on large stores
+      take: 500,
     });
 
+    // Get active reservations for all products
+    // Note: This query is scoped to low/out-of-stock products only (typically a small subset)
+    // The take: 500 limit above ensures this doesn't cause performance issues
+    const productIds = products.map(p => p.id);
+    
+    // Skip reservation query if no products found
+    if (productIds.length === 0) {
+      return [];
+    }
+    
+    const reservations = await prisma.inventoryReservation.groupBy({
+      by: ['productId', 'variantId'],
+      where: {
+        storeId,
+        productId: { in: productIds },
+        status: ReservationStatus.ACTIVE,
+        expiresAt: { gt: new Date() },
+      },
+      _sum: { quantity: true },
+    });
+
+    // Create a lookup map for reserved quantities
+    const reservedQtyMap = new Map<string, number>();
+    for (const r of reservations) {
+      const key = r.variantId ? `variant:${r.variantId}` : `product:${r.productId}`;
+      reservedQtyMap.set(key, r._sum.quantity ?? 0);
+    }
+
     return products.map((product) => {
-      const lowStockVariants = product.variants.filter(
-        (v) => v.inventoryQty <= v.lowStockThreshold
-      );
+      // Get reserved quantity for product
+      const productReserved = reservedQtyMap.get(`product:${product.id}`) ?? 0;
+      // Available stock = current stock - reserved quantity
+      const availableQty = product.inventoryQty - productReserved;
+      
+      const lowStockVariants = product.variants.filter((v) => {
+        const variantReserved = reservedQtyMap.get(`variant:${v.id}`) ?? 0;
+        const variantAvailableQty = v.inventoryQty - variantReserved;
+        return variantAvailableQty <= v.lowStockThreshold;
+      });
 
       return {
         id: product.id,
         name: product.name,
         sku: product.sku,
-        inventoryQty: product.inventoryQty,
+        inventoryQty: availableQty, // Report available qty (excluding reservations)
         lowStockThreshold: product.lowStockThreshold,
         inventoryStatus: product.inventoryStatus,
         categoryName: product.category?.name,
         brandName: product.brand?.name,
-        deficit: Math.max(0, product.lowStockThreshold - product.inventoryQty),
+        deficit: Math.max(0, product.lowStockThreshold - availableQty),
         variants: lowStockVariants.length > 0
-          ? lowStockVariants.map((v) => ({
-              id: v.id,
-              name: v.name,
-              sku: v.sku,
-              inventoryQty: v.inventoryQty,
-              lowStockThreshold: v.lowStockThreshold,
-              deficit: Math.max(0, v.lowStockThreshold - v.inventoryQty),
-            }))
+          ? lowStockVariants.map((v) => {
+              const variantReserved = reservedQtyMap.get(`variant:${v.id}`) ?? 0;
+              const variantAvailableQty = v.inventoryQty - variantReserved;
+              return {
+                id: v.id,
+                name: v.name,
+                sku: v.sku,
+                inventoryQty: variantAvailableQty,
+                lowStockThreshold: v.lowStockThreshold,
+                deficit: Math.max(0, v.lowStockThreshold - variantAvailableQty),
+              };
+            })
           : undefined,
       };
     });
