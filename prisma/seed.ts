@@ -124,7 +124,7 @@ async function main() {
   console.log('👥 Creating staff members with various roles...');
   
   // Sales Manager
-  const salesManagerHash = await bcrypt.hash('Sales123!@#', 12);
+  const salesManagerHash = await bcrypt.hash('SalesManager123!@#', 12);
   const salesManager = await prisma.user.create({
     data: {
       email: 'sales@example.com',
@@ -136,7 +136,7 @@ async function main() {
   console.log(`✅ Created Sales Manager: ${salesManager.email}`);
   
   // Inventory Manager
-  const inventoryManagerHash = await bcrypt.hash('Inventory123!@#', 12);
+  const inventoryManagerHash = await bcrypt.hash('InventoryManager123!@#', 12);
   const inventoryManager = await prisma.user.create({
     data: {
       email: 'inventory@example.com',
@@ -148,7 +148,7 @@ async function main() {
   console.log(`✅ Created Inventory Manager: ${inventoryManager.email}`);
   
   // Customer Service
-  const customerServiceHash = await bcrypt.hash('Support123!@#', 12);
+  const customerServiceHash = await bcrypt.hash('CustomerService123!@#', 12);
   const customerService = await prisma.user.create({
     data: {
       email: 'support@example.com',
@@ -160,7 +160,7 @@ async function main() {
   console.log(`✅ Created Customer Service: ${customerService.email}`);
   
   // Content Manager
-  const contentManagerHash = await bcrypt.hash('Content123!@#', 12);
+  const contentManagerHash = await bcrypt.hash('ContentManager123!@#', 12);
   const contentManager = await prisma.user.create({
     data: {
       email: 'content@example.com',
@@ -172,7 +172,7 @@ async function main() {
   console.log(`✅ Created Content Manager: ${contentManager.email}`);
   
   // Marketing Manager
-  const marketingManagerHash = await bcrypt.hash('Marketing123!@#', 12);
+  const marketingManagerHash = await bcrypt.hash('MarketingManager123!@#', 12);
   const marketingManager = await prisma.user.create({
     data: {
       email: 'marketing@example.com',
