@@ -23,7 +23,6 @@ interface TopProduct {
 interface TopProductsTableProps {
   storeId: string;
   timeRange: string;
-  storeId: string;
 }
 
 export function TopProductsTable({ storeId, timeRange }: TopProductsTableProps) {
