@@ -96,10 +96,6 @@ const data = {
           title: "Cart",
           url: "/dashboard/cart",
         },
-        {
-          title: "Payments",
-          url: "/dashboard/payments",
-        },
       ],
     },
     {

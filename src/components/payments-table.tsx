@@ -146,33 +146,18 @@ export function PaymentsTable({ storeId }: PaymentsTableProps) {
     }).format(value);
   };
 
-  // Fetch payment attempts - we need to fetch by orderId, but we'll show all for the store
-  // For now, we'll fetch order data to get the payment attempts
+  // Fetch all payment attempts for the store in a single request
   const fetchPayments = async () => {
     try {
       setLoading(true);
       
-      // First fetch orders for the store to get orderIds
-      const ordersResponse = await fetch(`/api/orders?storeId=${storeId}&perPage=100`);
-      if (!ordersResponse.ok) {
-        throw new Error('Failed to fetch orders');
+      // Fetch all payment attempts for the store
+      const response = await fetch(`/api/payments?storeId=${storeId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch payment attempts');
       }
-      const ordersData = await ordersResponse.json();
-      
-      // Fetch payment attempts for each order
-      const allAttempts: PaymentAttempt[] = [];
-      
-      for (const order of ordersData.orders || []) {
-        try {
-          const paymentsResponse = await fetch(`/api/payments?storeId=${storeId}&orderId=${order.id}`);
-          if (paymentsResponse.ok) {
-            const paymentsData: PaymentsResponse = await paymentsResponse.json();
-            allAttempts.push(...paymentsData.attempts);
-          }
-        } catch {
-          // Continue if individual order payment fetch fails
-        }
-      }
+      const data: PaymentsResponse = await response.json();
+      let allAttempts = data.attempts;
 
       // Filter based on status
       let filteredAttempts = allAttempts;

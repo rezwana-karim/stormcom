@@ -1,11 +1,11 @@
 /**
  * GET /api/payments
  *
- * Get payment attempts for an order
+ * Get payment attempts for a store (optionally filtered by orderId)
  *
  * Query Parameters:
  *   - storeId: string (required)
- *   - orderId: string (required)
+ *   - orderId: string (optional) - filter by specific order
  *
  * Returns:
  *   - 200: List of payment attempts with transactions
@@ -18,11 +18,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { PaymentService } from '@/lib/services/payment.service';
+import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
 const querySchema = z.object({
   storeId: z.string().cuid(),
-  orderId: z.string().cuid(),
+  orderId: z.string().cuid().optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -37,15 +38,27 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const params = querySchema.parse({
       storeId: searchParams.get('storeId'),
-      orderId: searchParams.get('orderId'),
+      orderId: searchParams.get('orderId') || undefined,
     });
 
-    // Get payment attempts
-    const paymentService = PaymentService.getInstance();
-    const attempts = await paymentService.getAttemptsByOrderId(
-      params.orderId,
-      params.storeId
-    );
+    let attempts;
+    
+    if (params.orderId) {
+      // Get payment attempts for specific order
+      const paymentService = PaymentService.getInstance();
+      attempts = await paymentService.getAttemptsByOrderId(
+        params.orderId,
+        params.storeId
+      );
+    } else {
+      // Get all payment attempts for the store
+      attempts = await prisma.paymentAttempt.findMany({
+        where: { storeId: params.storeId },
+        include: { transactions: true },
+        orderBy: { createdAt: 'desc' },
+        take: 100, // Limit to 100 most recent
+      });
+    }
 
     return NextResponse.json({
       attempts: attempts.map((attempt) => ({

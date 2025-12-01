@@ -143,7 +143,7 @@ export function ReconciliationCard({ storeId }: ReconciliationCardProps) {
           </div>
         </div>
         <CardDescription>
-          Monitors for payment attempts stuck in AUTHORIZING state for &gt;15 minutes
+          Monitors for payment attempts stuck in AUTHORIZING state for {'>'}15 minutes
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -204,7 +204,7 @@ export function ReconciliationCard({ storeId }: ReconciliationCardProps) {
           </div>
         ) : (
           <p className="text-sm text-muted-foreground text-center py-4">
-            Click &quot;Check&quot; to verify reconciliation status
+            Click &apos;Check&apos; to verify reconciliation status
           </p>
         )}
       </CardContent>
