@@ -78,7 +78,7 @@ export default async function StoreHomePage({ params }: StoreHomePageProps) {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Hero Section */}
-      <section className="text-center py-12 mb-12 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg">
+      <section className="text-center py-12 mb-12 bg-linear-to-r from-primary/10 to-secondary/10 rounded-lg">
         <h1 className="text-4xl font-bold mb-4">Welcome to {store.name}</h1>
         {store.description && (
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -121,7 +121,7 @@ export default async function StoreHomePage({ params }: StoreHomePageProps) {
                     <span className="text-4xl">📦</span>
                   </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-4">
                   <h3 className="text-white font-semibold">{category.name}</h3>
                 </div>

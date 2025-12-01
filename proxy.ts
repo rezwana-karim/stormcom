@@ -3,8 +3,19 @@ import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
 /**
+ * Next.js 16 Proxy (formerly Middleware)
+ * 
+ * Handles:
+ * - Dynamic subdomain routing for multi-tenant stores
+ * - Authentication protection for admin routes
+ * - Security headers
+ * 
+ * @see https://nextjs.org/docs/app/building-your-application/routing/middleware
+ */
+
+/**
  * Simple in-memory cache with TTL support
- * Used in Proxy (formerly Middleware) where Prisma isn't available
+ * Used in Proxy where Prisma isn't available (Edge Runtime compatible)
  * Note: In production, consider using a distributed cache like Redis or Vercel KV
  */
 class EdgeCache {
@@ -203,7 +214,33 @@ async function getStoreBySubdomainOrDomain(
 }
 
 /**
- * Middleware handler for subdomain routing and auth protection
+ * Apply security headers to response
+ */
+function applySecurityHeaders(response: NextResponse): NextResponse {
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=()"
+  );
+
+  // HSTS in production
+  if (process.env.NODE_ENV === "production") {
+    response.headers.set(
+      "Strict-Transport-Security",
+      "max-age=63072000; includeSubDomains; preload"
+    );
+  }
+
+  return response;
+}
+
+/**
+ * Proxy handler for subdomain routing and auth protection
+ * 
+ * Next.js 16: middleware.ts is deprecated, renamed to proxy.ts
+ * Function name changed from middleware() to proxy()
  * 
  * Subdomain Routing:
  * - For production: Works automatically with proper DNS (demo.stormcom.app -> store)
@@ -212,7 +249,7 @@ async function getStoreBySubdomainOrDomain(
  * 
  * @see https://nextjs.org/docs/app/building-your-application/routing/middleware
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const url = request.nextUrl;
   const hostname = request.headers.get("host") || "";
   const pathname = url.pathname;
@@ -279,7 +316,9 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  // Apply security headers and return
+  const response = NextResponse.next();
+  return applySecurityHeaders(response);
 }
 
 export const config = {

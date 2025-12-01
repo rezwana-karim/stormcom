@@ -168,7 +168,7 @@ export default async function StoreProductsPage({
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row gap-8">
         {/* Filters Sidebar */}
-        <aside className="md:w-64 flex-shrink-0">
+        <aside className="md:w-64 shrink-0">
           <h2 className="font-semibold mb-4">Filters</h2>
 
           {/* Search */}
