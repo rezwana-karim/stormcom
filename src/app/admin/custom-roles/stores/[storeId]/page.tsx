@@ -44,14 +44,14 @@ async function getStoreData(storeId: string) {
       },
       customRoles: {
         include: {
-          createdBy: {
+          createdByUser: {
             select: { id: true, name: true, email: true },
           },
           lastModifiedBy: {
             select: { id: true, name: true, email: true },
           },
           _count: {
-            select: { staff: true },
+            select: { staffAssignments: true },
           },
         },
         orderBy: { createdAt: "desc" },
@@ -72,7 +72,7 @@ async function getStoreData(storeId: string) {
   
   const activeRoles = store.customRoles.filter((r) => r.isActive).length;
   const usagePercent = (store.customRoles.length / store.customRoleLimit) * 100;
-  const totalStaffWithRoles = store.customRoles.reduce((sum, r) => sum + r._count.staff, 0);
+  const totalStaffWithRoles = store.customRoles.reduce((sum, r) => sum + r._count.staffAssignments, 0);
   
   return {
     store: {
@@ -96,10 +96,10 @@ async function getStoreData(storeId: string) {
       id: role.id,
       name: role.name,
       description: role.description,
-      permissions: role.permissions as string[],
+      permissions: role.permissions as unknown as string[],
       isActive: role.isActive,
-      staffCount: role._count.staff,
-      createdBy: role.createdBy,
+      staffCount: role._count.staffAssignments,
+      createdBy: role.createdByUser,
       createdAt: role.createdAt,
       lastModifiedBy: role.lastModifiedBy,
       lastModifiedAt: role.lastModifiedAt,

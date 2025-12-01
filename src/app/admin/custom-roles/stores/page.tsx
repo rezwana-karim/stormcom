@@ -60,8 +60,18 @@ async function getStores(options: {
     prisma.store.findMany({
       where,
       include: {
-        owner: {
-          select: { id: true, name: true, email: true },
+        organization: {
+          include: {
+            memberships: {
+              where: { role: "OWNER" },
+              include: {
+                user: {
+                  select: { id: true, name: true, email: true },
+                },
+              },
+              take: 1,
+            },
+          },
         },
         customRoles: {
           select: {
@@ -83,8 +93,9 @@ async function getStores(options: {
   
   // Transform stores with computed values
   const storesWithStats = stores.map((store) => {
-    const activeRoles = store.customRoles.filter((r) => r.isActive).length;
+    const activeRoles = store.customRoles.filter((r: { isActive: boolean }) => r.isActive).length;
     const usagePercent = (store.customRoles.length / store.customRoleLimit) * 100;
+    const owner = store.organization.memberships[0]?.user || null;
     
     return {
       id: store.id,
@@ -97,7 +108,7 @@ async function getStores(options: {
       inactiveRoles: store.customRoles.length - activeRoles,
       usagePercent,
       isAtLimit: store.customRoles.length >= store.customRoleLimit,
-      owner: store.owner,
+      owner,
       createdAt: store.createdAt,
     };
   });
