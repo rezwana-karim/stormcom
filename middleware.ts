@@ -203,17 +203,24 @@ async function getStoreBySubdomainOrDomain(
 }
 
 /**
- * Proxy handler for subdomain routing and auth protection
+ * Middleware handler for subdomain routing and auth protection
  * 
- * Note: In Next.js 16, Middleware has been renamed to Proxy to better reflect its purpose.
- * The function name is now `proxy` instead of `middleware`.
+ * Subdomain Routing:
+ * - For production: Works automatically with proper DNS (demo.stormcom.app -> store)
+ * - For local development: Requires hosts file setup (127.0.0.1 demo.localhost)
+ * - Direct URL access: Always works via /store/[slug] routes
  * 
- * @see https://nextjs.org/docs/app/getting-started/proxy
+ * @see https://nextjs.org/docs/app/building-your-application/routing/middleware
  */
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const url = request.nextUrl;
   const hostname = request.headers.get("host") || "";
   const pathname = url.pathname;
+  
+  // Construct the proper base URL using the Host header
+  // This is necessary because url.origin may not reflect the actual host in some scenarios
+  const protocol = request.headers.get("x-forwarded-proto") || "http";
+  const baseUrl = `${protocol}://${hostname}`;
 
   // Get subdomain
   const subdomain = extractSubdomain(hostname);
@@ -221,7 +228,6 @@ export async function proxy(request: NextRequest) {
   // Check if we should process subdomain/custom domain routing
   if (!shouldSkipSubdomainRouting(subdomain, pathname, hostname)) {
     // Subdomain or custom domain detected - handle store routing
-    const baseUrl = url.origin;
     const store = await getStoreBySubdomainOrDomain(subdomain, hostname, baseUrl);
 
     if (!store) {
@@ -236,6 +242,7 @@ export async function proxy(request: NextRequest) {
     
     // Preserve query parameters
     storeUrl.search = url.search;
+    console.log("[proxy] Rewriting to:", storeUrl.pathname);
 
     const response = NextResponse.rewrite(storeUrl);
     
