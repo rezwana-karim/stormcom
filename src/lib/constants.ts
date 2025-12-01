@@ -32,11 +32,11 @@ export const ORG_ROLE_PRIORITY: Record<string, number> = {
  * Higher values indicate higher priority
  */
 export const STORE_ROLE_PRIORITY: Record<string, number> = {
-  STORE_ADMIN: 4,
-  SALES_MANAGER: 3,
-  INVENTORY_MANAGER: 2,
-  CUSTOMER_SERVICE: 2,
-  CONTENT_MANAGER: 2,
+  STORE_ADMIN: 7,
+  SALES_MANAGER: 6,
+  INVENTORY_MANAGER: 5,
+  CUSTOMER_SERVICE: 4,
+  CONTENT_MANAGER: 3,
   MARKETING_MANAGER: 2,
   DELIVERY_BOY: 1,
 };

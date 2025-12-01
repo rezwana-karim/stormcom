@@ -18,8 +18,6 @@ import {
   Store, 
   CheckCircle2, 
   XCircle,
-  InfoIcon,
-  AlertCircle,
   AlertTriangle,
   Settings,
   Loader2,
