@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/sidebar";
 
 export const metadata = {
-  title: 'Integrations | Dashboard | StormCom',
+  title: 'Integrations | Dashboard',
   description: 'Manage third-party integrations and connections',
 };
 

@@ -21,7 +21,7 @@ const generateReportSchema = z.object({
  * GET /api/admin/reports
  * List available reports
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {

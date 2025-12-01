@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     };
     demoAttributes.push(attr);
     return NextResponse.json({ attribute: attr }, { status: 201 });
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
   }
 }

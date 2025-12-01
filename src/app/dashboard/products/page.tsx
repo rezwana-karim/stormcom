@@ -4,9 +4,6 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { IconPlus } from '@tabler/icons-react';
 import { ProductsPageClient } from '@/components/products-page-client';
 import { ProductsHeaderActions } from '@/components/products-header-actions';
 import { AppSidebar } from "@/components/app-sidebar";

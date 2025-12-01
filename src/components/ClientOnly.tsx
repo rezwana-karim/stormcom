@@ -1,10 +1,16 @@
 "use client"
 
-import { PropsWithChildren, useEffect, useState } from 'react'
+import { PropsWithChildren, useSyncExternalStore } from 'react'
+
+// Subscribe function that never changes (for SSR, we're always not mounted)
+const subscribe = () => () => {};
+const getSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 export default function ClientOnly({ children }: PropsWithChildren) {
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
+  // Using useSyncExternalStore to track client-side mounting
+  // This avoids the setState-in-effect pattern that React Compiler warns about
+  const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
   if (!mounted) return null
   return <>{children}</>
 }

@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/sidebar";
 
 export const metadata = {
-  title: 'New Attribute | Dashboard | StormCom',
+  title: 'New Attribute | Dashboard',
   description: 'Create a new product attribute',
 };
 

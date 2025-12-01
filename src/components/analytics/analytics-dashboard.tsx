@@ -48,6 +48,7 @@ interface DashboardMetrics {
   avgOrderValue?: {
     value: number;
     change: number;
+    trend: 'up' | 'down';
   };
 }
 

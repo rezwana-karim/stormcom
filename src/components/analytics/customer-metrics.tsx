@@ -23,6 +23,7 @@ interface CustomerMetricsData {
 interface CustomerMetricsProps {
   storeId: string;
   timeRange: string;
+  storeId: string;
 }
 
 // Helper to calculate date range from timeRange
@@ -50,6 +51,11 @@ export function CustomerMetrics({ storeId, timeRange }: CustomerMetricsProps) {
     if (!storeId) return;
     
     const fetchData = async () => {
+      if (!storeId) {
+        setLoading(false);
+        return;
+      }
+      
       setLoading(true);
       try {
         const dateRange = getDateRange(timeRange);

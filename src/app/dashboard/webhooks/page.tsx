@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/sidebar";
 
 export const metadata = {
-  title: 'Webhooks | Dashboard | StormCom',
+  title: 'Webhooks | Dashboard',
   description: 'Manage webhooks and event subscriptions',
 };
 

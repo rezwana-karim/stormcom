@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import { ProductImage } from '@/components/product/product-image';
 import {
   Table,
   TableBody,
@@ -43,7 +43,6 @@ import {
   Eye,
   Archive,
   CheckCircle,
-  ImageIcon,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -245,11 +244,11 @@ export function ProductsTable({
     }
   };
 
-  // Get product image URL
-  const getProductImage = (product: Product): string | null => {
+  // Get product image URL with fallback to placeholder
+  const getProductImage = (product: Product): string => {
     if (product.thumbnailUrl) return product.thumbnailUrl;
     if (product.images && product.images.length > 0) return product.images[0];
-    return null;
+    return '/placeholder.svg';
   };
 
   // Get status badge variant
@@ -425,19 +424,12 @@ export function ProductsTable({
                     )}
                     <TableCell>
                       <div className="relative h-14 w-14 overflow-hidden rounded-md bg-muted ring-1 ring-border">
-                        {imageUrl ? (
-                          <Image
-                            src={imageUrl}
-                            alt={product.name}
-                            fill
-                            className="object-cover"
-                            sizes="56px"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center">
-                            <ImageIcon className="h-5 w-5 text-muted-foreground" />
-                          </div>
-                        )}
+                        <ProductImage
+                          src={imageUrl}
+                          alt={product.name}
+                          fill
+                          sizes="56px"
+                        />
                       </div>
                     </TableCell>
                     <TableCell>

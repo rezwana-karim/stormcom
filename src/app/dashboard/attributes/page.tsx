@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/sidebar";
 
 export const metadata = {
-  title: 'Attributes | Dashboard | StormCom',
+  title: 'Attributes | Dashboard',
   description: 'Manage product attributes',
 };
 
