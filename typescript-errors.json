@@ -1,19 +1,68 @@
 ﻿{
     "summary":  {
-                    "totalErrors":  0,
-                    "exitCode":  0,
-                    "timestamp":  "2025-11-27T03:47:13Z",
+                    "totalErrors":  5,
+                    "exitCode":  1,
+                    "timestamp":  "2025-12-01T20:08:24Z",
                     "command":  "npm run type-check",
                     "totalWarnings":  0,
-                    "totalLines":  4
+                    "totalLines":  9
                 },
     "rawOutput":  [
                       "",
                       "\u003e stormcom@0.1.0 type-check",
                       "\u003e tsc --noEmit --incremental",
-                      ""
+                      "",
+                      ".next/dev/types/routes.d.ts(237,22): error TS1005: \u0027;\u0027 expected.",
+                      ".next/dev/types/routes.d.ts(237,23): error TS1128: Declaration or statement expected.",
+                      ".next/dev/types/routes.d.ts(238,3): error TS1128: Declaration or statement expected.",
+                      ".next/dev/types/routes.d.ts(253,1): error TS1128: Declaration or statement expected.",
+                      ".next/dev/types/validator.ts(1548,1): error TS1128: Declaration or statement expected."
                   ],
     "errors":  [
-
+                   {
+                       "message":  "\u0027;\u0027 expected.",
+                       "column":  22,
+                       "line":  237,
+                       "fullText":  ".next/dev/types/routes.d.ts(237,22): error TS1005: \u0027;\u0027 expected.",
+                       "code":  "TS1005",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/routes.d.ts"
+                   },
+                   {
+                       "message":  "Declaration or statement expected.",
+                       "column":  23,
+                       "line":  237,
+                       "fullText":  ".next/dev/types/routes.d.ts(237,23): error TS1128: Declaration or statement expected.",
+                       "code":  "TS1128",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/routes.d.ts"
+                   },
+                   {
+                       "message":  "Declaration or statement expected.",
+                       "column":  3,
+                       "line":  238,
+                       "fullText":  ".next/dev/types/routes.d.ts(238,3): error TS1128: Declaration or statement expected.",
+                       "code":  "TS1128",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/routes.d.ts"
+                   },
+                   {
+                       "message":  "Declaration or statement expected.",
+                       "column":  1,
+                       "line":  253,
+                       "fullText":  ".next/dev/types/routes.d.ts(253,1): error TS1128: Declaration or statement expected.",
+                       "code":  "TS1128",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/routes.d.ts"
+                   },
+                   {
+                       "message":  "Declaration or statement expected.",
+                       "column":  1,
+                       "line":  1548,
+                       "fullText":  ".next/dev/types/validator.ts(1548,1): error TS1128: Declaration or statement expected.",
+                       "code":  "TS1128",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/validator.ts"
+                   }
                ]
 }
