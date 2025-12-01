@@ -1,7 +1,7 @@
 /**
  * Store Roles Page
  * 
- * Lists custom roles and allows store owners to request new ones
+ * Lists custom roles and allows store owners to create or request new ones
  */
 
 import { Suspense } from 'react';
@@ -18,8 +18,10 @@ import {
 } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RolesList } from './roles-list';
 import { RoleRequestsList } from './role-requests-list';
+import { RoleUsageIndicator } from '@/components/store/roles/role-usage-indicator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface PageProps {
@@ -72,15 +74,28 @@ export default async function StoreRolesPage({ params, searchParams }: PageProps
     notFound();
   }
   
-  // Get store details
+  // Get store details with role count
   const store = await prisma.store.findUnique({
     where: { id: storeId },
-    select: { id: true, name: true },
+    select: { 
+      id: true, 
+      name: true,
+      customRoleLimit: true,
+      _count: {
+        select: { customRoles: true },
+      },
+    },
   });
   
   if (!store) {
     notFound();
   }
+  
+  const usage = {
+    current: store._count.customRoles,
+    limit: store.customRoleLimit,
+    remaining: Math.max(0, store.customRoleLimit - store._count.customRoles),
+  };
   
   return (
     <div className="flex flex-col gap-6">
@@ -100,21 +115,36 @@ export default async function StoreRolesPage({ params, searchParams }: PageProps
           </p>
         </div>
         
-        {isOwner && (
-          <Link href={`/dashboard/stores/${storeId}/roles/request`}>
+        {isOwner && usage.remaining > 0 && (
+          <Link href={`/dashboard/stores/${storeId}/roles/create`}>
             <Button>
               <IconPlus className="h-4 w-4 mr-2" />
-              Request Custom Role
+              Create Custom Role
             </Button>
           </Link>
         )}
       </div>
       
+      {/* Usage Indicator */}
+      {isOwner && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Role Limit</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <RoleUsageIndicator 
+              current={usage.current} 
+              limit={usage.limit} 
+            />
+          </CardContent>
+        </Card>
+      )}
+      
       {/* Tabs */}
       <Tabs defaultValue={tab || 'roles'} className="w-full">
         <TabsList>
           <TabsTrigger value="roles">Custom Roles</TabsTrigger>
-          <TabsTrigger value="requests">My Requests</TabsTrigger>
+          <TabsTrigger value="requests">Role Requests</TabsTrigger>
         </TabsList>
         
         <TabsContent value="roles" className="mt-6">
