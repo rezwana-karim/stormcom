@@ -257,6 +257,9 @@ model Store {
   auditLogs      AuditLog[]
   inventoryLogs  InventoryLog[] @relation("StoreInventoryLogs")
   
+  // Instagram Shopping Integration
+  instagramConnection InstagramConnection?
+  
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   deletedAt      DateTime?
@@ -314,6 +317,9 @@ model Product {
   attributes  ProductAttributeValue[]
   reviews     Review[]
   inventoryLogs InventoryLog[] @relation("InventoryLogs")
+  
+  // Instagram Shopping
+  instagramTags InstagramProductTag[]
   
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
@@ -524,6 +530,9 @@ model Order {
   
   items    OrderItem[]
   
+  // Instagram Shopping
+  instagramOrders InstagramOrder[]
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   deletedAt DateTime?
@@ -648,4 +657,168 @@ model AuditLog {
   @@index([userId, createdAt])
   @@index([entityType, entityId, createdAt])
   @@map("audit_logs")
+}
+
+// ============================================================================
+// INSTAGRAM SHOPPING INTEGRATION MODELS
+// ============================================================================
+
+enum InstagramConnectionStatus {
+  PENDING
+  CONNECTED
+  DISCONNECTED
+  ERROR
+}
+
+enum ProductTaggingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// Instagram Shopping Account Connection
+model InstagramConnection {
+  id                    String                    @id @default(cuid())
+  storeId               String                    @unique
+  store                 Store                     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  // Facebook Business Suite Connection
+  facebookPageId        String?
+  facebookPageName      String?
+  facebookAccessToken   String?
+  facebookTokenExpiresAt DateTime?
+
+  // Instagram Business Account
+  instagramAccountId    String?
+  instagramUsername     String?
+  instagramProfilePic   String?
+  instagramFollowers    Int                       @default(0)
+
+  // Commerce Manager Catalog
+  catalogId             String?
+  catalogName           String?
+  catalogSyncedAt       DateTime?
+
+  // Connection Status
+  status                InstagramConnectionStatus @default(PENDING)
+  connectionError       String?
+  domainVerified        Boolean                   @default(false)
+
+  // Settings
+  autoSyncProducts      Boolean                   @default(true)
+  syncInterval          Int                       @default(60) // minutes
+
+  productTags           InstagramProductTag[]
+  orders                InstagramOrder[]
+  analytics             InstagramAnalytics[]
+
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+
+  @@index([status])
+  @@index([instagramAccountId])
+}
+
+// Product Tagging for Instagram Posts/Stories
+model InstagramProductTag {
+  id                    String                    @id @default(cuid())
+  connectionId          String
+  connection            InstagramConnection       @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  productId             String
+  product               Product                   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  // Instagram Media Info
+  instagramMediaId      String?
+  instagramMediaUrl     String?
+  mediaType             String?                   // "IMAGE", "VIDEO", "CAROUSEL", "STORY", "REEL"
+
+  // Tagging Status
+  status                ProductTaggingStatus      @default(PENDING)
+  submittedAt           DateTime?
+  approvedAt            DateTime?
+  rejectedReason        String?
+
+  // Engagement Metrics
+  clicks                Int                       @default(0)
+  views                 Int                       @default(0)
+  purchases             Int                       @default(0)
+
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+
+  @@unique([connectionId, productId, instagramMediaId])
+  @@index([productId])
+  @@index([status])
+}
+
+// Instagram Orders (synced from Instagram Shopping)
+model InstagramOrder {
+  id                    String                    @id @default(cuid())
+  connectionId          String
+  connection            InstagramConnection       @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  // Link to StormCom Order
+  orderId               String?
+  order                 Order?                    @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  // Instagram Order Details
+  instagramOrderId      String                    @unique
+  instagramOrderStatus  String?
+  instagramBuyerId      String?
+  instagramBuyerUsername String?
+
+  // Order Source
+  sourceMediaId         String?
+  sourceMediaType       String?                   // "POST", "STORY", "REEL", "SHOP"
+
+  // Amounts
+  subtotal              Float                     @default(0)
+  shippingAmount        Float                     @default(0)
+  taxAmount             Float                     @default(0)
+  totalAmount           Float                     @default(0)
+
+  // Timestamps
+  instagramCreatedAt    DateTime?
+  syncedAt              DateTime                  @default(now())
+
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+
+  @@index([orderId])
+  @@index([instagramCreatedAt])
+}
+
+// Instagram Analytics
+model InstagramAnalytics {
+  id                    String                    @id @default(cuid())
+  connectionId          String
+  connection            InstagramConnection       @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  // Date for aggregation
+  date                  DateTime
+
+  // Traffic Metrics
+  profileVisits         Int                       @default(0)
+  websiteClicks         Int                       @default(0)
+  productClicks         Int                       @default(0)
+
+  // Shopping Metrics
+  shoppingContentViews  Int                       @default(0)
+  shoppingTagClicks     Int                       @default(0)
+  checkoutsInitiated    Int                       @default(0)
+  ordersCompleted       Int                       @default(0)
+
+  // Revenue
+  revenue               Float                     @default(0)
+  averageOrderValue     Float                     @default(0)
+
+  // Conversion Metrics
+  conversionRate        Float                     @default(0) // percentage
+
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+
+  @@unique([connectionId, date])
+  @@index([date])
 }
