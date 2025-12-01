@@ -59,23 +59,13 @@ async function getStores(options: {
   const [stores, total] = await Promise.all([
     prisma.store.findMany({
       where,
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        subscriptionPlan: true,
-        customRoleLimit: true,
-        createdAt: true,
+      include: {
         owner: {
           select: { id: true, name: true, email: true },
         },
-        _count: {
-          select: { 
-            customRoles: true,
-          },
-        },
         customRoles: {
           select: {
+            id: true,
             isActive: true,
           },
         },
@@ -94,7 +84,7 @@ async function getStores(options: {
   // Transform stores with computed values
   const storesWithStats = stores.map((store) => {
     const activeRoles = store.customRoles.filter((r) => r.isActive).length;
-    const usagePercent = (store._count.customRoles / store.customRoleLimit) * 100;
+    const usagePercent = (store.customRoles.length / store.customRoleLimit) * 100;
     
     return {
       id: store.id,
@@ -102,11 +92,11 @@ async function getStores(options: {
       slug: store.slug,
       subscriptionPlan: store.subscriptionPlan,
       customRoleLimit: store.customRoleLimit,
-      roleCount: store._count.customRoles,
+      roleCount: store.customRoles.length,
       activeRoles,
-      inactiveRoles: store._count.customRoles - activeRoles,
+      inactiveRoles: store.customRoles.length - activeRoles,
       usagePercent,
-      isAtLimit: store._count.customRoles >= store.customRoleLimit,
+      isAtLimit: store.customRoles.length >= store.customRoleLimit,
       owner: store.owner,
       createdAt: store.createdAt,
     };
