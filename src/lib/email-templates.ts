@@ -138,7 +138,7 @@ export function approvalEmail({ userName, storeName, appUrl = 'https://stormcom.
 /**
  * Email sent when user is rejected
  */
-export function rejectionEmail({ userName, reason, appUrl = 'https://stormcom.app' }: RejectionEmailProps): string {
+export function rejectionEmail({ userName, reason, appUrl: _appUrl = 'https://stormcom.app' }: RejectionEmailProps): string {
   return `
 <!DOCTYPE html>
 <html>
@@ -236,7 +236,7 @@ export function storeCreatedEmail({ userName, storeName, storeSlug, appUrl = 'ht
 /**
  * Email sent when account is suspended
  */
-export function suspensionEmail({ userName, reason, appUrl = 'https://stormcom.app' }: RejectionEmailProps): string {
+export function suspensionEmail({ userName, reason, appUrl: _appUrl = 'https://stormcom.app' }: RejectionEmailProps): string {
   return `
 <!DOCTYPE html>
 <html>

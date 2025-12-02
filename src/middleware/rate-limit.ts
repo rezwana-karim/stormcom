@@ -134,8 +134,8 @@ export function withRateLimit<T extends unknown[]>(
  */
 export async function rateLimitCheck(
   request: NextRequest,
-  maxRequests: number = 100,
-  windowMs: number = 60000
+  _maxRequests: number = 100,
+  _windowMs: number = 60000
 ): Promise<{
   allowed: boolean;
   headers: Record<string, string>;
@@ -170,7 +170,7 @@ export async function rateLimitCheck(
  * Get rate limit info for response headers
  */
 export async function getRateLimitHeaders(
-  request: NextRequest
+  _request: NextRequest
 ): Promise<Record<string, string>> {
   const session = await getServerSession(authOptions);
   const context = session?.user ? await getUserContext() : null;

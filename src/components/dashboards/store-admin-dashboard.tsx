@@ -14,8 +14,7 @@ import {
   TrendingUp, 
   Users as UsersIcon,
   AlertTriangle,
-  Star,
-  Clock
+  Star
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -281,7 +280,7 @@ function OrderStatusBar({
   label, 
   count, 
   total, 
-  variant 
+  variant: _variant 
 }: {
   label: string;
   count: number;

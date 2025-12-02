@@ -1,8 +1,19 @@
 # Complete Login Credentials - All Roles
 
-## Test Date: November 29, 2025
+## Last Updated: January 2025
 ## Environment: Development (SQLite)
 ## Login URL: http://localhost:3000/login
+
+---
+
+## Quick Reference - All Working Credentials
+
+| Role | Email | Password | Status |
+|------|-------|----------|--------|
+| Super Admin | superadmin@example.com | SuperAdmin123!@# | ✅ Verified |
+| Store Owner | owner@example.com | Test123!@# | ✅ Verified |
+| Store Admin | admin@example.com | Test123!@# | ✅ Verified |
+| Store Member | member@example.com | Test123!@# | ✅ Verified |
 
 ---
 
@@ -29,20 +40,22 @@ Password: SuperAdmin123!@#
 - Access all dashboards
 - Configure system settings
 - View platform-wide analytics
+- Access Admin Dashboard (/admin/*)
 
 ---
 
 ## Organization Level Roles
 
-### 2. OWNER (Organization Owner)
-**Full control over Demo Company organization**
+### 2. OWNER (Store Owner)
+**Full control over Demo Company organization and Demo Store**
 
 ```
-Email: test@example.com
+Email: owner@example.com
 Password: Test123!@#
 ```
 
 **Organization:** Demo Company  
+**Store:** Demo Store (with seeded data - 15 products, 13 orders, 15 customers)
 **Permissions:**
 - ✅ All organization operations (`org:*`)
 - ✅ All store operations (`stores:*`)
@@ -56,18 +69,20 @@ Password: Test123!@#
 - Assign roles to users
 - Configure billing and subscriptions
 - Access all store features
+- Full sidebar menu access
 
 ---
 
-### 3. ADMIN (Organization Administrator)
-**Management access except billing**
+### 3. ADMIN (Store Administrator)
+**Management access for Acme Corp and Acme Store**
 
 ```
 Email: admin@example.com
-Password: OrgAdmin123!@#
+Password: Test123!@#
 ```
 
-**Organization:** Demo Company  
+**Organization:** Acme Corp  
+**Store:** Acme Store (empty - no seeded data)
 **Permissions:**
 - ✅ Read/update organization (`org:read`, `org:update`)
 - ✅ All store operations (`stores:*`)
@@ -80,25 +95,28 @@ Password: OrgAdmin123!@#
 - Create/edit stores in organization
 - Manage store operations
 - Invite new members
+- Full sidebar menu access
 - Cannot modify billing settings
 
 ---
 
-### 4. MEMBER (Organization Member)
-**Basic read access**
+### 4. MEMBER (Store Member)
+**Basic read access with limited menu**
 
 ```
 Email: member@example.com
-Password: OrgMember123!@#
+Password: Test123!@#
 ```
 
-**Organization:** Demo Company  
+**Organization:** Acme Corp  
+**Store:** Acme Store  
 **Permissions:**
 - ✅ View organization info (`org:read`)
 - ✅ View stores (`stores:read`)
 - ✅ View products, categories, brands
 - ✅ View orders and customers
 - ✅ View reports
+- ❌ Limited sidebar (no Analytics, Stores, Marketing, Team)
 - ❌ Cannot create or edit
 
 **What You Can Do:**

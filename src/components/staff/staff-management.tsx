@@ -92,11 +92,7 @@ export function StaffManagement({ storeId }: StaffManagementProps) {
   const [loading, setLoading] = useState(true);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editMember, setEditMember] = useState<StaffMember | null>(null);
-  const { can } = usePermissions();
-
-  useEffect(() => {
-    loadStaff();
-  }, [storeId]);
+  const { can: _can } = usePermissions();
 
   const loadStaff = async () => {
     try {
@@ -110,6 +106,11 @@ export function StaffManagement({ storeId }: StaffManagementProps) {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadStaff();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeId]);
 
   const handleAddStaff = async (email: string, role: string) => {
     try {

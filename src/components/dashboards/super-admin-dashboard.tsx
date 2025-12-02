@@ -11,13 +11,11 @@ import {
   Users, 
   Store, 
   Package, 
-  ShoppingCart, 
   DollarSign, 
   TrendingUp, 
   Activity, 
   AlertTriangle,
   Server,
-  Database,
   Shield,
   CheckCircle
 } from 'lucide-react';

@@ -145,6 +145,8 @@ async function main() {
         organizationId: organizations[0].id,
         name: 'Demo Store',
         slug: 'demo-store',
+        subdomain: 'demo', // Multi-tenant subdomain: demo.localhost:3000
+        customDomain: null,
         description: 'A demo e-commerce store for testing',
         email: 'store@example.com',
         phone: '+1-555-0100',
@@ -168,6 +170,8 @@ async function main() {
         organizationId: organizations[1].id,
         name: 'Acme Store',
         slug: 'acme-store',
+        subdomain: 'acme', // Multi-tenant subdomain: acme.localhost:3000
+        customDomain: null,
         description: 'Acme Corporation online store',
         email: 'acme@example.com',
         phone: '+1-555-0200',

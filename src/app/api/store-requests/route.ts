@@ -26,7 +26,7 @@ const createStoreRequestSchema = z.object({
  * GET /api/store-requests
  * Get current user's store requests
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {

@@ -13,7 +13,7 @@ import { prisma } from '@/lib/prisma';
  * GET /api/admin/stats
  * Get platform-wide statistics (Super Admin only)
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {

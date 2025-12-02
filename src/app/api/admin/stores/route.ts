@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
  * 
  * Direct store creation is disabled. Use the store request approval workflow.
  */
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   // Direct store creation is disabled.
   // Stores can only be created by approving store requests.
   return NextResponse.json(

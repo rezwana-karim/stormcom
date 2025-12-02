@@ -5,18 +5,10 @@
  * Comprehensive activity tracking and audit log interface
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import {
   Select,
   SelectContent,
@@ -38,8 +30,7 @@ import {
   ChevronUp,
   Loader2,
   Download,
-  Search,
-  Calendar
+  Search
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
@@ -102,11 +93,7 @@ export function AuditLogViewer({ storeId, entityType, entityId }: AuditLogViewer
   const [endDate, setEndDate] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  useEffect(() => {
-    loadLogs();
-  }, [storeId, entityType, entityId, filterEntityType, filterAction, filterUserId, startDate, endDate, page]);
-
-  const loadLogs = async () => {
+  const loadLogs = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -134,7 +121,11 @@ export function AuditLogViewer({ storeId, entityType, entityId }: AuditLogViewer
     } finally {
       setLoading(false);
     }
-  };
+  }, [storeId, entityType, entityId, filterEntityType, filterAction, filterUserId, startDate, endDate, page]);
+
+  useEffect(() => {
+    loadLogs();
+  }, [loadLogs]);
 
   const handleExport = () => {
     // Export logs as CSV

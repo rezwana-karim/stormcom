@@ -146,3 +146,13 @@ See [VERCEL_DEPLOYMENT.md](./docs/VERCEL_DEPLOYMENT.md) for detailed instruction
 For Next.js 16 specifics, see official documentation at https://nextjs.org/docs
 
 Built with Next.js 16 and shadcn/ui
+
+
+
+npm run prisma:generate  # Generate Prisma Client
+npm run prisma:migrate   # Run migrations (dev)
+npm run prisma:reset     # Reset database
+npm run prisma:push      # Push schema changes
+npm run prisma:seed      # Seed database
+npm run prisma:studio    # Open Prisma Studio
+npm run db:seed          # Alias for prisma:seed

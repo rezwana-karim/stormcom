@@ -8,63 +8,60 @@
 
 ---
 
-## 📋 All Login Credentials
+## 📋 All Login Credentials (Verified January 2025)
 
-| Role | Email | Password | Can Create Stores? |
-|------|-------|----------|-------------------|
-| **Super Admin** | superadmin@example.com | SuperAdmin123!@# | ✅ |
-| **Owner** | test@example.com | Test123!@# | ✅ |
-| **Admin** | admin@example.com | OrgAdmin123!@# | ✅ |
-| **Member** | member@example.com | OrgMember123!@# | ❌ |
-| **Viewer** | viewer@example.com | OrgViewer123!@# | ❌ |
-| **Store Admin** | storeadmin@example.com | StoreAdmin123!@# | ❌ |
-| **Sales Manager** | sales@example.com | SalesManager123!@# | ❌ |
-| **Inventory Manager** | inventory@example.com | InventoryManager123!@# | ❌ |
-| **Customer Service** | support@example.com | CustomerService123!@# | ❌ |
-| **Content Manager** | content@example.com | ContentManager123!@# | ❌ |
-| **Marketing Manager** | marketing@example.com | MarketingManager123!@# | ❌ |
-| **Delivery** | delivery@example.com | Delivery123!@# | ❌ |
-| **Customer 1** | customer1@example.com | Customer123!@# | ❌ |
-| **Customer 2** | customer2@example.com | Customer123!@# | ❌ |
+| Role | Email | Password | Store Access |
+|------|-------|----------|--------------|
+| **Super Admin** | superadmin@example.com | SuperAdmin123!@# | All Stores |
+| **Store Owner** | owner@example.com | Test123!@# | Demo Store (with data) |
+| **Store Admin** | admin@example.com | Test123!@# | Acme Store |
+| **Store Member** | member@example.com | Test123!@# | Acme Store (limited) |
 
 ---
 
 ## 🎯 Testing Shortcuts
 
-### Test Super Admin (All Access)
+### Test Super Admin (All Access + Admin Panel)
 ```
 superadmin@example.com
 SuperAdmin123!@#
 ```
 
-### Test Store Creation
+### Test Store Owner with Data (Demo Store has 15 products, 13 orders)
 ```
-test@example.com OR admin@example.com
-Test123!@# OR OrgAdmin123!@#
-```
-
-### Test Store Management
-```
-storeadmin@example.com
-StoreAdmin123!@#
+owner@example.com
+Test123!@#
 ```
 
-### Test Customer Shopping
+### Test Store Admin (Acme Store - empty)
 ```
-customer1@example.com
-Customer123!@#
+admin@example.com
+Test123!@#
+```
+
+### Test Limited Member Access
+```
+member@example.com
+Test123!@#
 ```
 
 ---
 
-## ✅ Verification Status
-- ✅ All 14 users tested and working
-- ✅ All passwords validated
+## ✅ Verification Status (January 2025)
+- ✅ All 4 users tested and working
+- ✅ All passwords validated (SuperAdmin uses different password)
 - ✅ Session data correct
 - ✅ Permissions assigned properly
-- ✅ Store creation permissions verified
+- ✅ Role-based sidebar menu verified
 
 ---
 
 ## 📁 Full Documentation
 See: `docs/LOGIN_CREDENTIALS_ALL_ROLES.md`
+
+---
+
+## 💡 Notes
+- Database seeded from `prisma/seed.mjs`
+- Super Admin password: `SuperAdmin123!@#` (unique)
+- All other users: `Test123!@#` (shared)
