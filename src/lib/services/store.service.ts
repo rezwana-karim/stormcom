@@ -27,7 +27,7 @@ export const CreateStoreSchema = z.object({
   timezone: z.string().default('UTC'),
   locale: z.string().default('en'),
   subscriptionPlan: z.nativeEnum(SubscriptionPlan).default(SubscriptionPlan.FREE),
-  organizationId: z.string(),
+  organizationId: z.string().optional(), // Optional - will be derived from session if not provided
 });
 
 export type CreateStoreInput = z.infer<typeof CreateStoreSchema>;
@@ -99,7 +99,7 @@ export class StoreService {
   /**
    * Create a new store
    */
-  async create(input: CreateStoreInput, _userId: string) {
+  async create(input: CreateStoreInput, userId: string) {
     // Validate slug uniqueness
     const existingStore = await prisma.store.findUnique({
       where: { slug: input.slug },
@@ -109,10 +109,55 @@ export class StoreService {
       throw new Error(`Store with slug '${input.slug}' already exists`);
     }
 
-    // Create store
+    // Destructure to separate organizationId from other fields
+    const { organizationId, ...storeData } = input;
+
+    // Check if user is super admin
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isSuperAdmin: true },
+    });
+
+    // If no organizationId provided, create one (for super admins)
+    let finalOrganizationId = organizationId;
+    if (!finalOrganizationId) {
+      if (!user?.isSuperAdmin) {
+        throw new Error('organizationId is required to create a store');
+      }
+      
+      // Auto-create organization for the store with unique slug
+      let orgSlug = `${input.slug}-org`;
+      const orgName = `${input.name} Organization`;
+      
+      // Check if organization slug already exists
+      const existingOrg = await prisma.organization.findUnique({
+        where: { slug: orgSlug },
+      });
+      
+      if (existingOrg) {
+        // Add timestamp suffix to make it unique
+        orgSlug = `${input.slug}-org-${Date.now()}`;
+      }
+      
+      const organization = await prisma.organization.create({
+        data: {
+          name: orgName,
+          slug: orgSlug,
+          memberships: {
+            create: {
+              userId,
+              role: 'OWNER',
+            },
+          },
+        },
+      });
+      finalOrganizationId = organization.id;
+    }
+
     const store = await prisma.store.create({
       data: {
-        ...input,
+        ...storeData,
+        organizationId: finalOrganizationId,
         subscriptionStatus: SubscriptionStatus.TRIAL,
         trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days trial
       },
@@ -181,7 +226,8 @@ export class StoreService {
     options: ListStoresOptions = {},
     userId?: string,
     userRole?: string,
-    userStoreId?: string
+    userStoreId?: string,
+    userOrganizationId?: string
   ): Promise<StoreListResult> {
     const {
       page = 1,
@@ -199,8 +245,15 @@ export class StoreService {
     };
 
     // Role-based filtering
-    if (userRole !== 'SUPER_ADMIN' && userStoreId) {
-      where.id = userStoreId; // Non-super admins only see their store
+    if (userRole !== 'SUPER_ADMIN') {
+      // Organization-level roles (OWNER, ADMIN, MEMBER, VIEWER) - filter by organizationId
+      if (userOrganizationId && ['OWNER', 'ADMIN', 'MEMBER', 'VIEWER'].includes(userRole || '')) {
+        where.organizationId = userOrganizationId;
+      }
+      // Store-level roles (STORE_ADMIN, SALES_MANAGER, etc.) - filter by storeId
+      else if (userStoreId) {
+        where.id = userStoreId;
+      }
     }
 
     if (search) {

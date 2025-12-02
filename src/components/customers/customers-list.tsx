@@ -82,7 +82,10 @@ export function CustomersList({ storeId }: CustomersListProps) {
   const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
 
   const fetchCustomers = async () => {
-    if (!storeId) return;
+    if (!storeId) {
+      setLoading(false);
+      return;
+    }
     
     setLoading(true);
     try {
@@ -106,6 +109,7 @@ export function CustomersList({ storeId }: CustomersListProps) {
     } catch (error) {
       toast.error('Failed to load customers');
       console.error('Customers fetch error:', error);
+      setCustomers([]);
     } finally {
       setLoading(false);
     }
@@ -114,15 +118,20 @@ export function CustomersList({ storeId }: CustomersListProps) {
   useEffect(() => {
     fetchCustomers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storeId, pagination.page, searchQuery]);
+  }, [pagination.page, searchQuery, storeId]);
 
   const refreshCustomers = () => {
     fetchCustomers();
   };
 
   const handleExport = async () => {
+    if (!storeId) {
+      toast.error('Please select a store first');
+      return;
+    }
+    
     try {
-      const response = await fetch('/api/customers/export');
+      const response = await fetch(`/api/customers/export?storeId=${storeId}`);
       if (!response.ok) throw new Error('Failed to export customers');
 
       const blob = await response.blob();
@@ -159,33 +168,41 @@ export function CustomersList({ storeId }: CustomersListProps) {
 
   return (
     <div className="space-y-4">
-      {/* Header Actions */}
-      <Card className="p-4">
-        <div className="flex flex-col sm:flex-row gap-4 items-center">
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search customers by name or email..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setPagination((prev) => ({ ...prev, page: 1 }));
-              }}
-              className="pl-9"
-            />
+      {!storeId ? (
+        <Card className="p-8">
+          <div className="text-center text-muted-foreground">
+            Select a store to view customers
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleExport}>
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-            <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Customer
-            </Button>
-          </div>
-        </div>
-      </Card>
+        </Card>
+      ) : (
+        <>
+          {/* Header Actions */}
+          <Card className="p-4">
+            <div className="flex flex-col sm:flex-row gap-4 items-center">
+              <div className="relative flex-1 w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search customers by name or email..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setPagination((prev) => ({ ...prev, page: 1 }));
+                  }}
+                  className="pl-9"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={handleExport}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+                <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Customer
+                </Button>
+              </div>
+            </div>
+          </Card>
 
       {/* Customers Table */}
       <Card>
@@ -280,7 +297,7 @@ export function CustomersList({ storeId }: CustomersListProps) {
       </Card>
 
       {/* Pagination */}
-      {pagination.totalPages > 1 && (
+      {storeId && pagination.totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
             Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
@@ -307,12 +324,15 @@ export function CustomersList({ storeId }: CustomersListProps) {
           </div>
         </div>
       )}
+        </>
+      )}
 
       {/* Dialogs */}
       <CustomerDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         onSuccess={refreshCustomers}
+        storeId={storeId}
       />
 
       {editingCustomer && (
@@ -321,6 +341,7 @@ export function CustomersList({ storeId }: CustomersListProps) {
           onOpenChange={(open: boolean) => !open && setEditingCustomer(null)}
           customer={editingCustomer}
           onSuccess={refreshCustomers}
+          storeId={storeId}
         />
       )}
 

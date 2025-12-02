@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { verifyStoreAccess } from '@/lib/get-current-user';
+import { checkPermission } from '@/lib/auth-helpers';
 import { ProductService } from '@/lib/services/product.service';
 import { z } from 'zod';
 
@@ -18,6 +19,15 @@ export async function GET(
   context: RouteContext
 ) {
   try {
+    // Check permission for reading products
+    const hasPermission = await checkPermission('products:read');
+    if (!hasPermission) {
+      return NextResponse.json(
+        { error: 'Access denied. You do not have permission to view products.' },
+        { status: 403 }
+      );
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json(
@@ -72,6 +82,15 @@ export async function PATCH(
   context: RouteContext
 ) {
   try {
+    // Check permission for updating products
+    const hasPermission = await checkPermission('products:update');
+    if (!hasPermission) {
+      return NextResponse.json(
+        { error: 'Access denied. You do not have permission to update products.' },
+        { status: 403 }
+      );
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json(
@@ -140,6 +159,15 @@ export async function DELETE(
   context: RouteContext
 ) {
   try {
+    // Check permission for deleting products
+    const hasPermission = await checkPermission('products:delete');
+    if (!hasPermission) {
+      return NextResponse.json(
+        { error: 'Access denied. You do not have permission to delete products.' },
+        { status: 403 }
+      );
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json(
@@ -201,6 +229,15 @@ export async function PUT(
   context: RouteContext
 ) {
   try {
+    // Check permission for updating products
+    const hasPermission = await checkPermission('products:update');
+    if (!hasPermission) {
+      return NextResponse.json(
+        { error: 'Access denied. You do not have permission to update products.' },
+        { status: 403 }
+      );
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json(

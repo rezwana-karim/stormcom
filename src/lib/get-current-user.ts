@@ -126,6 +126,7 @@ export async function requireStoreId(): Promise<string> {
 /**
  * Verify user has access to a specific store
  * Checks if the user is a member of the organization that owns the store
+ * OR if the user is directly assigned as store staff
  * @param storeId - The store ID to verify access for
  * @returns True if user has access, false otherwise
  */
@@ -136,7 +137,30 @@ export async function verifyStoreAccess(storeId: string): Promise<boolean> {
     return false;
   }
 
-  // Find membership where the user belongs to the organization that owns this store
+  // Check if user is super admin
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { isSuperAdmin: true },
+  });
+
+  if (user?.isSuperAdmin) {
+    return true;
+  }
+
+  // Check if user is store staff (direct assignment)
+  const storeStaff = await prisma.storeStaff.findFirst({
+    where: {
+      userId: session.user.id,
+      storeId: storeId,
+      isActive: true,
+    },
+  });
+
+  if (storeStaff) {
+    return true;
+  }
+
+  // Check if user is member of organization that owns this store
   const membership = await prisma.membership.findFirst({
     where: {
       userId: session.user.id,
@@ -166,4 +190,44 @@ export async function requireVerifiedStoreAccess(storeId: string): Promise<strin
   }
   
   return storeId;
+}
+
+/**
+ * Get current user's default organization ID
+ * Returns the first organization membership
+ * @returns Organization ID or null if user has no memberships
+ */
+export async function getCurrentOrganizationId(): Promise<string | null> {
+  const session = await getServerSession(authOptions);
+  
+  if (!session?.user?.id) {
+    return null;
+  }
+
+  // Find user's first membership
+  const membership = await prisma.membership.findFirst({
+    where: {
+      userId: session.user.id,
+    },
+    orderBy: {
+      createdAt: 'asc', // Get the oldest/first membership
+    },
+  });
+
+  return membership?.organizationId || null;
+}
+
+/**
+ * Require organization access - throws error if user has no organization
+ * @throws Error if no organization found
+ * @returns Organization ID
+ */
+export async function requireOrganizationId(): Promise<string> {
+  const organizationId = await getCurrentOrganizationId();
+  
+  if (!organizationId) {
+    throw new Error('Organization access required. Please create or join an organization.');
+  }
+  
+  return organizationId;
 }

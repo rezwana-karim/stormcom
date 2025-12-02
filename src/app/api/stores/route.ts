@@ -4,12 +4,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import { checkPermission, getUserContext } from '@/lib/auth-helpers';
+import { withRateLimit } from '@/middleware/rate-limit';
 import { StoreService, CreateStoreSchema } from '@/lib/services/store.service';
+import { requireOrganizationId } from '@/lib/get-current-user';
 import { SubscriptionPlan, SubscriptionStatus } from '@prisma/client';
 import { z } from 'zod';
 
 // GET /api/stores - List stores with pagination and filtering
-export async function GET(request: NextRequest) {
+export const GET = withRateLimit(async (request: NextRequest) => {
   try {
     const session = await getServerSession(authOptions);
 
@@ -46,6 +49,27 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Get user context for role-based filtering
+    const userContext = await getUserContext();
+    
+    // Determine effective role for store filtering
+    let effectiveRole: string | undefined;
+    let userStoreId: string | undefined;
+    let userOrganizationId: string | undefined;
+    
+    if (userContext) {
+      if (userContext.isSuperAdmin) {
+        effectiveRole = 'SUPER_ADMIN';
+      } else if (userContext.storeRole) {
+        effectiveRole = userContext.storeRole;
+        userStoreId = userContext.storeId;
+      } else if (userContext.organizationRole) {
+        effectiveRole = userContext.organizationRole;
+        userOrganizationId = userContext.organizationId;
+        userStoreId = userContext.storeId;
+      }
+    }
+
     const storeService = StoreService.getInstance();
     const result = await storeService.list(
       {
@@ -54,8 +78,9 @@ export async function GET(request: NextRequest) {
         subscriptionStatus: queryInput.subscriptionStatus as SubscriptionStatus | undefined,
       },
       session.user.id,
-      undefined, // TODO: Add role from session
-      undefined  // TODO: Add storeId from session
+      effectiveRole,
+      userStoreId,
+      userOrganizationId
     );
 
     return NextResponse.json({
@@ -72,10 +97,10 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 // POST /api/stores - Create a new store
-export async function POST(request: NextRequest) {
+export const POST = withRateLimit(async (request: NextRequest) => {
   try {
     const session = await getServerSession(authOptions);
 
@@ -86,8 +111,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check permission
+    const hasPermission = await checkPermission('stores:create');
+    if (!hasPermission) {
+      return NextResponse.json(
+        { error: 'Permission denied. You do not have permission to create stores.' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const validatedData = CreateStoreSchema.parse(body);
+
+    // Get organizationId from session if not provided in request
+    let organizationId = validatedData.organizationId;
+    const isSuperAdmin = (session.user as { isSuperAdmin?: boolean }).isSuperAdmin || false;
+    
+    if (!organizationId) {
+      // Super admins can create stores without existing organization
+      // Organization will be auto-created by the service
+      if (!isSuperAdmin) {
+        try {
+          organizationId = await requireOrganizationId();
+        } catch {
+          return NextResponse.json(
+            { error: 'Organization required. Please create or join an organization first.' },
+            { status: 400 }
+          );
+        }
+      }
+    }
 
     const storeService = StoreService.getInstance();
     
@@ -100,7 +153,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const store = await storeService.create(validatedData, session.user.id);
+    const store = await storeService.create(
+      { ...validatedData, organizationId },
+      session.user.id
+    );
 
     return NextResponse.json(
       {
@@ -136,4 +192,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

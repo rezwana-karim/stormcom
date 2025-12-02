@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import { checkPermission } from '@/lib/auth-helpers';
 import { CustomerService } from '@/lib/services/customer.service';
 import { z } from 'zod';
 
@@ -57,6 +58,15 @@ const CreateCustomerSchema = z.object({
  */
 export async function GET(request: NextRequest) {
   try {
+    // Check permission for reading customers
+    const hasPermission = await checkPermission('customers:read');
+    if (!hasPermission) {
+      return NextResponse.json(
+        { error: 'Access denied. You do not have permission to view customers.' },
+        { status: 403 }
+      );
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json(
@@ -127,6 +137,15 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    // Check permission for creating customers
+    const hasPermission = await checkPermission('customers:create');
+    if (!hasPermission) {
+      return NextResponse.json(
+        { error: 'Access denied. You do not have permission to create customers.' },
+        { status: 403 }
+      );
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json(

@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import { checkPermission } from '@/lib/auth-helpers';
 import { OrderService } from '@/lib/services/order.service';
 import { z } from 'zod';
 import { OrderStatus } from '@prisma/client';
@@ -24,6 +25,15 @@ const querySchema = z.object({
 // GET /api/orders - List orders
 export async function GET(request: NextRequest) {
   try {
+    // Check permission for reading orders
+    const hasPermission = await checkPermission('orders:read');
+    if (!hasPermission) {
+      return NextResponse.json(
+        { error: 'Access denied. You do not have permission to view orders.' },
+        { status: 403 }
+      );
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json(

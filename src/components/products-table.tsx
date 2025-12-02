@@ -47,6 +47,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { usePermissions } from '@/hooks/use-permissions';
 
 interface Product {
   id: string;
@@ -95,6 +96,7 @@ export function ProductsTable({
   onSelectionChange,
   isPending = false,
 }: ProductsTableProps) {
+  const { can, isSuperAdmin } = usePermissions();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -363,7 +365,7 @@ export function ProductsTable({
             ? 'Try adjusting your filters to find what you\'re looking for.'
             : 'Get started by creating your first product.'}
         </p>
-        {!search && !status && !inventoryStatus && (
+        {!search && !status && !inventoryStatus && (isSuperAdmin || can('products:create')) && (
           <Link href="/dashboard/products/new">
             <Button className="mt-6">Create Product</Button>
           </Link>
@@ -486,34 +488,42 @@ export function ProductsTable({
                           <DropdownMenuItem asChild>
                             <Link href={`/dashboard/products/${product.id}`}>
                               <Eye className="mr-2 h-4 w-4" />
-                              View / Edit
+                              {(isSuperAdmin || can('products:update')) ? 'View / Edit' : 'View'}
                             </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          {product.status !== 'ACTIVE' && (
-                            <DropdownMenuItem
-                              onClick={() => handleStatusChange(product, 'ACTIVE')}
-                            >
-                              <CheckCircle className="mr-2 h-4 w-4 text-green-600" />
-                              Publish
-                            </DropdownMenuItem>
+                          {(isSuperAdmin || can('products:update')) && (
+                            <>
+                              <DropdownMenuSeparator />
+                              {product.status !== 'ACTIVE' && (
+                                <DropdownMenuItem
+                                  onClick={() => handleStatusChange(product, 'ACTIVE')}
+                                >
+                                  <CheckCircle className="mr-2 h-4 w-4 text-green-600" />
+                                  Publish
+                                </DropdownMenuItem>
+                              )}
+                              {product.status !== 'ARCHIVED' && (
+                                <DropdownMenuItem
+                                  onClick={() => handleStatusChange(product, 'ARCHIVED')}
+                                >
+                                  <Archive className="mr-2 h-4 w-4 text-yellow-600" />
+                                  Archive
+                                </DropdownMenuItem>
+                              )}
+                            </>
                           )}
-                          {product.status !== 'ARCHIVED' && (
-                            <DropdownMenuItem
-                              onClick={() => handleStatusChange(product, 'ARCHIVED')}
-                            >
-                              <Archive className="mr-2 h-4 w-4 text-yellow-600" />
-                              Archive
-                            </DropdownMenuItem>
+                          {(isSuperAdmin || can('products:delete')) && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteClick(product)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </>
                           )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => handleDeleteClick(product)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

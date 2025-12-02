@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import { checkPermission } from '@/lib/auth-helpers';
 import { BrandService } from '@/lib/services/brand.service';
 import { getCurrentStoreId } from '@/lib/get-current-user';
 import { z } from 'zod';
@@ -11,6 +12,15 @@ import { z } from 'zod';
 // GET /api/brands - List brands
 export async function GET(request: NextRequest) {
   try {
+    // Check permission for reading brands
+    const hasPermission = await checkPermission('brands:read');
+    if (!hasPermission) {
+      return NextResponse.json(
+        { error: 'Access denied. You do not have permission to view brands.' },
+        { status: 403 }
+      );
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -50,6 +60,15 @@ export async function GET(request: NextRequest) {
 // POST /api/brands - Create brand
 export async function POST(request: NextRequest) {
   try {
+    // Check permission for creating brands
+    const hasPermission = await checkPermission('brands:create');
+    if (!hasPermission) {
+      return NextResponse.json(
+        { error: 'Access denied. You do not have permission to create brands.' },
+        { status: 403 }
+      );
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

@@ -5,12 +5,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { verifyStoreAccess } from '@/lib/get-current-user';
+import { checkPermission } from '@/lib/auth-helpers';
 import { ProductService } from '@/lib/services/product.service';
 import { z } from 'zod';
 
 // GET /api/products - List products with pagination and filtering
 export async function GET(request: NextRequest) {
   try {
+    // Check permission for reading products
+    const hasPermission = await checkPermission('products:read');
+    if (!hasPermission) {
+      return NextResponse.json(
+        { error: 'Access denied. You do not have permission to view products.' },
+        { status: 403 }
+      );
+    }
+
     // Get user session for authentication
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -81,6 +91,15 @@ export async function GET(request: NextRequest) {
 // POST /api/products - Create new product
 export async function POST(request: NextRequest) {
   try {
+    // Check permission for creating products
+    const hasPermission = await checkPermission('products:create');
+    if (!hasPermission) {
+      return NextResponse.json(
+        { error: 'Access denied. You do not have permission to create products.' },
+        { status: 403 }
+      );
+    }
+
     // Get user session for authentication
     const session = await getServerSession(authOptions);
     if (!session?.user) {

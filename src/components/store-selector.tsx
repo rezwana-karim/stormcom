@@ -57,27 +57,25 @@ export function StoreSelector({ onStoreChange }: StoreSelectorProps) {
       }
 
       try {
-        setError(null);
         const response = await fetch('/api/stores');
-        
         if (!response.ok) {
-          throw new Error(`Failed to fetch stores: ${response.status}`);
+          throw new Error('Failed to fetch stores');
         }
+        const result = await response.json();
+        const storeList: Store[] = result.data || result.stores || [];
         
-        const result: StoresResponse = await response.json();
-        const storesList = result.data || [];
-        
-        setStores(storesList);
+        setStores(storeList);
         
         // Auto-select first store if available
-        if (storesList.length > 0 && !selectedStore) {
-          const firstStore = storesList[0];
-          setSelectedStore(firstStore.id);
-          onStoreChangeRef.current?.(firstStore.id);
+        if (storeList.length > 0 && !selectedStore) {
+          const firstStoreId = storeList[0].id;
+          setSelectedStore(firstStoreId);
+          onStoreChangeRef.current?.(firstStoreId);
         }
-      } catch (err) {
-        console.error('Failed to fetch stores:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load stores');
+      } catch (error) {
+        console.error('Failed to fetch stores:', error);
+        // Fallback to empty array - UI will show "No stores available"
+        setStores([]);
       } finally {
         setLoading(false);
       }

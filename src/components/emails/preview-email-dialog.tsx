@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import DOMPurify from 'isomorphic-dompurify';
 
 interface EmailTemplate {
   id: string;
@@ -25,6 +26,10 @@ export function PreviewEmailDialog({
   open,
   onOpenChange,
 }: PreviewEmailDialogProps) {
+  // Sanitize template values to prevent XSS
+  const sanitizedName = DOMPurify.sanitize(template.name, { ALLOWED_TAGS: [] });
+  const sanitizedSubject = DOMPurify.sanitize(template.subject, { ALLOWED_TAGS: [] });
+  
   const previewHtml = `
 <!DOCTYPE html>
 <html>
@@ -42,10 +47,10 @@ export function PreviewEmailDialog({
     <h1>Your Store Name</h1>
   </div>
   <div class="content">
-    <h2>${template.name}</h2>
+    <h2>${sanitizedName}</h2>
     <p>Dear Customer,</p>
-    <p>This is a preview of the <strong>${template.name}</strong> email template.</p>
-    <p>Subject: <em>${template.subject}</em></p>
+    <p>This is a preview of the <strong>${sanitizedName}</strong> email template.</p>
+    <p>Subject: <em>${sanitizedSubject}</em></p>
     <a href="#" class="button">View Order</a>
     <p>Thank you for your business!</p>
   </div>
@@ -69,7 +74,7 @@ export function PreviewEmailDialog({
         <div className="border rounded-lg overflow-hidden">
           <div 
             className="bg-white p-4 overflow-y-auto max-h-[70vh]"
-            dangerouslySetInnerHTML={{ __html: previewHtml }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(previewHtml) }}
           />
         </div>
       </DialogContent>
