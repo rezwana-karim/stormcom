@@ -1,19 +1,238 @@
 ﻿{
     "summary":  {
-                    "totalErrors":  0,
-                    "exitCode":  0,
-                    "timestamp":  "2025-11-27T03:47:13Z",
+                    "totalErrors":  22,
+                    "exitCode":  1,
+                    "timestamp":  "2025-12-03T02:50:57Z",
                     "command":  "npm run type-check",
                     "totalWarnings":  0,
-                    "totalLines":  4
+                    "totalLines":  26
                 },
     "rawOutput":  [
                       "",
                       "\u003e stormcom@0.1.0 type-check",
                       "\u003e tsc --noEmit --incremental",
-                      ""
+                      "",
+                      ".next/dev/types/routes.d.ts(195,19): error TS1005: \u0027;\u0027 expected.",
+                      ".next/dev/types/routes.d.ts(197,5): error TS1005: \u0027,\u0027 expected.",
+                      ".next/dev/types/routes.d.ts(229,1): error TS1128: Declaration or statement expected.",
+                      ".next/dev/types/routes.d.ts(230,1): error TS1434: Unexpected keyword or identifier.",
+                      ".next/dev/types/routes.d.ts(230,11): error TS1002: Unterminated string literal.",
+                      ".next/dev/types/routes.d.ts(231,11): error TS1005: \u0027;\u0027 expected.",
+                      ".next/dev/types/routes.d.ts(232,16): error TS1005: \u0027;\u0027 expected.",
+                      ".next/dev/types/routes.d.ts(233,14): error TS1005: \u0027;\u0027 expected.",
+                      ".next/dev/types/routes.d.ts(234,14): error TS1005: \u0027;\u0027 expected.",
+                      ".next/dev/types/routes.d.ts(235,22): error TS1005: \u0027;\u0027 expected.",
+                      ".next/dev/types/routes.d.ts(236,12): error TS1005: \u0027;\u0027 expected.",
+                      ".next/dev/types/routes.d.ts(237,10): error TS1005: \u0027;\u0027 expected.",
+                      ".next/dev/types/routes.d.ts(238,18): error TS1005: \u0027;\u0027 expected.",
+                      ".next/dev/types/routes.d.ts(239,1): error TS1128: Declaration or statement expected.",
+                      ".next/dev/types/validator.ts(1169,1): error TS1109: Expression expected.",
+                      ".next/dev/types/validator.ts(1171,8): error TS1005: \u0027;\u0027 expected.",
+                      ".next/dev/types/validator.ts(1172,1): error TS1128: Declaration or statement expected.",
+                      ".next/dev/types/validator.ts(1285,16): error TS1003: Identifier expected.",
+                      ".next/dev/types/validator.ts(1285,17): error TS1003: Identifier expected.",
+                      ".next/dev/types/validator.ts(1285,18): error TS1109: Expression expected.",
+                      ".next/dev/types/validator.ts(1285,19): error TS1003: Identifier expected.",
+                      ".next/dev/types/validator.ts(1285,20): error TS1003: Identifier expected."
                   ],
     "errors":  [
-
+                   {
+                       "message":  "\u0027;\u0027 expected.",
+                       "column":  19,
+                       "line":  195,
+                       "fullText":  ".next/dev/types/routes.d.ts(195,19): error TS1005: \u0027;\u0027 expected.",
+                       "code":  "TS1005",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/routes.d.ts"
+                   },
+                   {
+                       "message":  "\u0027,\u0027 expected.",
+                       "column":  5,
+                       "line":  197,
+                       "fullText":  ".next/dev/types/routes.d.ts(197,5): error TS1005: \u0027,\u0027 expected.",
+                       "code":  "TS1005",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/routes.d.ts"
+                   },
+                   {
+                       "message":  "Declaration or statement expected.",
+                       "column":  1,
+                       "line":  229,
+                       "fullText":  ".next/dev/types/routes.d.ts(229,1): error TS1128: Declaration or statement expected.",
+                       "code":  "TS1128",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/routes.d.ts"
+                   },
+                   {
+                       "message":  "Unexpected keyword or identifier.",
+                       "column":  1,
+                       "line":  230,
+                       "fullText":  ".next/dev/types/routes.d.ts(230,1): error TS1434: Unexpected keyword or identifier.",
+                       "code":  "TS1434",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/routes.d.ts"
+                   },
+                   {
+                       "message":  "Unterminated string literal.",
+                       "column":  11,
+                       "line":  230,
+                       "fullText":  ".next/dev/types/routes.d.ts(230,11): error TS1002: Unterminated string literal.",
+                       "code":  "TS1002",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/routes.d.ts"
+                   },
+                   {
+                       "message":  "\u0027;\u0027 expected.",
+                       "column":  11,
+                       "line":  231,
+                       "fullText":  ".next/dev/types/routes.d.ts(231,11): error TS1005: \u0027;\u0027 expected.",
+                       "code":  "TS1005",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/routes.d.ts"
+                   },
+                   {
+                       "message":  "\u0027;\u0027 expected.",
+                       "column":  16,
+                       "line":  232,
+                       "fullText":  ".next/dev/types/routes.d.ts(232,16): error TS1005: \u0027;\u0027 expected.",
+                       "code":  "TS1005",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/routes.d.ts"
+                   },
+                   {
+                       "message":  "\u0027;\u0027 expected.",
+                       "column":  14,
+                       "line":  233,
+                       "fullText":  ".next/dev/types/routes.d.ts(233,14): error TS1005: \u0027;\u0027 expected.",
+                       "code":  "TS1005",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/routes.d.ts"
+                   },
+                   {
+                       "message":  "\u0027;\u0027 expected.",
+                       "column":  14,
+                       "line":  234,
+                       "fullText":  ".next/dev/types/routes.d.ts(234,14): error TS1005: \u0027;\u0027 expected.",
+                       "code":  "TS1005",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/routes.d.ts"
+                   },
+                   {
+                       "message":  "\u0027;\u0027 expected.",
+                       "column":  22,
+                       "line":  235,
+                       "fullText":  ".next/dev/types/routes.d.ts(235,22): error TS1005: \u0027;\u0027 expected.",
+                       "code":  "TS1005",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/routes.d.ts"
+                   },
+                   {
+                       "message":  "\u0027;\u0027 expected.",
+                       "column":  12,
+                       "line":  236,
+                       "fullText":  ".next/dev/types/routes.d.ts(236,12): error TS1005: \u0027;\u0027 expected.",
+                       "code":  "TS1005",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/routes.d.ts"
+                   },
+                   {
+                       "message":  "\u0027;\u0027 expected.",
+                       "column":  10,
+                       "line":  237,
+                       "fullText":  ".next/dev/types/routes.d.ts(237,10): error TS1005: \u0027;\u0027 expected.",
+                       "code":  "TS1005",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/routes.d.ts"
+                   },
+                   {
+                       "message":  "\u0027;\u0027 expected.",
+                       "column":  18,
+                       "line":  238,
+                       "fullText":  ".next/dev/types/routes.d.ts(238,18): error TS1005: \u0027;\u0027 expected.",
+                       "code":  "TS1005",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/routes.d.ts"
+                   },
+                   {
+                       "message":  "Declaration or statement expected.",
+                       "column":  1,
+                       "line":  239,
+                       "fullText":  ".next/dev/types/routes.d.ts(239,1): error TS1128: Declaration or statement expected.",
+                       "code":  "TS1128",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/routes.d.ts"
+                   },
+                   {
+                       "message":  "Expression expected.",
+                       "column":  1,
+                       "line":  1169,
+                       "fullText":  ".next/dev/types/validator.ts(1169,1): error TS1109: Expression expected.",
+                       "code":  "TS1109",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/validator.ts"
+                   },
+                   {
+                       "message":  "\u0027;\u0027 expected.",
+                       "column":  8,
+                       "line":  1171,
+                       "fullText":  ".next/dev/types/validator.ts(1171,8): error TS1005: \u0027;\u0027 expected.",
+                       "code":  "TS1005",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/validator.ts"
+                   },
+                   {
+                       "message":  "Declaration or statement expected.",
+                       "column":  1,
+                       "line":  1172,
+                       "fullText":  ".next/dev/types/validator.ts(1172,1): error TS1128: Declaration or statement expected.",
+                       "code":  "TS1128",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/validator.ts"
+                   },
+                   {
+                       "message":  "Identifier expected.",
+                       "column":  16,
+                       "line":  1285,
+                       "fullText":  ".next/dev/types/validator.ts(1285,16): error TS1003: Identifier expected.",
+                       "code":  "TS1003",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/validator.ts"
+                   },
+                   {
+                       "message":  "Identifier expected.",
+                       "column":  17,
+                       "line":  1285,
+                       "fullText":  ".next/dev/types/validator.ts(1285,17): error TS1003: Identifier expected.",
+                       "code":  "TS1003",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/validator.ts"
+                   },
+                   {
+                       "message":  "Expression expected.",
+                       "column":  18,
+                       "line":  1285,
+                       "fullText":  ".next/dev/types/validator.ts(1285,18): error TS1109: Expression expected.",
+                       "code":  "TS1109",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/validator.ts"
+                   },
+                   {
+                       "message":  "Identifier expected.",
+                       "column":  19,
+                       "line":  1285,
+                       "fullText":  ".next/dev/types/validator.ts(1285,19): error TS1003: Identifier expected.",
+                       "code":  "TS1003",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/validator.ts"
+                   },
+                   {
+                       "message":  "Identifier expected.",
+                       "column":  20,
+                       "line":  1285,
+                       "fullText":  ".next/dev/types/validator.ts(1285,20): error TS1003: Identifier expected.",
+                       "code":  "TS1003",
+                       "severity":  "error",
+                       "file":  ".next/dev/types/validator.ts"
+                   }
                ]
 }
