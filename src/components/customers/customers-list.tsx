@@ -36,7 +36,6 @@ import { toast } from 'sonner';
 import { CustomerDialog } from './customer-dialog';
 import { CustomerDetailDialog } from './customer-detail-dialog';
 import { DeleteCustomerDialog } from './delete-customer-dialog';
-import { StoreSelector } from '@/components/store-selector';
 
 interface Customer {
   id: string;
@@ -69,7 +68,6 @@ export function CustomersList({ storeId }: CustomersListProps) {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [storeId, setStoreId] = useState<string>('');
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -170,14 +168,6 @@ export function CustomersList({ storeId }: CustomersListProps) {
 
   return (
     <div className="space-y-4">
-      {/* Store Selector */}
-      <Card className="p-4">
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-medium">Store:</span>
-          <StoreSelector onStoreChange={setStoreId} />
-        </div>
-      </Card>
-
       {!storeId ? (
         <Card className="p-8">
           <div className="text-center text-muted-foreground">

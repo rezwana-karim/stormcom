@@ -1,19 +1,288 @@
 ﻿{
     "summary":  {
-                    "totalErrors":  0,
-                    "exitCode":  0,
-                    "timestamp":  "2025-11-27T03:47:13Z",
+                    "totalErrors":  27,
+                    "exitCode":  1,
+                    "timestamp":  "2025-12-02T18:49:09Z",
                     "command":  "npm run type-check",
                     "totalWarnings":  0,
-                    "totalLines":  4
+                    "totalLines":  31
                 },
     "rawOutput":  [
                       "",
                       "\u003e stormcom@0.1.0 type-check",
                       "\u003e tsc --noEmit --incremental",
-                      ""
+                      "",
+                      "prisma/seed.ts(109,25): error TS2552: Cannot find name \u0027organizations\u0027. Did you mean \u0027organization\u0027?",
+                      "prisma/seed.ts(116,25): error TS2552: Cannot find name \u0027organizations\u0027. Did you mean \u0027organization\u0027?",
+                      "prisma/seed.ts(123,25): error TS2552: Cannot find name \u0027organizations\u0027. Did you mean \u0027organization\u0027?",
+                      "prisma/seed.ts(136,25): error TS2552: Cannot find name \u0027organizations\u0027. Did you mean \u0027organization\u0027?",
+                      "prisma/seed.ts(159,25): error TS2552: Cannot find name \u0027organizations\u0027. Did you mean \u0027organization\u0027?",
+                      "prisma/seed.ts(275,16): error TS2552: Cannot find name \u0027store\u0027. Did you mean \u0027stores\u0027?",
+                      "prisma/seed.ts(286,16): error TS2552: Cannot find name \u0027store\u0027. Did you mean \u0027stores\u0027?",
+                      "prisma/seed.ts(297,16): error TS2552: Cannot find name \u0027store\u0027. Did you mean \u0027stores\u0027?",
+                      "prisma/seed.ts(308,16): error TS2552: Cannot find name \u0027store\u0027. Did you mean \u0027stores\u0027?",
+                      "prisma/seed.ts(319,16): error TS2552: Cannot find name \u0027store\u0027. Did you mean \u0027stores\u0027?",
+                      "prisma/seed.ts(330,16): error TS2304: Cannot find name \u0027store\u0027.",
+                      "prisma/seed.ts(680,16): error TS2304: Cannot find name \u0027store\u0027.",
+                      "prisma/seed.ts(695,16): error TS2304: Cannot find name \u0027store\u0027.",
+                      "prisma/seed.ts(711,18): error TS2304: Cannot find name \u0027store\u0027.",
+                      "prisma/seed.ts(723,18): error TS2304: Cannot find name \u0027store\u0027.",
+                      "prisma/seed.ts(734,18): error TS2304: Cannot find name \u0027store\u0027.",
+                      "prisma/seed.ts(1116,38): error TS2304: Cannot find name \u0027store\u0027.",
+                      "prisma/seed.ts(1175,33): error TS2304: Cannot find name \u0027store\u0027.",
+                      "src/app/api/stores/[id]/role-requests/route.ts(152,10): error TS2456: Type alias \u0027Status\u0027 circularly references itself.",
+                      "src/app/api/stores/[id]/role-requests/route.ts(154,11): error TS2502: \u0027statusCounts\u0027 is referenced directly or indirectly in its own type annotation.",
+                      "src/components/customers/customer-dialog.tsx(117,79): error TS2339: Property \u0027name\u0027 does not exist on type \u0027{ firstName: string; lastName: string; email: string; status: \"active\" | \"inactive\"; phone?: string | undefined; }\u0027.",
+                      "src/components/customers/customer-dialog.tsx(117,114): error TS2339: Property \u0027name\u0027 does not exist on type \u0027{ firstName: string; lastName: string; email: string; status: \"active\" | \"inactive\"; phone?: string | undefined; }\u0027.",
+                      "src/components/customers/customer-dialog.tsx(117,157): error TS2339: Property \u0027name\u0027 does not exist on type \u0027{ firstName: string; lastName: string; email: string; status: \"active\" | \"inactive\"; phone?: string | undefined; }\u0027.",
+                      "src/components/customers/customers-list.tsx(68,33): error TS2300: Duplicate identifier \u0027storeId\u0027.",
+                      "src/components/customers/customers-list.tsx(72,10): error TS2300: Duplicate identifier \u0027storeId\u0027.",
+                      "src/lib/services/store.service.ts(117,20): error TS2304: Cannot find name \u0027userId\u0027.",
+                      "src/lib/services/store.service.ts(148,15): error TS18004: No value exists in scope for the shorthand property \u0027userId\u0027. Either declare one or provide an initializer."
                   ],
     "errors":  [
-
+                   {
+                       "message":  "Cannot find name \u0027organizations\u0027. Did you mean \u0027organization\u0027?",
+                       "column":  25,
+                       "line":  109,
+                       "fullText":  "prisma/seed.ts(109,25): error TS2552: Cannot find name \u0027organizations\u0027. Did you mean \u0027organization\u0027?",
+                       "code":  "TS2552",
+                       "severity":  "error",
+                       "file":  "prisma/seed.ts"
+                   },
+                   {
+                       "message":  "Cannot find name \u0027organizations\u0027. Did you mean \u0027organization\u0027?",
+                       "column":  25,
+                       "line":  116,
+                       "fullText":  "prisma/seed.ts(116,25): error TS2552: Cannot find name \u0027organizations\u0027. Did you mean \u0027organization\u0027?",
+                       "code":  "TS2552",
+                       "severity":  "error",
+                       "file":  "prisma/seed.ts"
+                   },
+                   {
+                       "message":  "Cannot find name \u0027organizations\u0027. Did you mean \u0027organization\u0027?",
+                       "column":  25,
+                       "line":  123,
+                       "fullText":  "prisma/seed.ts(123,25): error TS2552: Cannot find name \u0027organizations\u0027. Did you mean \u0027organization\u0027?",
+                       "code":  "TS2552",
+                       "severity":  "error",
+                       "file":  "prisma/seed.ts"
+                   },
+                   {
+                       "message":  "Cannot find name \u0027organizations\u0027. Did you mean \u0027organization\u0027?",
+                       "column":  25,
+                       "line":  136,
+                       "fullText":  "prisma/seed.ts(136,25): error TS2552: Cannot find name \u0027organizations\u0027. Did you mean \u0027organization\u0027?",
+                       "code":  "TS2552",
+                       "severity":  "error",
+                       "file":  "prisma/seed.ts"
+                   },
+                   {
+                       "message":  "Cannot find name \u0027organizations\u0027. Did you mean \u0027organization\u0027?",
+                       "column":  25,
+                       "line":  159,
+                       "fullText":  "prisma/seed.ts(159,25): error TS2552: Cannot find name \u0027organizations\u0027. Did you mean \u0027organization\u0027?",
+                       "code":  "TS2552",
+                       "severity":  "error",
+                       "file":  "prisma/seed.ts"
+                   },
+                   {
+                       "message":  "Cannot find name \u0027store\u0027. Did you mean \u0027stores\u0027?",
+                       "column":  16,
+                       "line":  275,
+                       "fullText":  "prisma/seed.ts(275,16): error TS2552: Cannot find name \u0027store\u0027. Did you mean \u0027stores\u0027?",
+                       "code":  "TS2552",
+                       "severity":  "error",
+                       "file":  "prisma/seed.ts"
+                   },
+                   {
+                       "message":  "Cannot find name \u0027store\u0027. Did you mean \u0027stores\u0027?",
+                       "column":  16,
+                       "line":  286,
+                       "fullText":  "prisma/seed.ts(286,16): error TS2552: Cannot find name \u0027store\u0027. Did you mean \u0027stores\u0027?",
+                       "code":  "TS2552",
+                       "severity":  "error",
+                       "file":  "prisma/seed.ts"
+                   },
+                   {
+                       "message":  "Cannot find name \u0027store\u0027. Did you mean \u0027stores\u0027?",
+                       "column":  16,
+                       "line":  297,
+                       "fullText":  "prisma/seed.ts(297,16): error TS2552: Cannot find name \u0027store\u0027. Did you mean \u0027stores\u0027?",
+                       "code":  "TS2552",
+                       "severity":  "error",
+                       "file":  "prisma/seed.ts"
+                   },
+                   {
+                       "message":  "Cannot find name \u0027store\u0027. Did you mean \u0027stores\u0027?",
+                       "column":  16,
+                       "line":  308,
+                       "fullText":  "prisma/seed.ts(308,16): error TS2552: Cannot find name \u0027store\u0027. Did you mean \u0027stores\u0027?",
+                       "code":  "TS2552",
+                       "severity":  "error",
+                       "file":  "prisma/seed.ts"
+                   },
+                   {
+                       "message":  "Cannot find name \u0027store\u0027. Did you mean \u0027stores\u0027?",
+                       "column":  16,
+                       "line":  319,
+                       "fullText":  "prisma/seed.ts(319,16): error TS2552: Cannot find name \u0027store\u0027. Did you mean \u0027stores\u0027?",
+                       "code":  "TS2552",
+                       "severity":  "error",
+                       "file":  "prisma/seed.ts"
+                   },
+                   {
+                       "message":  "Cannot find name \u0027store\u0027.",
+                       "column":  16,
+                       "line":  330,
+                       "fullText":  "prisma/seed.ts(330,16): error TS2304: Cannot find name \u0027store\u0027.",
+                       "code":  "TS2304",
+                       "severity":  "error",
+                       "file":  "prisma/seed.ts"
+                   },
+                   {
+                       "message":  "Cannot find name \u0027store\u0027.",
+                       "column":  16,
+                       "line":  680,
+                       "fullText":  "prisma/seed.ts(680,16): error TS2304: Cannot find name \u0027store\u0027.",
+                       "code":  "TS2304",
+                       "severity":  "error",
+                       "file":  "prisma/seed.ts"
+                   },
+                   {
+                       "message":  "Cannot find name \u0027store\u0027.",
+                       "column":  16,
+                       "line":  695,
+                       "fullText":  "prisma/seed.ts(695,16): error TS2304: Cannot find name \u0027store\u0027.",
+                       "code":  "TS2304",
+                       "severity":  "error",
+                       "file":  "prisma/seed.ts"
+                   },
+                   {
+                       "message":  "Cannot find name \u0027store\u0027.",
+                       "column":  18,
+                       "line":  711,
+                       "fullText":  "prisma/seed.ts(711,18): error TS2304: Cannot find name \u0027store\u0027.",
+                       "code":  "TS2304",
+                       "severity":  "error",
+                       "file":  "prisma/seed.ts"
+                   },
+                   {
+                       "message":  "Cannot find name \u0027store\u0027.",
+                       "column":  18,
+                       "line":  723,
+                       "fullText":  "prisma/seed.ts(723,18): error TS2304: Cannot find name \u0027store\u0027.",
+                       "code":  "TS2304",
+                       "severity":  "error",
+                       "file":  "prisma/seed.ts"
+                   },
+                   {
+                       "message":  "Cannot find name \u0027store\u0027.",
+                       "column":  18,
+                       "line":  734,
+                       "fullText":  "prisma/seed.ts(734,18): error TS2304: Cannot find name \u0027store\u0027.",
+                       "code":  "TS2304",
+                       "severity":  "error",
+                       "file":  "prisma/seed.ts"
+                   },
+                   {
+                       "message":  "Cannot find name \u0027store\u0027.",
+                       "column":  38,
+                       "line":  1116,
+                       "fullText":  "prisma/seed.ts(1116,38): error TS2304: Cannot find name \u0027store\u0027.",
+                       "code":  "TS2304",
+                       "severity":  "error",
+                       "file":  "prisma/seed.ts"
+                   },
+                   {
+                       "message":  "Cannot find name \u0027store\u0027.",
+                       "column":  33,
+                       "line":  1175,
+                       "fullText":  "prisma/seed.ts(1175,33): error TS2304: Cannot find name \u0027store\u0027.",
+                       "code":  "TS2304",
+                       "severity":  "error",
+                       "file":  "prisma/seed.ts"
+                   },
+                   {
+                       "message":  "Type alias \u0027Status\u0027 circularly references itself.",
+                       "column":  10,
+                       "line":  152,
+                       "fullText":  "src/app/api/stores/[id]/role-requests/route.ts(152,10): error TS2456: Type alias \u0027Status\u0027 circularly references itself.",
+                       "code":  "TS2456",
+                       "severity":  "error",
+                       "file":  "src/app/api/stores/[id]/role-requests/route.ts"
+                   },
+                   {
+                       "message":  "\u0027statusCounts\u0027 is referenced directly or indirectly in its own type annotation.",
+                       "column":  11,
+                       "line":  154,
+                       "fullText":  "src/app/api/stores/[id]/role-requests/route.ts(154,11): error TS2502: \u0027statusCounts\u0027 is referenced directly or indirectly in its own type annotation.",
+                       "code":  "TS2502",
+                       "severity":  "error",
+                       "file":  "src/app/api/stores/[id]/role-requests/route.ts"
+                   },
+                   {
+                       "message":  "Property \u0027name\u0027 does not exist on type \u0027{ firstName: string; lastName: string; email: string; status: \"active\" | \"inactive\"; phone?: string | undefined; }\u0027.",
+                       "column":  79,
+                       "line":  117,
+                       "fullText":  "src/components/customers/customer-dialog.tsx(117,79): error TS2339: Property \u0027name\u0027 does not exist on type \u0027{ firstName: string; lastName: string; email: string; status: \"active\" | \"inactive\"; phone?: string | undefined; }\u0027.",
+                       "code":  "TS2339",
+                       "severity":  "error",
+                       "file":  "src/components/customers/customer-dialog.tsx"
+                   },
+                   {
+                       "message":  "Property \u0027name\u0027 does not exist on type \u0027{ firstName: string; lastName: string; email: string; status: \"active\" | \"inactive\"; phone?: string | undefined; }\u0027.",
+                       "column":  114,
+                       "line":  117,
+                       "fullText":  "src/components/customers/customer-dialog.tsx(117,114): error TS2339: Property \u0027name\u0027 does not exist on type \u0027{ firstName: string; lastName: string; email: string; status: \"active\" | \"inactive\"; phone?: string | undefined; }\u0027.",
+                       "code":  "TS2339",
+                       "severity":  "error",
+                       "file":  "src/components/customers/customer-dialog.tsx"
+                   },
+                   {
+                       "message":  "Property \u0027name\u0027 does not exist on type \u0027{ firstName: string; lastName: string; email: string; status: \"active\" | \"inactive\"; phone?: string | undefined; }\u0027.",
+                       "column":  157,
+                       "line":  117,
+                       "fullText":  "src/components/customers/customer-dialog.tsx(117,157): error TS2339: Property \u0027name\u0027 does not exist on type \u0027{ firstName: string; lastName: string; email: string; status: \"active\" | \"inactive\"; phone?: string | undefined; }\u0027.",
+                       "code":  "TS2339",
+                       "severity":  "error",
+                       "file":  "src/components/customers/customer-dialog.tsx"
+                   },
+                   {
+                       "message":  "Duplicate identifier \u0027storeId\u0027.",
+                       "column":  33,
+                       "line":  68,
+                       "fullText":  "src/components/customers/customers-list.tsx(68,33): error TS2300: Duplicate identifier \u0027storeId\u0027.",
+                       "code":  "TS2300",
+                       "severity":  "error",
+                       "file":  "src/components/customers/customers-list.tsx"
+                   },
+                   {
+                       "message":  "Duplicate identifier \u0027storeId\u0027.",
+                       "column":  10,
+                       "line":  72,
+                       "fullText":  "src/components/customers/customers-list.tsx(72,10): error TS2300: Duplicate identifier \u0027storeId\u0027.",
+                       "code":  "TS2300",
+                       "severity":  "error",
+                       "file":  "src/components/customers/customers-list.tsx"
+                   },
+                   {
+                       "message":  "Cannot find name \u0027userId\u0027.",
+                       "column":  20,
+                       "line":  117,
+                       "fullText":  "src/lib/services/store.service.ts(117,20): error TS2304: Cannot find name \u0027userId\u0027.",
+                       "code":  "TS2304",
+                       "severity":  "error",
+                       "file":  "src/lib/services/store.service.ts"
+                   },
+                   {
+                       "message":  "No value exists in scope for the shorthand property \u0027userId\u0027. Either declare one or provide an initializer.",
+                       "column":  15,
+                       "line":  148,
+                       "fullText":  "src/lib/services/store.service.ts(148,15): error TS18004: No value exists in scope for the shorthand property \u0027userId\u0027. Either declare one or provide an initializer.",
+                       "code":  "TS18004",
+                       "severity":  "error",
+                       "file":  "src/lib/services/store.service.ts"
+                   }
                ]
 }

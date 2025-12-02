@@ -1,12 +1,17 @@
 /**
  * Admin Stores API
  * 
- * Manage all stores in the system (admin only).
+ * Manage all stores in the system (Super Admin only).
+ * 
+ * NOTE: Direct store creation is DISABLED.
+ * Stores can only be created by approving store requests at:
+ * POST /api/admin/store-requests/[id]/approve
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import prisma from '@/lib/prisma';
 
 /**
  * GET /api/admin/stores
@@ -16,9 +21,19 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check if user is Super Admin
+    const currentUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { isSuperAdmin: true },
+    });
+
+    if (!currentUser?.isSuperAdmin) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
+        { error: 'Forbidden - Super Admin access required' },
+        { status: 403 }
       );
     }
 
@@ -27,70 +42,96 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const search = searchParams.get('search');
     const status = searchParams.get('status');
+    const skip = (page - 1) * limit;
 
-    // Mock stores data
-    const stores = [
-      {
-        id: 'store1',
-        name: 'Acme Store',
-        slug: 'acme-store',
-        owner: { id: 'user1', name: 'John Doe', email: 'john@example.com' },
-        status: 'active',
-        plan: 'pro',
-        productsCount: 245,
-        ordersCount: 1245,
-        revenue: 45890.50,
-        createdAt: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'store2',
-        name: 'Tech Gadgets',
-        slug: 'tech-gadgets',
-        owner: { id: 'user2', name: 'Jane Smith', email: 'jane@example.com' },
-        status: 'active',
-        plan: 'enterprise',
-        productsCount: 567,
-        ordersCount: 3456,
-        revenue: 125430.00,
-        createdAt: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'store3',
-        name: 'Fashion Hub',
-        slug: 'fashion-hub',
-        owner: { id: 'user3', name: 'Bob Wilson', email: 'bob@example.com' },
-        status: 'suspended',
-        plan: 'basic',
-        productsCount: 89,
-        ordersCount: 234,
-        revenue: 12340.00,
-        createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-    ];
+    // Build where clause
+    const whereClause: Record<string, unknown> = {};
 
-    const filteredStores = stores.filter(store => {
-      if (search && !store.name.toLowerCase().includes(search.toLowerCase()) && 
-          !store.slug.toLowerCase().includes(search.toLowerCase())) {
-        return false;
-      }
-      if (status && store.status !== status) {
-        return false;
-      }
-      return true;
+    if (search) {
+      whereClause.OR = [
+        { name: { contains: search } },
+        { slug: { contains: search } },
+        { email: { contains: search } },
+      ];
+    }
+
+    if (status) {
+      whereClause.subscriptionStatus = status;
+    }
+
+    // Get total count
+    const total = await prisma.store.count({ where: whereClause });
+
+    // Get stores with related data
+    const stores = await prisma.store.findMany({
+      where: whereClause,
+      include: {
+        organization: {
+          include: {
+            memberships: {
+              where: { role: 'OWNER' },
+              include: {
+                user: {
+                  select: { id: true, name: true, email: true },
+                },
+              },
+              take: 1,
+            },
+          },
+        },
+        staff: {
+          include: {
+            user: {
+              select: { id: true, name: true, email: true },
+            },
+          },
+        },
+        _count: {
+          select: {
+            products: true,
+            orders: true,
+            customers: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
     });
 
-    const total = filteredStores.length;
-    const paginatedStores = filteredStores.slice((page - 1) * limit, page * limit);
+    // Format response
+    const formattedStores = stores.map(store => {
+      const owner = store.organization.memberships[0]?.user || null;
+      return {
+        id: store.id,
+        name: store.name,
+        slug: store.slug,
+        description: store.description,
+        logo: store.logo,
+        email: store.email,
+        phone: store.phone,
+        owner: owner
+          ? { id: owner.id, name: owner.name, email: owner.email }
+          : null,
+        subscriptionPlan: store.subscriptionPlan,
+        subscriptionStatus: store.subscriptionStatus,
+        productsCount: store._count.products,
+        ordersCount: store._count.orders,
+        customersCount: store._count.customers,
+        staffCount: store.staff.length,
+        createdAt: store.createdAt.toISOString(),
+      };
+    });
 
     return NextResponse.json({
-      data: paginatedStores,
+      data: formattedStores,
       meta: {
         total,
         page,
         limit,
         totalPages: Math.ceil(total / limit),
       },
-    }, { status: 200 });
+    });
   } catch (error) {
     console.error('List stores error:', error);
     return NextResponse.json(
@@ -98,4 +139,27 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * POST /api/admin/stores
+ * Create a new store for a user (Super Admin only)
+ * 
+ * NOTE: This endpoint is for INTERNAL USE ONLY.
+ * Stores should be created by approving store requests at:
+ * POST /api/admin/store-requests/[id]/approve
+ * 
+ * Direct store creation is disabled. Use the store request approval workflow.
+ */
+export async function POST(request: NextRequest) {
+  // Direct store creation is disabled.
+  // Stores can only be created by approving store requests.
+  return NextResponse.json(
+    { 
+      error: 'Direct store creation is disabled',
+      message: 'Stores can only be created by approving store requests. Please use the Store Requests page to approve pending requests.',
+      redirectUrl: '/admin/stores/requests'
+    },
+    { status: 403 }
+  );
 }

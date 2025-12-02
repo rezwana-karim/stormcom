@@ -6,7 +6,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import { Role } from '@prisma/client';
+import { Role, Prisma } from '@prisma/client';
 import { headers } from 'next/headers';
 
 export type AuditAction = 
@@ -237,14 +237,14 @@ export async function queryAuditLogs(filters: {
   const limit = Math.min(filters.limit || 50, 100);
   const skip = (page - 1) * limit;
 
-  const where: any = {};
+  const where: Prisma.AuditLogWhereInput = {};
 
   if (filters.userId) where.userId = filters.userId;
   if (filters.storeId) where.storeId = filters.storeId;
   if (filters.action) where.action = filters.action;
   if (filters.entityType) where.entityType = filters.entityType;
   if (filters.permission) where.permission = filters.permission;
-  if (filters.allowed !== undefined) where.allowed = filters.allowed;
+  if (filters.allowed !== undefined) where.allowed = filters.allowed ? 1 : 0;
 
   if (filters.startDate || filters.endDate) {
     where.createdAt = {};
@@ -301,7 +301,7 @@ export async function getAuditStats(filters?: {
   startDate?: Date;
   endDate?: Date;
 }) {
-  const where: any = {};
+  const where: Prisma.AuditLogWhereInput = {};
 
   if (filters?.userId) where.userId = filters.userId;
   if (filters?.storeId) where.storeId = filters.storeId;
@@ -321,10 +321,10 @@ export async function getAuditStats(filters?: {
   ] = await Promise.all([
     prisma.auditLog.count({ where }),
     prisma.auditLog.count({
-      where: { ...where, action: 'PERMISSION_CHECK', allowed: true },
+      where: { ...where, action: 'PERMISSION_CHECK', allowed: 1 },
     }),
     prisma.auditLog.count({
-      where: { ...where, action: 'PERMISSION_DENIED', allowed: false },
+      where: { ...where, action: 'PERMISSION_DENIED', allowed: 0 },
     }),
     prisma.auditLog.groupBy({
       by: ['action'],

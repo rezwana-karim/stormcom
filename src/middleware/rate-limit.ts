@@ -43,7 +43,7 @@ export interface RateLimitConfig {
  *   return NextResponse.json({ data: 'success' });
  * });
  */
-export function withRateLimit<T extends any[]>(
+export function withRateLimit<T extends unknown[]>(
   handler: (request: NextRequest, ...args: T) => Promise<NextResponse>,
   config?: RateLimitConfig
 ) {

@@ -6,7 +6,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import { Role } from '@prisma/client';
+import { Role, Prisma } from '@prisma/client';
 import { logRateLimitHit } from './audit-logger';
 
 /**
@@ -266,7 +266,7 @@ export async function resetRateLimit(
   identifier: string,
   endpoint?: string
 ): Promise<number> {
-  const where: any = { identifier };
+  const where: Prisma.RateLimitWhereInput = { identifier };
   if (endpoint) where.endpoint = endpoint;
 
   const result = await prisma.rateLimit.deleteMany({ where });
@@ -280,7 +280,7 @@ export async function getRateLimitStats(filters?: {
   startDate?: Date;
   endDate?: Date;
 }) {
-  const where: any = {};
+  const where: Prisma.RateLimitWhereInput = {};
 
   if (filters?.startDate || filters?.endDate) {
     where.windowStart = {};

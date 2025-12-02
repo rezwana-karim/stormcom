@@ -15,6 +15,10 @@ const eslintConfig = defineConfig([
     // Custom ignores:
     "scripts/**/*.js",
     "scripts/**/*.sh",
+    // Root-level utility scripts
+    "check-store-requests.js",
+    "check-user-roles.js",
+    "fix-user-roles.js",
   ]),
   // Custom rules
   {

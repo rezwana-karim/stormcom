@@ -7,13 +7,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import prisma from '@/lib/prisma';
 import { z } from 'zod';
 
 const updateUserSchema = z.object({
   name: z.string().min(1).max(100).optional(),
-  email: z.string().email().optional(),
-  role: z.enum(['admin', 'user', 'moderator']).optional(),
-  status: z.enum(['active', 'suspended', 'banned']).optional(),
+  accountStatus: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED', 'DELETED']).optional(),
+  isSuperAdmin: z.boolean().optional(),
 });
 
 /**
@@ -34,27 +34,52 @@ export async function GET(
       );
     }
 
-    // Mock user data
-    const user = {
-      id: params.id,
-      name: 'John Doe',
-      email: 'john@example.com',
-      role: 'user',
-      status: 'active',
-      emailVerified: true,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${params.id}`,
-      phone: '+1 (555) 123-4567',
-      timezone: 'America/New_York',
-      language: 'en',
-      organizations: [
-        { id: 'org1', name: 'Acme Inc', role: 'owner' },
-        { id: 'org2', name: 'Tech Startup', role: 'member' },
-      ],
-      lastLogin: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-      loginCount: 145,
-      createdAt: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    // Check if user is Super Admin
+    const currentUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { isSuperAdmin: true },
+    });
+
+    if (!currentUser?.isSuperAdmin) {
+      return NextResponse.json(
+        { error: 'Forbidden - Super Admin access required' },
+        { status: 403 }
+      );
+    }
+
+    // Get user from database
+    const user = await prisma.user.findUnique({
+      where: { id: params.id },
+      include: {
+        storeStaff: {
+          where: { isActive: true },
+          include: {
+            store: {
+              select: { id: true, name: true, slug: true },
+            },
+          },
+        },
+        memberships: {
+          include: {
+            organization: {
+              select: { id: true, name: true, slug: true },
+            },
+          },
+        },
+        _count: {
+          select: {
+            notifications: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({ user }, { status: 200 });
   } catch (error) {
@@ -84,6 +109,19 @@ export async function PATCH(
       );
     }
 
+    // Check if user is Super Admin
+    const currentUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { isSuperAdmin: true },
+    });
+
+    if (!currentUser?.isSuperAdmin) {
+      return NextResponse.json(
+        { error: 'Forbidden - Super Admin access required' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const validation = updateUserSchema.safeParse(body);
 
@@ -96,15 +134,35 @@ export async function PATCH(
 
     const data = validation.data;
 
-    // Mock user update
-    const updatedUser = {
-      id: params.id,
-      ...data,
-      updatedAt: new Date().toISOString(),
-      updatedBy: session.user.id,
-    };
+    // Prevent modifying own super admin status
+    if (data.isSuperAdmin !== undefined && session.user.id === params.id) {
+      return NextResponse.json(
+        { error: 'Cannot modify your own super admin status' },
+        { status: 400 }
+      );
+    }
 
-    console.log('User updated (mock):', updatedUser);
+    const updatedUser = await prisma.user.update({
+      where: { id: params.id },
+      data: {
+        ...data,
+        statusChangedAt: data.accountStatus ? new Date() : undefined,
+        statusChangedBy: data.accountStatus ? session.user.id : undefined,
+      },
+    });
+
+    // Log activity
+    await prisma.platformActivity.create({
+      data: {
+        actorId: session.user.id,
+        targetUserId: params.id,
+        action: 'USER_UPDATED',
+        entityType: 'User',
+        entityId: params.id,
+        description: `Updated user ${updatedUser.name || updatedUser.email}`,
+        metadata: JSON.stringify(data),
+      },
+    });
 
     return NextResponse.json({ user: updatedUser, message: 'User updated successfully' }, { status: 200 });
   } catch (error) {
@@ -118,7 +176,7 @@ export async function PATCH(
 
 /**
  * DELETE /api/admin/users/[id]
- * Delete user
+ * Delete user (soft delete)
  */
 export async function DELETE(
   request: NextRequest,
@@ -134,6 +192,19 @@ export async function DELETE(
       );
     }
 
+    // Check if user is Super Admin
+    const currentUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { isSuperAdmin: true },
+    });
+
+    if (!currentUser?.isSuperAdmin) {
+      return NextResponse.json(
+        { error: 'Forbidden - Super Admin access required' },
+        { status: 403 }
+      );
+    }
+
     // Prevent self-deletion
     if (session.user.id === params.id) {
       return NextResponse.json(
@@ -142,7 +213,48 @@ export async function DELETE(
       );
     }
 
-    console.log('User deleted (mock):', params.id);
+    // Get user info before deletion
+    const user = await prisma.user.findUnique({
+      where: { id: params.id },
+      select: { name: true, email: true, isSuperAdmin: true },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    // Prevent deleting other super admins
+    if (user.isSuperAdmin) {
+      return NextResponse.json(
+        { error: 'Cannot delete a super admin account' },
+        { status: 400 }
+      );
+    }
+
+    // Soft delete - set status to DELETED
+    await prisma.user.update({
+      where: { id: params.id },
+      data: {
+        accountStatus: 'DELETED',
+        statusChangedAt: new Date(),
+        statusChangedBy: session.user.id,
+      },
+    });
+
+    // Log activity
+    await prisma.platformActivity.create({
+      data: {
+        actorId: session.user.id,
+        targetUserId: params.id,
+        action: 'USER_DELETED',
+        entityType: 'User',
+        entityId: params.id,
+        description: `Deleted user ${user.name || user.email}`,
+      },
+    });
 
     return NextResponse.json({ message: 'User deleted successfully' }, { status: 200 });
   } catch (error) {

@@ -26,36 +26,61 @@ async function main() {
   await prisma.account.deleteMany();
   await prisma.user.deleteMany();
 
-  // Create 3 test users
+  // Create Super Admin user
+  console.log('👑 Creating Super Admin...');
+  const superAdminPasswordHash = await bcrypt.hash('SuperAdmin123!@#', 10);
+  const superAdmin = await prisma.user.create({
+    data: {
+      id: 'clqm1j4k00000l8dw8z8r8z8s', // Fixed super admin ID
+      email: 'superadmin@example.com',
+      name: 'Super Admin',
+      emailVerified: new Date(),
+      passwordHash: superAdminPasswordHash,
+      isSuperAdmin: true,
+      accountStatus: 'APPROVED',
+    },
+  });
+  console.log(`✅ Created Super Admin: ${superAdmin.email}`);
+
+  // Create test users with different roles
   console.log('👤 Creating test users...');
   const passwordHash = await bcrypt.hash('Test123!@#', 10);
-  const users = await Promise.all([
-    prisma.user.create({
-      data: {
-        email: 'test@example.com',
-        name: 'Test User',
-        emailVerified: new Date(),
-        passwordHash,
-      },
-    }),
-    prisma.user.create({
-      data: {
-        email: 'seller@example.com',
-        name: 'Seller User',
-        emailVerified: new Date(),
-        passwordHash,
-      },
-    }),
-    prisma.user.create({
-      data: {
-        email: 'buyer@example.com',
-        name: 'Buyer User',
-        emailVerified: new Date(),
-        passwordHash,
-      },
-    }),
-  ]);
-  console.log(`✅ Created ${users.length} users`);
+  
+  const storeOwner = await prisma.user.create({
+    data: {
+      id: 'clqm1j4k00000l8dw8z8r8z8b',
+      email: 'owner@example.com',
+      name: 'Store Owner',
+      emailVerified: new Date(),
+      passwordHash,
+      accountStatus: 'APPROVED',
+    },
+  });
+  
+  const storeAdmin = await prisma.user.create({
+    data: {
+      id: 'clqm1j4k00000l8dw8z8r8z8c',
+      email: 'admin@example.com',
+      name: 'Store Admin',
+      emailVerified: new Date(),
+      passwordHash,
+      accountStatus: 'APPROVED',
+    },
+  });
+  
+  const storeMember = await prisma.user.create({
+    data: {
+      id: 'clqm1j4k00000l8dw8z8r8z8d',
+      email: 'member@example.com',
+      name: 'Store Member',
+      emailVerified: new Date(),
+      passwordHash,
+      accountStatus: 'APPROVED',
+    },
+  });
+  
+  const users = [storeOwner, storeAdmin, storeMember];
+  console.log(`✅ Created ${users.length} test users`);
 
   // Create 2 organizations
   console.log('🏢 Creating organizations...');
@@ -819,20 +844,21 @@ async function main() {
 
   console.log('\n🎉 Database seeding completed successfully!');
   console.log('\n📊 Summary:');
-  console.log(`   - Users: ${users.length}`);
-  console.log(`   - Organizations: ${organizations.length}`);
-  console.log(`   - Stores: ${stores.length}`);
-  console.log(`   - Categories: ${categories.length}`);
-  console.log(`   - Brands: ${brands.length}`);
+  console.log(`   - Users: 4 (including Super Admin)`);
+  console.log(`   - Organizations: 2`);
+  console.log(`   - Stores: 2 (Demo Store & Acme Store)`);
+  console.log(`   - Categories: 5`);
+  console.log(`   - Brands: 4`);
   console.log(`   - Products: ${products.length}`);
   console.log(`   - Customers: ${customers.length}`);
   console.log(`   - Orders: ${orders.length}`);
-  console.log(`   - Reviews: ${reviews.length}`);
-  console.log('\n🔑 Test Credentials:');
-  console.log(`   Email: test@example.com`);
-  console.log(`   Email: seller@example.com`);
-  console.log(`   Email: buyer@example.com`);
-  console.log(`   Password: Test123!@#`);
+  console.log('\n🔑 Super Admin Credentials:');
+  console.log(`   Email: superadmin@example.com`);
+  console.log(`   Password: SuperAdmin123!@#`);
+  console.log('\n🔑 Test User Credentials (Password: Test123!@#):');
+  console.log(`   Owner: owner@example.com`);
+  console.log(`   Admin: admin@example.com`);
+  console.log(`   Member: member@example.com`);
   console.log(`   Primary Store ID: ${stores[0].id}`);
   console.log(`   Secondary Store ID: ${stores[1].id}`);
 }

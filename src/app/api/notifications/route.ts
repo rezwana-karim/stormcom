@@ -11,46 +11,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { z } from 'zod';
 import { authOptions } from '@/lib/auth';
-
-// Mock notification data - TODO: Create Notification model in Prisma schema
-const mockNotifications = [
-  {
-    id: '1',
-    userId: 'user-1',
-    type: 'order',
-    title: 'New Order Received',
-    message: 'Order #ORD-001 has been placed',
-    isRead: false,
-    createdAt: new Date('2024-01-20T10:00:00Z'),
-    metadata: { orderId: 'order-1', amount: 99.99 },
-  },
-  {
-    id: '2',
-    userId: 'user-1',
-    type: 'system',
-    title: 'Product Low Stock Alert',
-    message: 'Product "Laptop Pro" is running low on stock',
-    isRead: false,
-    createdAt: new Date('2024-01-19T15:30:00Z'),
-    metadata: { productId: 'product-1', stock: 3 },
-  },
-  {
-    id: '3',
-    userId: 'user-1',
-    type: 'review',
-    title: 'New Product Review',
-    message: 'A customer left a 5-star review on "Wireless Mouse"',
-    isRead: true,
-    createdAt: new Date('2024-01-18T09:15:00Z'),
-    metadata: { productId: 'product-2', rating: 5 },
-  },
-];
+import prisma from '@/lib/prisma';
 
 const QuerySchema = z.object({
-  page: z.string().optional().transform(val => parseInt(val || '1')),
-  limit: z.string().optional().transform(val => parseInt(val || '20')),
-  type: z.enum(['order', 'system', 'review', 'payment', 'customer']).optional(),
-  unreadOnly: z.string().optional().transform(val => val === 'true'),
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(20),
+  type: z.string().nullish(),
+  unreadOnly: z.string().nullish().transform(val => val === 'true'),
 });
 
 export async function GET(request: NextRequest) {
@@ -86,43 +53,55 @@ export async function GET(request: NextRequest) {
     }
 
     const { page, limit, type, unreadOnly } = validation.data;
+    const skip = (page - 1) * limit;
 
-    // TODO: Replace with actual database query
-    // const notifications = await prisma.notification.findMany({
-    //   where: {
-    //     userId,
-    //     ...(type && { type }),
-    //     ...(unreadOnly && { isRead: false }),
-    //   },
-    //   orderBy: { createdAt: 'desc' },
-    //   skip: (page - 1) * limit,
-    //   take: limit,
-    // });
+    // Build where clause
+    const whereClause: Record<string, unknown> = { userId };
+    if (type) whereClause.type = type;
+    if (unreadOnly) whereClause.read = false;
 
-    // Mock filtering
-    let filteredNotifications = mockNotifications.filter(n => n.userId === userId);
-    
-    if (type) {
-      filteredNotifications = filteredNotifications.filter(n => n.type === type);
-    }
-    
-    if (unreadOnly) {
-      filteredNotifications = filteredNotifications.filter(n => !n.isRead);
-    }
+    // Get notifications count
+    const [total, unreadCount] = await Promise.all([
+      prisma.notification.count({ where: whereClause }),
+      prisma.notification.count({ where: { userId, read: false } }),
+    ]);
 
-    // Pagination
-    const total = filteredNotifications.length;
-    const start = (page - 1) * limit;
-    const end = start + limit;
-    const paginatedNotifications = filteredNotifications.slice(start, end);
+    // Get notifications
+    const notifications = await prisma.notification.findMany({
+      where: whereClause,
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
+    });
 
-    const unreadCount = mockNotifications.filter(
-      n => n.userId === userId && !n.isRead
-    ).length;
+    // Format response with safe JSON parsing
+    const formattedNotifications = notifications.map(n => {
+      let parsedData = null;
+      if (n.data) {
+        try {
+          parsedData = JSON.parse(n.data);
+        } catch (e) {
+          console.error('Failed to parse notification data:', e);
+          parsedData = null;
+        }
+      }
+      return {
+        id: n.id,
+        type: n.type,
+        title: n.title,
+        message: n.message,
+        data: parsedData,
+        read: n.read,
+        readAt: n.readAt?.toISOString() || null,
+        actionUrl: n.actionUrl,
+        actionLabel: n.actionLabel,
+        createdAt: n.createdAt.toISOString(),
+      };
+    });
 
     return NextResponse.json({
       success: true,
-      data: paginatedNotifications,
+      data: formattedNotifications,
       pagination: {
         page,
         limit,
@@ -135,6 +114,55 @@ export async function GET(request: NextRequest) {
     console.error('[GET /api/notifications] Error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch notifications' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * PATCH /api/notifications
+ * Mark notifications as read
+ */
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { ids, markAllRead } = body;
+
+    if (markAllRead) {
+      // Mark all notifications as read for this user
+      await prisma.notification.updateMany({
+        where: { userId: session.user.id, read: false },
+        data: { read: true, readAt: new Date() },
+      });
+    } else if (ids && Array.isArray(ids)) {
+      // Mark specific notifications as read
+      await prisma.notification.updateMany({
+        where: {
+          id: { in: ids },
+          userId: session.user.id,
+        },
+        data: { read: true, readAt: new Date() },
+      });
+    } else {
+      return NextResponse.json(
+        { error: 'Either ids array or markAllRead must be provided' },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({ success: true, message: 'Notifications marked as read' });
+  } catch (error) {
+    console.error('[PATCH /api/notifications] Error:', error);
+    return NextResponse.json(
+      { error: 'Failed to update notifications' },
       { status: 500 }
     );
   }
