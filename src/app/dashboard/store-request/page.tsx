@@ -94,7 +94,7 @@ function RequestStatusCard({ request }: { request: {
       <CardContent>
         {request.status === 'PENDING' && (
           <p className="text-sm text-muted-foreground">
-            Your request is being reviewed by our team. You'll be notified once a decision is made.
+            Your request is being reviewed by our team. You&apos;ll be notified once a decision is made.
           </p>
         )}
         {request.status === 'APPROVED' && request.createdStore && (

@@ -38,8 +38,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
-const { data: session } = useSession()
-const navConfig = {
+const getNavConfig = (session: { user?: { name?: string | null; email?: string | null; image?: string | null } } | null) => ({
   user: {
     name: session?.user?.name || "Guest",
     email: session?.user?.email || "",
@@ -283,9 +282,11 @@ const navConfig = {
       icon: IconFileWord,
     },
   ],
-}
+})
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { data: session } = useSession()
+  const navConfig = getNavConfig(session)
   const { can, isSuperAdmin, isLoading } = usePermissions()
 
   // Filter menu items based on permissions
@@ -309,7 +310,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       }
       return false
     }).filter(Boolean)
-  }, [can, isLoading])
+  }, [can, isLoading, navConfig.navMain])
 
   const filteredNavSecondary = React.useMemo(() => {
     if (isLoading) return []
@@ -322,7 +323,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       // Check permission
       return !item.permission || can(item.permission)
     })
-  }, [can, isSuperAdmin, isLoading])
+  }, [can, isSuperAdmin, isLoading, navConfig.navSecondary])
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>

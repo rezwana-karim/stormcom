@@ -114,7 +114,7 @@ export function CustomerDialog({
       const method = isEditing ? 'PATCH' : 'POST';
 
       // Include storeId for creating new customers
-      const bodyData = isEditing ? data : { ...data, storeId, firstName: data.name.split(' ')[0], lastName: data.name.split(' ').slice(1).join(' ') || data.name.split(' ')[0] };
+      const bodyData = isEditing ? data : { ...data, storeId };
 
       const response = await fetch(url, {
         method,

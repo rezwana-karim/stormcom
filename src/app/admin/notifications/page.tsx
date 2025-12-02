@@ -5,24 +5,18 @@
  */
 
 import { Suspense } from "react";
+import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Bell,
-  BellOff,
   CheckCircle2,
-  XCircle,
   UserPlus,
-  Store,
-  AlertTriangle,
-  Info,
 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
 import { NotificationsList } from "@/components/admin/notifications-list";
 
 async function getNotifications() {
@@ -99,9 +93,9 @@ async function NotificationsContent() {
           <CardContent>
             <div className="text-2xl font-bold">{data.pendingUsersCount}</div>
             {data.pendingUsersCount > 0 && (
-              <a href="/admin/users/pending" className="text-xs text-primary hover:underline">
+              <Link href="/admin/users/pending" className="text-xs text-primary hover:underline">
                 Review now →
-              </a>
+              </Link>
             )}
           </CardContent>
         </Card>

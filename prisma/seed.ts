@@ -88,17 +88,26 @@ async function main() {
   });
   console.log(`✅ Created Store Admin user: ${storeAdmin.email}`);
 
-  // Create organization
-  console.log('🏢 Creating organization...');
-  const organization = await prisma.organization.create({
-    data: {
-      id: 'clqm1j4k00000l8dw8z8r8z8b', // Fixed org ID
-      name: 'Demo Company',
-      slug: 'demo-company',
-      image: null,
-    },
-  });
-  console.log(`✅ Created organization: ${organization.name}`);
+  // Create organizations
+  console.log('🏢 Creating organizations...');
+  const organizations = await Promise.all([
+    prisma.organization.create({
+      data: {
+        id: 'clqm1j4k00000l8dw8z8r8z8b', // Fixed org ID
+        name: 'Demo Company',
+        slug: 'demo-company',
+        image: null,
+      },
+    }),
+    prisma.organization.create({
+      data: {
+        name: 'Acme Corporation',
+        slug: 'acme-corp',
+        image: null,
+      },
+    }),
+  ]);
+  console.log(`✅ Created ${organizations.length} organizations`);
 
   // Create memberships
   console.log('👥 Creating memberships...');
@@ -272,7 +281,7 @@ async function main() {
   await prisma.storeStaff.create({
     data: {
       userId: storeAdmin.id,
-      storeId: store.id,
+      storeId: stores[0].id,
       role: 'STORE_ADMIN',
       isActive: true,
     },
@@ -283,7 +292,7 @@ async function main() {
   await prisma.storeStaff.create({
     data: {
       userId: salesManager.id,
-      storeId: store.id,
+      storeId: stores[0].id,
       role: 'SALES_MANAGER',
       isActive: true,
     },
@@ -294,7 +303,7 @@ async function main() {
   await prisma.storeStaff.create({
     data: {
       userId: inventoryManager.id,
-      storeId: store.id,
+      storeId: stores[0].id,
       role: 'INVENTORY_MANAGER',
       isActive: true,
     },
@@ -305,7 +314,7 @@ async function main() {
   await prisma.storeStaff.create({
     data: {
       userId: customerService.id,
-      storeId: store.id,
+      storeId: stores[0].id,
       role: 'CUSTOMER_SERVICE',
       isActive: true,
     },
@@ -316,7 +325,7 @@ async function main() {
   await prisma.storeStaff.create({
     data: {
       userId: contentManager.id,
-      storeId: store.id,
+      storeId: stores[0].id,
       role: 'CONTENT_MANAGER',
       isActive: true,
     },
@@ -327,7 +336,7 @@ async function main() {
   await prisma.storeStaff.create({
     data: {
       userId: marketingManager.id,
-      storeId: store.id,
+      storeId: stores[0].id,
       role: 'MARKETING_MANAGER',
       isActive: true,
     },
@@ -677,7 +686,7 @@ async function main() {
   // Registered customers (linked to user accounts)
   const customer1Profile = await prisma.customer.create({
     data: {
-      storeId: store.id,
+      storeId: stores[0].id,
       userId: customer1User.id,  // Link to user account
       email: 'customer1@example.com',
       firstName: 'John',
@@ -692,7 +701,7 @@ async function main() {
   
   const customer2Profile = await prisma.customer.create({
     data: {
-      storeId: store.id,
+      storeId: stores[0].id,
       userId: customer2User.id,  // Link to user account
       email: 'customer2@example.com',
       firstName: 'Jane',
@@ -708,7 +717,7 @@ async function main() {
   const guestCustomers = await Promise.all([
     prisma.customer.create({
       data: {
-        storeId: store.id,
+        storeId: stores[0].id,
         userId: null,  // Guest checkout
         email: 'john.doe@example.com',
         firstName: 'John',
@@ -720,7 +729,7 @@ async function main() {
     }),
     prisma.customer.create({
       data: {
-        storeId: store.id,
+        storeId: stores[0].id,
         userId: null,  // Guest checkout
         email: 'jane.smith@example.com',
         firstName: 'Jane',
@@ -731,7 +740,7 @@ async function main() {
     }),
     prisma.customer.create({
       data: {
-        storeId: store.id,
+        storeId: stores[0].id,
         userId: null,  // Guest checkout
         email: 'bob.wilson@example.com',
         firstName: 'Bob',
@@ -1112,8 +1121,8 @@ async function main() {
   console.log('\n🎉 Database seeding completed successfully!');
   console.log('\n📊 Summary:');
   console.log(`   - Users: 10 (1 Owner + 1 Super Admin + 6 Staff + 2 Customers)`);
-  console.log(`   - Organizations: 1`);
-  console.log(`   - Stores: 1 (ID: ${store.id})`);
+  console.log(`   - Organizations: ${organizations.length}`);
+  console.log(`   - Stores: ${stores.length} (ID: ${stores[0].id})`);
   console.log(`   - Store Staff Assignments: 6`);
   console.log(`   - Categories: 3`);
   console.log(`   - Brands: 3`);
@@ -1172,7 +1181,7 @@ async function main() {
   console.log(`   Password: Customer123!@#`);
   console.log(`   Role: CUSTOMER`);
   console.log(`   Access: Browse, order, manage profile, track orders`);
-  console.log(`\n   Store ID: ${store.id}`);
+  console.log(`\n   Store ID: ${stores[0].id}`);
 }
 
 main()

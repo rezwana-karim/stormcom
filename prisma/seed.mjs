@@ -42,20 +42,45 @@ async function main() {
   });
   console.log(`✅ Created Super Admin: ${superAdmin.email}`);
 
-  // Create test user with password
-  console.log('👤 Creating test user...');
+  // Create test users with different roles
+  console.log('👤 Creating test users...');
   const passwordHash = await bcrypt.hash('Test123!@#', 10);
-  const user = await prisma.user.create({
+  
+  const storeOwner = await prisma.user.create({
     data: {
-      id: 'clqm1j4k00000l8dw8z8r8z8a', // Fixed user ID
-      email: 'test@example.com',
-      name: 'Test User',
+      id: 'clqm1j4k00000l8dw8z8r8z8b',
+      email: 'owner@example.com',
+      name: 'Store Owner',
       emailVerified: new Date(),
       passwordHash,
       accountStatus: 'APPROVED',
     },
   });
-  console.log(`✅ Created user: ${user.email}`);
+  
+  const storeAdmin = await prisma.user.create({
+    data: {
+      id: 'clqm1j4k00000l8dw8z8r8z8c',
+      email: 'admin@example.com',
+      name: 'Store Admin',
+      emailVerified: new Date(),
+      passwordHash,
+      accountStatus: 'APPROVED',
+    },
+  });
+  
+  const storeMember = await prisma.user.create({
+    data: {
+      id: 'clqm1j4k00000l8dw8z8r8z8d',
+      email: 'member@example.com',
+      name: 'Store Member',
+      emailVerified: new Date(),
+      passwordHash,
+      accountStatus: 'APPROVED',
+    },
+  });
+  
+  const users = [storeOwner, storeAdmin, storeMember];
+  console.log(`✅ Created ${users.length} test users`);
 
   // Create 2 organizations
   console.log('🏢 Creating organizations...');
@@ -819,22 +844,21 @@ async function main() {
 
   console.log('\n🎉 Database seeding completed successfully!');
   console.log('\n📊 Summary:');
-  console.log(`   - Users: 2 (including Super Admin)`);
-  console.log(`   - Organizations: 1`);
-  console.log(`   - Stores: 1 (ID: ${store.id})`);
-  console.log(`   - Categories: 3`);
-  console.log(`   - Brands: 3`);
+  console.log(`   - Users: 4 (including Super Admin)`);
+  console.log(`   - Organizations: 2`);
+  console.log(`   - Stores: 2 (Demo Store & Acme Store)`);
+  console.log(`   - Categories: 5`);
+  console.log(`   - Brands: 4`);
   console.log(`   - Products: ${products.length}`);
   console.log(`   - Customers: ${customers.length}`);
   console.log(`   - Orders: ${orders.length}`);
   console.log('\n🔑 Super Admin Credentials:');
   console.log(`   Email: superadmin@example.com`);
   console.log(`   Password: SuperAdmin123!@#`);
-  console.log('\n🔑 Test User Credentials:');
-  console.log(`   Email: test@example.com`);
-  console.log(`   Email: seller@example.com`);
-  console.log(`   Email: buyer@example.com`);
-  console.log(`   Password: Test123!@#`);
+  console.log('\n🔑 Test User Credentials (Password: Test123!@#):');
+  console.log(`   Owner: owner@example.com`);
+  console.log(`   Admin: admin@example.com`);
+  console.log(`   Member: member@example.com`);
   console.log(`   Primary Store ID: ${stores[0].id}`);
   console.log(`   Secondary Store ID: ${stores[1].id}`);
 }

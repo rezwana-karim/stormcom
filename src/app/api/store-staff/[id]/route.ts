@@ -133,7 +133,7 @@ export async function PATCH(
     // Log the change
     if (session?.user?.id && oldData) {
       const auditService = AuditLogService.getInstance();
-      const changes: Record<string, any> = {};
+      const changes: Record<string, { old: string | boolean | null; new: string | boolean | null }> = {};
       if (oldData.role !== storeStaff.role) {
         changes.role = { old: oldData.role, new: storeStaff.role };
       }

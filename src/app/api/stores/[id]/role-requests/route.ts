@@ -30,12 +30,6 @@ interface RouteContext {
   params: Promise<{ id: string }>;
 }
 
-// Type for count results
-interface CountResult {
-  status: string;
-  _count: number;
-}
-
 // Type for request with relations
 interface RoleRequestWithRelations {
   id: string;
@@ -149,9 +143,9 @@ export async function GET(
     });
     
     // Format counts with proper type safety
-    type Status = keyof typeof statusCounts;
-    type GroupByResult = { status: Status; _count: number };
-    const statusCounts: Record<Status, number> = {
+    type StatusType = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'INFO_REQUESTED';
+    type GroupByResult = { status: StatusType; _count: number };
+    const statusCounts: Record<StatusType, number> = {
       PENDING: 0,
       APPROVED: 0,
       REJECTED: 0,

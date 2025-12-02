@@ -55,7 +55,7 @@ export default async function TeamPage({
                   permission="staff:read"
                   fallback={
                     <div className="text-center py-12 text-muted-foreground">
-                      You don't have permission to view staff members
+                      You don&apos;t have permission to view staff members
                     </div>
                   }
                 >

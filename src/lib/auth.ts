@@ -143,12 +143,12 @@ export const authOptions: NextAuthOptions = {
           const membership = sortedMemberships[0];
           const storeStaff = sortedStoreStaff[0];
 
-          (session.user as any).isSuperAdmin = user.isSuperAdmin;
-          (session.user as any).accountStatus = user.accountStatus;
-          (session.user as any).organizationRole = membership?.role;
-          (session.user as any).organizationId = membership?.organizationId;
-          (session.user as any).storeRole = storeStaff?.role;
-          (session.user as any).storeId = storeStaff?.storeId || membership?.organization?.store?.id;
+          session.user.isSuperAdmin = user.isSuperAdmin;
+          session.user.accountStatus = user.accountStatus;
+          session.user.organizationRole = membership?.role ?? undefined;
+          session.user.organizationId = membership?.organizationId ?? undefined;
+          session.user.storeRole = storeStaff?.role ?? undefined;
+          session.user.storeId = storeStaff?.storeId || membership?.organization?.store?.id;
 
           // Compute permissions
           const { getPermissions } = await import('./permissions');
@@ -163,7 +163,7 @@ export const authOptions: NextAuthOptions = {
             }
           }
           
-          (session.user as any).permissions = permissions;
+          session.user.permissions = permissions;
         }
       }
       return session;

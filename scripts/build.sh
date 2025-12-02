@@ -16,7 +16,7 @@ if [[ $DATABASE_URL == postgresql://* ]] || [[ $DATABASE_URL == postgres://* ]];
   SCHEMA_PATH="prisma/schema.postgres.prisma"
 elif [[ $DATABASE_URL == file:* ]]; then
   echo "🗄️  Detected SQLite database, using schema.sqlite.prisma"
-  SCHEMA_PATH="prisma/schema.sqlite.prisma"
+  SCHEMA_PATH="prisma/schema.prisma"
 else
   echo "⚠️  Unknown database type, defaulting to PostgreSQL schema"
   SCHEMA_PATH="prisma/schema.postgres.prisma"

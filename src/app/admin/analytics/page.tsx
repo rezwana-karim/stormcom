@@ -22,7 +22,7 @@ import {
   Clock,
   Activity,
 } from "lucide-react";
-import { formatDistanceToNow, subDays, startOfDay, endOfDay } from "date-fns";
+import { formatDistanceToNow, subDays } from "date-fns";
 
 async function getAnalytics() {
   const today = new Date();

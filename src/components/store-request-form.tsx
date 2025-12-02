@@ -229,7 +229,7 @@ export function StoreRequestForm({ defaultValues }: StoreRequestFormProps) {
                   </SelectContent>
                 </Select>
                 <FormDescription>
-                  The primary category of products you'll sell
+                  The primary category of products you&apos;ll sell
                 </FormDescription>
                 <FormMessage />
               </FormItem>
