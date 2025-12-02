@@ -249,7 +249,7 @@ function applySecurityHeaders(response: NextResponse): NextResponse {
  * 
  * @see https://nextjs.org/docs/app/building-your-application/routing/middleware
  */
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const url = request.nextUrl;
   const hostname = request.headers.get("host") || "";
   const pathname = url.pathname;

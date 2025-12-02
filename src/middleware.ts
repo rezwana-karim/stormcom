@@ -249,7 +249,7 @@ function applySecurityHeaders(response: NextResponse): NextResponse {
  * 
  * @see https://nextjs.org/docs/app/building-your-application/routing/middleware
  */
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const url = request.nextUrl;
   const hostname = request.headers.get("host") || "";
   const pathname = url.pathname;
@@ -268,11 +268,24 @@ export async function proxy(request: NextRequest) {
 
   // Get subdomain
   const subdomain = extractSubdomain(hostname);
+  
+  // For internal API calls, we need to use the main host without subdomain
+  // e.g., demo.localhost:3000 → localhost:3000
+  // e.g., demo.stormcom.app → stormcom.app
+  let apiBaseUrl = baseUrl;
+  if (subdomain) {
+    // Extract port if present
+    const [hostWithoutPort, port] = hostname.split(":");
+    // Remove the subdomain prefix from the hostname
+    const mainHost = hostWithoutPort.replace(`${subdomain}.`, "");
+    apiBaseUrl = port ? `${protocol}://${mainHost}:${port}` : `${protocol}://${mainHost}`;
+  }
 
   // Check if we should process subdomain/custom domain routing
   if (!shouldSkipSubdomainRouting(subdomain, pathname, hostname)) {
     // Subdomain or custom domain detected - handle store routing
-    const store = await getStoreBySubdomainOrDomain(subdomain, hostname, baseUrl);
+    console.log("[proxy] Looking up store with apiBaseUrl:", apiBaseUrl);
+    const store = await getStoreBySubdomainOrDomain(subdomain, hostname, apiBaseUrl);
 
     if (!store) {
       // Invalid subdomain/domain - redirect to 404 page

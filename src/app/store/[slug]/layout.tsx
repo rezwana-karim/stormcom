@@ -1,9 +1,9 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
-import Link from "next/link";
-import Image from "next/image";
 import type { Metadata } from "next";
+import { StoreHeader } from "@/components/storefront/store-header";
+import { StoreFooter } from "@/components/storefront/store-footer";
 
 interface StoreLayoutProps {
   children: React.ReactNode;
@@ -67,7 +67,7 @@ export default async function StoreLayout({
   const headersList = await headers();
   const storeId = headersList.get("x-store-id");
 
-  // Fetch full store data
+  // Fetch full store data with categories for navigation
   const store = await prisma.store.findFirst({
     where: storeId 
       ? { id: storeId, deletedAt: null }
@@ -75,6 +75,18 @@ export default async function StoreLayout({
     include: {
       organization: {
         select: { name: true, image: true },
+      },
+      categories: {
+        where: { isPublished: true, deletedAt: null, parentId: null },
+        orderBy: { sortOrder: "asc" },
+        take: 10,
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          description: true,
+          image: true,
+        },
       },
     },
   });
@@ -85,125 +97,35 @@ export default async function StoreLayout({
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Store Header */}
-      <header className="border-b bg-background sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {store.logo && (
-                <Image
-                  src={store.logo}
-                  alt={store.name}
-                  width={40}
-                  height={40}
-                  className="h-10 w-auto object-contain"
-                  unoptimized
-                />
-              )}
-              <h1 className="text-2xl font-bold">{store.name}</h1>
-            </div>
-            <nav className="flex items-center gap-6">
-              <Link
-                href={`/store/${store.slug}`}
-                className="text-sm font-medium hover:text-primary"
-              >
-                Home
-              </Link>
-              <Link
-                href={`/store/${store.slug}/products`}
-                className="text-sm font-medium hover:text-primary"
-              >
-                Products
-              </Link>
-              <Link
-                href={`/store/${store.slug}/categories`}
-                className="text-sm font-medium hover:text-primary"
-              >
-                Categories
-              </Link>
-              <Link
-                href="/checkout"
-                className="text-sm font-medium hover:text-primary"
-              >
-                Cart
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </header>
+      {/* Store Header with Navigation Menu */}
+      <StoreHeader
+        store={{
+          name: store.name,
+          slug: store.slug,
+          logo: store.logo,
+          description: store.description,
+        }}
+        categories={store.categories}
+      />
 
       {/* Store Content */}
       <main className="flex-1">{children}</main>
 
       {/* Store Footer */}
-      <footer className="border-t mt-auto">
-        <div className="container mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {/* Store Info */}
-            <div>
-              <h3 className="font-semibold mb-4">{store.name}</h3>
-              {store.description && (
-                <p className="text-sm text-muted-foreground">
-                  {store.description}
-                </p>
-              )}
-            </div>
-
-            {/* Quick Links */}
-            <div>
-              <h3 className="font-semibold mb-4">Quick Links</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <Link href={`/store/${store.slug}`} className="hover:text-primary">
-                    Home
-                  </Link>
-                </li>
-                <li>
-                  <Link href={`/store/${store.slug}/products`} className="hover:text-primary">
-                    All Products
-                  </Link>
-                </li>
-                <li>
-                  <Link href={`/store/${store.slug}/categories`} className="hover:text-primary">
-                    Categories
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            {/* Contact */}
-            <div>
-              <h3 className="font-semibold mb-4">Contact</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                {store.email && <li>{store.email}</li>}
-                {store.phone && <li>{store.phone}</li>}
-                {store.address && (
-                  <li>
-                    {store.address}
-                    {store.city && `, ${store.city}`}
-                    {store.state && `, ${store.state}`}
-                    {store.postalCode && ` ${store.postalCode}`}
-                  </li>
-                )}
-              </ul>
-            </div>
-
-            {/* Powered By */}
-            <div>
-              <h3 className="font-semibold mb-4">Powered By</h3>
-              <p className="text-sm text-muted-foreground">
-                <Link href="/" className="hover:text-primary">
-                  StormCom
-                </Link>
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
-            © {new Date().getFullYear()} {store.name}. Powered by StormCom.
-          </div>
-        </div>
-      </footer>
+      <StoreFooter
+        store={{
+          name: store.name,
+          slug: store.slug,
+          description: store.description,
+          email: store.email,
+          phone: store.phone,
+          address: store.address,
+          city: store.city,
+          state: store.state,
+          postalCode: store.postalCode,
+          website: store.website,
+        }}
+      />
     </div>
   );
 }

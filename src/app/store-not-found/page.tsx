@@ -1,5 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertCircle, Home, Store, ArrowLeft } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Store Not Found",
@@ -12,52 +15,69 @@ export const metadata: Metadata = {
  */
 export default function StoreNotFoundPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center px-4">
-        {/* 404 Icon */}
-        <div className="text-8xl mb-6">🏪</div>
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-b from-background to-muted/30 p-4">
+      <Card className="w-full max-w-lg text-center">
+        <CardHeader className="pb-4">
+          {/* Icon */}
+          <div className="mx-auto mb-4 h-20 w-20 rounded-full bg-destructive/10 flex items-center justify-center">
+            <AlertCircle className="h-10 w-10 text-destructive" />
+          </div>
+          
+          <CardTitle className="text-3xl">Store Not Found</CardTitle>
+          <CardDescription className="text-base">
+            The store you are looking for does not exist, has been removed, or the
+            subdomain is incorrect.
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent className="space-y-6">
+          {/* Suggestions */}
+          <div className="text-left bg-muted/50 rounded-lg p-4">
+            <h3 className="font-medium mb-3">Things you can try:</h3>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li className="flex items-start gap-2">
+                <span className="text-primary">•</span>
+                <span>Check the URL for typos</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary">•</span>
+                <span>Make sure you have the correct subdomain</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary">•</span>
+                <span>Contact the store owner if you believe this is an error</span>
+              </li>
+            </ul>
+          </div>
 
-        {/* Main Message */}
-        <h1 className="text-4xl font-bold mb-4">Store Not Found</h1>
-        <p className="text-lg text-muted-foreground mb-8 max-w-md mx-auto">
-          The store you are looking for does not exist, has been removed, or the
-          subdomain is incorrect.
-        </p>
+          {/* Actions */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button asChild size="lg">
+              <Link href="/">
+                <Home className="mr-2 h-4 w-4" />
+                Go to Homepage
+              </Link>
+            </Button>
+            <Button variant="outline" size="lg" asChild>
+              <Link href="/signup">
+                <Store className="mr-2 h-4 w-4" />
+                Create Your Store
+              </Link>
+            </Button>
+          </div>
 
-        {/* Suggestions */}
-        <div className="space-y-4 mb-8">
-          <p className="text-sm text-muted-foreground">Here are some things you can try:</p>
-          <ul className="text-sm text-muted-foreground list-disc list-inside space-y-2">
-            <li>Check the URL for typos</li>
-            <li>Make sure you have the correct subdomain</li>
-            <li>Contact the store owner if you believe this is an error</li>
-          </ul>
-        </div>
-
-        {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link
-            href="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90"
-          >
-            Go to Homepage
-          </Link>
-          <Link
-            href="/signup"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-6 py-3 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground"
-          >
-            Create Your Store
-          </Link>
-        </div>
-
-        {/* Help Link */}
-        <p className="mt-8 text-sm text-muted-foreground">
-          Need help?{" "}
-          <a href="mailto:support@stormcom.app" className="text-primary hover:underline">
-            Contact Support
-          </a>
-        </p>
-      </div>
+          {/* Help Link */}
+          <p className="text-sm text-muted-foreground">
+            Need help?{" "}
+            <a 
+              href="mailto:support@stormcom.app" 
+              className="text-primary hover:underline font-medium"
+            >
+              Contact Support
+            </a>
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
