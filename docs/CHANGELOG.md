@@ -258,7 +258,7 @@ Based on comprehensive codebase review (IMPLEMENTATION_STATUS_AND_ROADMAP.md) an
 Before starting implementation:
 - [ ] Review IMPLEMENTATION_STATUS_AND_ROADMAP.md
 - [ ] Review EXTERNAL_WEBSITE_INTEGRATION_PLAN.md
-- [ ] Review existing codebase (`src/app/api/*`, `prisma/schema.sqlite.prisma`)
+- [ ] Review existing codebase (`src/app/api/*`, `prisma/schema.prisma`)
 - [ ] Complete Phase 0 codebase audit
 - [ ] Validate MVP scope with stakeholders
 - [ ] Set up local development environment

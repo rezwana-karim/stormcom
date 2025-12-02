@@ -21,7 +21,7 @@ npm run build
 
 **Environment Detection:**
 - `postgresql://` or `postgres://` → Uses `schema.postgres.prisma`
-- `file:` → Uses `schema.sqlite.prisma`
+- `file:` → Uses `schema.prisma`
 - Unknown → Defaults to PostgreSQL schema
 
 ### postinstall.js / postinstall.sh

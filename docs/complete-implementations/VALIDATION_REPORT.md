@@ -75,7 +75,7 @@ Parity:     99.7% (perfect functional parity)
 if (databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://')) {
   schemaPath = 'prisma/schema.postgres.prisma'; // ✅
 } else if (databaseUrl.startsWith('file:')) {
-  schemaPath = 'prisma/schema.sqlite.prisma'; // ✅
+  schemaPath = 'prisma/schema.prisma'; // ✅
 }
 ```
 

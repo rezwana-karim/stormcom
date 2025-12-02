@@ -73,7 +73,7 @@
     utils.ts                    # Helper functions (cn, etc.)
   /hooks                        # Custom React hooks
 /prisma
-  schema.sqlite.prisma          # SQLite schema (ACTIVE for dev)
+  schema.prisma                 # SQLite schema (ACTIVE for dev)
   schema.postgres.prisma,.md    # PostgreSQL schema (RENAME before use)
   /migrations                   # Database migrations
   dev.db                        # SQLite database file
@@ -99,7 +99,7 @@ components.json                 # shadcn-ui config
 - **Client Session**: Use `useSession()` hook in Client Components
 
 ### Database Layer (Multi-Tenant)
-- **Dev Schema**: `prisma/schema.sqlite.prisma` (ACTIVE)
+- **Dev Schema**: `prisma/schema.prisma` (ACTIVE)
 - **Prod Schema**: `prisma/schema.postgres.prisma,.md` (TYPO: rename to `.prisma` before deploy)
 - **Models**: `User` (NextAuth), `Account`, `Session`, `VerificationToken`, `Organization`, `Membership` (with `Role` enum)
 - **Multi-Tenancy**: ALWAYS filter queries by BOTH `userId` AND `organizationId` (or `slug`) to prevent data leakage
@@ -137,11 +137,11 @@ export $(cat .env.local | xargs) && npm run prisma:migrate:dev
 dotenv -e .env.local -- npm run prisma:migrate:dev
 
 # Option 3: Use npx with dotenv
-npx dotenv -e .env.local -- prisma migrate dev --schema=prisma/schema.sqlite.prisma
+npx dotenv -e .env.local -- prisma migrate dev --schema=prisma/schema.prisma
 ```
 
 **Migration Workflow**:
-1. Modify `prisma/schema.sqlite.prisma`
+1. Modify `prisma/schema.prisma`
 2. Run `npm run prisma:migrate:dev` (creates migration + generates client)
 3. Commit both schema and migration files
 

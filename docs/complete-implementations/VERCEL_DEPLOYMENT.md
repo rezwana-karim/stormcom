@@ -158,7 +158,7 @@ For detailed seeding instructions, see [Production Seeding Guide](./PRODUCTION_S
 
 During development:
 ```bash
-# 1. Modify prisma/schema.sqlite.prisma (for local dev)
+# 1. Modify prisma/schema.prisma (for local dev)
 # 2. Create migration
 npm run prisma:migrate:dev
 
