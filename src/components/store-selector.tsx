@@ -20,16 +20,6 @@ interface Store {
   slug: string;
 }
 
-interface StoresResponse {
-  data: Store[];
-  meta?: {
-    total: number;
-    page: number;
-    perPage: number;
-    totalPages: number;
-  };
-}
-
 interface StoreSelectorProps {
   onStoreChange?: (storeId: string) => void;
 }
@@ -72,8 +62,9 @@ export function StoreSelector({ onStoreChange }: StoreSelectorProps) {
           setSelectedStore(firstStoreId);
           onStoreChangeRef.current?.(firstStoreId);
         }
-      } catch (error) {
-        console.error('Failed to fetch stores:', error);
+      } catch (err) {
+        console.error('Failed to fetch stores:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch stores');
         // Fallback to empty array - UI will show "No stores available"
         setStores([]);
       } finally {

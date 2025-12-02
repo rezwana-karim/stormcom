@@ -69,7 +69,7 @@ export function CanAccess({
   children,
   fallback = null,
 }: CanAccessProps) {
-  const { can, canAny, canAll, hasRole, isSuperAdmin, isLoading } = usePermissions();
+  const { canAny, canAll, hasRole, isSuperAdmin, isLoading } = usePermissions();
 
   // Don't render anything while loading
   if (isLoading) {
@@ -134,7 +134,7 @@ export function CannotAccess({
   children,
   fallback = null,
 }: Omit<CanAccessProps, 'requireSuperAdmin'>) {
-  const { can, canAny, canAll, hasRole, isLoading } = usePermissions();
+  const { canAny, canAll, hasRole, isLoading } = usePermissions();
 
   if (isLoading) {
     return null;

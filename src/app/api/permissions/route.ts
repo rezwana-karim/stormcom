@@ -24,7 +24,7 @@ import {
  * - Super Admin
  * - Store Admin/Owner of at least one store
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     

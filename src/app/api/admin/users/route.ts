@@ -159,7 +159,7 @@ export async function GET(request: NextRequest) {
  * POST /api/admin/users/stats
  * Get user statistics by status
  */
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {

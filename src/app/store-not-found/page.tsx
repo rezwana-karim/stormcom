@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, Home, Store, ArrowLeft } from "lucide-react";
+import { AlertCircle, Home, Store } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Store Not Found",
