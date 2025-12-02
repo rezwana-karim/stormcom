@@ -223,6 +223,13 @@ enum SubscriptionStatus {
   PAUSED
 }
 
+enum ReservationStatus {
+  ACTIVE
+  CONSUMED
+  EXPIRED
+  RELEASED
+}
+
 // Store model (E-commerce tenant - extends Organization)
 model Store {
   id             String   @id @default(cuid())
