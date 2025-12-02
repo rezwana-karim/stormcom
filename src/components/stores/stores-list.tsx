@@ -40,6 +40,7 @@ import { Plus, Search, MoreVertical, Edit, Trash2, Store as StoreIcon } from 'lu
 import { StoreFormDialog } from './store-form-dialog';
 import { DeleteStoreDialog } from './delete-store-dialog';
 import { toast } from 'sonner';
+import { usePermissions } from '@/hooks/use-permissions';
 
 type SubscriptionPlan = 'FREE' | 'STARTER' | 'PRO' | 'ENTERPRISE';
 type SubscriptionStatus = 'TRIALING' | 'ACTIVE' | 'PAST_DUE' | 'CANCELED' | 'UNPAID';
@@ -68,6 +69,7 @@ interface ListResponse {
 }
 
 export function StoresList() {
+  const { can, isSuperAdmin } = usePermissions();
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({
@@ -209,10 +211,13 @@ export function StoresList() {
           </SelectContent>
         </Select>
 
-        <Button onClick={() => setCreateOpen(true)} className="ml-auto">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Store
-        </Button>
+        {/* Only show Create Store button to users with create permission */}
+        {(isSuperAdmin || can('stores:create')) && (
+          <Button onClick={() => setCreateOpen(true)} className="ml-auto">
+            <Plus className="h-4 w-4 mr-2" />
+            Create Store
+          </Button>
+        )}
       </div>
 
       {/* Data Table */}
@@ -294,17 +299,22 @@ export function StoresList() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => setEditingStore(store)}>
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit Store
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => setDeletingStore(store)}
-                          className="text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete Store
-                        </DropdownMenuItem>
+                        {/* Only show edit/delete for users with update/delete permissions */}
+                        {(isSuperAdmin || can('stores:update')) && (
+                          <DropdownMenuItem onClick={() => setEditingStore(store)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit Store
+                          </DropdownMenuItem>
+                        )}
+                        {(isSuperAdmin || can('stores:delete')) && (
+                          <DropdownMenuItem
+                            onClick={() => setDeletingStore(store)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete Store
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

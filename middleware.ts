@@ -7,5 +7,6 @@ export const config = {
     "/team/:path*", 
     "/projects/:path*",
     "/products/:path*",  // Protect products routes
+    "/admin/:path*",     // Protect admin routes
   ],
 };

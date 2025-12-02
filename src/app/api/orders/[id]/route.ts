@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import { checkPermission } from '@/lib/auth-helpers';
 import { OrderService } from '@/lib/services/order.service';
 import { OrderStatus } from '@prisma/client';
 
@@ -17,6 +18,15 @@ export async function GET(
   context: RouteContext
 ) {
   try {
+    // Check permission for reading orders
+    const hasPermission = await checkPermission('orders:read');
+    if (!hasPermission) {
+      return NextResponse.json(
+        { error: 'Access denied. You do not have permission to view orders.' },
+        { status: 403 }
+      );
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json(
@@ -62,6 +72,15 @@ export async function PATCH(
   context: RouteContext
 ) {
   try {
+    // Check permission for updating orders
+    const hasPermission = await checkPermission('orders:update');
+    if (!hasPermission) {
+      return NextResponse.json(
+        { error: 'Access denied. You do not have permission to update orders.' },
+        { status: 403 }
+      );
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json(
@@ -122,6 +141,15 @@ export async function DELETE(
   context: RouteContext
 ) {
   try {
+    // Check permission for deleting orders
+    const hasPermission = await checkPermission('orders:delete');
+    if (!hasPermission) {
+      return NextResponse.json(
+        { error: 'Access denied. You do not have permission to delete orders.' },
+        { status: 403 }
+      );
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json(

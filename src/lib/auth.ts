@@ -6,6 +6,7 @@ import { Resend } from "resend";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { ORG_ROLE_PRIORITY, STORE_ROLE_PRIORITY } from "@/lib/constants";
 
 const fromEmail = process.env.EMAIL_FROM ?? "no-reply@example.com";
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -61,19 +62,36 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid email or password");
         }
 
-        // Verify password
+        // Verify password with timing-safe comparison
         const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
 
         if (!isValid) {
           throw new Error("Invalid email or password");
         }
 
-        // Return user object
+        // Check account status - only allow APPROVED users and Super Admins to sign in
+        if (!user.isSuperAdmin && user.accountStatus !== 'APPROVED') {
+          if (user.accountStatus === 'PENDING') {
+            throw new Error("Your account is pending approval. Please wait for admin review.");
+          }
+          if (user.accountStatus === 'REJECTED') {
+            throw new Error("Your account application was not approved. Please contact support.");
+          }
+          if (user.accountStatus === 'SUSPENDED') {
+            throw new Error("Your account has been suspended. Please contact support.");
+          }
+          if (user.accountStatus === 'DELETED') {
+            throw new Error("This account has been deleted.");
+          }
+        }
+
+        // Return user object with isSuperAdmin field
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           image: user.image,
+          isSuperAdmin: user.isSuperAdmin || false,
         };
       }
     }),
@@ -86,7 +104,67 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async session({ session, token }) {
       if (session.user && token?.sub) {
-        (session.user as typeof session.user & { id: string }).id = token.sub;
+        const userId = token.sub;
+        (session.user as typeof session.user & { id: string }).id = userId;
+
+        // Fetch user roles and permissions
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          include: {
+            memberships: {
+              include: {
+                organization: {
+                  include: { store: true },
+                },
+              },
+            },
+            storeStaff: {
+              where: { isActive: true },
+              include: { store: true },
+            },
+          },
+        });
+
+        if (user) {
+          // Prioritize memberships using shared priority constants
+          const sortedMemberships = [...user.memberships].sort((a, b) => {
+            const priorityDiff = (ORG_ROLE_PRIORITY[b.role] || 0) - (ORG_ROLE_PRIORITY[a.role] || 0);
+            if (priorityDiff !== 0) return priorityDiff;
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          });
+
+          // Prioritize store staff using shared priority constants
+          const sortedStoreStaff = [...user.storeStaff].sort((a, b) => {
+            const priorityDiff = (STORE_ROLE_PRIORITY[b.role || ''] || 0) - (STORE_ROLE_PRIORITY[a.role || ''] || 0);
+            if (priorityDiff !== 0) return priorityDiff;
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          });
+
+          const membership = sortedMemberships[0];
+          const storeStaff = sortedStoreStaff[0];
+
+          session.user.isSuperAdmin = user.isSuperAdmin;
+          session.user.accountStatus = user.accountStatus;
+          session.user.organizationRole = membership?.role ?? undefined;
+          session.user.organizationId = membership?.organizationId ?? undefined;
+          session.user.storeRole = storeStaff?.role ?? undefined;
+          session.user.storeId = storeStaff?.storeId || membership?.organization?.store?.id;
+
+          // Compute permissions
+          const { getPermissions } = await import('./permissions');
+          let permissions: string[] = [];
+          
+          if (user.isSuperAdmin) {
+            permissions = ['*'];
+          } else {
+            const effectiveRole = storeStaff?.role || membership?.role;
+            if (effectiveRole) {
+              permissions = getPermissions(effectiveRole);
+            }
+          }
+          
+          session.user.permissions = permissions;
+        }
       }
       return session;
     },

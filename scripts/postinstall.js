@@ -44,7 +44,7 @@ if (databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres:
   schemaPath = 'prisma/schema.postgres.prisma';
 } else if (databaseUrl.startsWith('file:')) {
   console.log('🗄️  Using SQLite schema');
-  schemaPath = 'prisma/schema.sqlite.prisma';
+  schemaPath = 'prisma/schema.prisma';
 } else {
   console.log('⚠️  Unknown database, defaulting to PostgreSQL');
   schemaPath = 'prisma/schema.postgres.prisma';

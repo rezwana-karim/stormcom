@@ -50,6 +50,25 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Verify user has access to this store (prevent IDOR)
+    const userMembership = await prisma.membership.findFirst({
+      where: {
+        userId: session.user.id,
+        organization: {
+          store: {
+            id: storeId,
+          },
+        },
+      },
+    });
+
+    if (!userMembership) {
+      return NextResponse.json(
+        { error: 'Access denied. You do not have access to this store.' },
+        { status: 403 }
+      );
+    }
+
     // Get store with subscription details
     const store = await prisma.store.findFirst({
       where: {
@@ -135,6 +154,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'storeId and plan are required' },
         { status: 400 }
+      );
+    }
+
+    // Verify user has access to this store
+    const userMembership = await prisma.membership.findFirst({
+      where: {
+        userId: session.user.id,
+        organization: {
+          store: {
+            id: storeId,
+          },
+        },
+      },
+    });
+
+    if (!userMembership) {
+      return NextResponse.json(
+        { error: 'Access denied. You do not have access to this store.' },
+        { status: 403 }
       );
     }
 

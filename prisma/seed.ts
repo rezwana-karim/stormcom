@@ -59,20 +59,51 @@ async function main() {
   ]);
   console.log(`✅ Created ${users.length} users`);
 
-  // Create 2 organizations
+  // Create Super Admin user
+  console.log('👤 Creating Super Admin user...');
+  const superAdminHash = await bcrypt.hash('SuperAdmin123!@#', 12);
+  const superAdmin = await prisma.user.create({
+    data: {
+      id: 'clqm1j4k00000l8dw8z8r8z9a', // Fixed Super Admin ID
+      email: 'superadmin@example.com',
+      name: 'Super Administrator',
+      emailVerified: new Date(),
+      passwordHash: superAdminHash,
+      isSuperAdmin: true,  // Platform-level administrator
+    },
+  });
+  console.log(`✅ Created Super Admin: ${superAdmin.email}`);
+
+  // Create Store Admin user (will be assigned to store later)
+  console.log('👤 Creating Store Admin user...');
+  const storeAdminHash = await bcrypt.hash('StoreAdmin123!@#', 12);
+  const storeAdmin = await prisma.user.create({
+    data: {
+      id: 'clqm1j4k00000l8dw8z8r8z9b', // Fixed Store Admin ID
+      email: 'storeadmin@example.com',
+      name: 'Store Administrator',
+      emailVerified: new Date(),
+      passwordHash: storeAdminHash,
+    },
+  });
+  console.log(`✅ Created Store Admin user: ${storeAdmin.email}`);
+
+  // Create organizations
   console.log('🏢 Creating organizations...');
   const organizations = await Promise.all([
     prisma.organization.create({
       data: {
-        id: 'clqm1j4k00000l8dw8z8r8z8b',
+        id: 'clqm1j4k00000l8dw8z8r8z8b', // Fixed org ID
         name: 'Demo Company',
         slug: 'demo-company',
+        image: null,
       },
     }),
     prisma.organization.create({
       data: {
-        name: 'Acme Corp',
+        name: 'Acme Corporation',
         slug: 'acme-corp',
+        image: null,
       },
     }),
   ]);
@@ -157,7 +188,162 @@ async function main() {
   ]);
   console.log(`✅ Created ${stores.length} stores`);
 
-  // Create 5 categories
+  // Create additional staff members with different roles
+  console.log('👥 Creating staff members with various roles...');
+  
+  // Sales Manager
+  const salesManagerHash = await bcrypt.hash('SalesManager123!@#', 12);
+  const salesManager = await prisma.user.create({
+    data: {
+      email: 'sales@example.com',
+      name: 'Sales Manager',
+      emailVerified: new Date(),
+      passwordHash: salesManagerHash,
+    },
+  });
+  console.log(`✅ Created Sales Manager: ${salesManager.email}`);
+  
+  // Inventory Manager
+  const inventoryManagerHash = await bcrypt.hash('InventoryManager123!@#', 12);
+  const inventoryManager = await prisma.user.create({
+    data: {
+      email: 'inventory@example.com',
+      name: 'Inventory Manager',
+      emailVerified: new Date(),
+      passwordHash: inventoryManagerHash,
+    },
+  });
+  console.log(`✅ Created Inventory Manager: ${inventoryManager.email}`);
+  
+  // Customer Service
+  const customerServiceHash = await bcrypt.hash('CustomerService123!@#', 12);
+  const customerService = await prisma.user.create({
+    data: {
+      email: 'support@example.com',
+      name: 'Customer Service Rep',
+      emailVerified: new Date(),
+      passwordHash: customerServiceHash,
+    },
+  });
+  console.log(`✅ Created Customer Service: ${customerService.email}`);
+  
+  // Content Manager
+  const contentManagerHash = await bcrypt.hash('ContentManager123!@#', 12);
+  const contentManager = await prisma.user.create({
+    data: {
+      email: 'content@example.com',
+      name: 'Content Manager',
+      emailVerified: new Date(),
+      passwordHash: contentManagerHash,
+    },
+  });
+  console.log(`✅ Created Content Manager: ${contentManager.email}`);
+  
+  // Marketing Manager
+  const marketingManagerHash = await bcrypt.hash('MarketingManager123!@#', 12);
+  const marketingManager = await prisma.user.create({
+    data: {
+      email: 'marketing@example.com',
+      name: 'Marketing Manager',
+      emailVerified: new Date(),
+      passwordHash: marketingManagerHash,
+    },
+  });
+  console.log(`✅ Created Marketing Manager: ${marketingManager.email}`);
+  
+  // Customer users (registered customers with login accounts)
+  console.log('🛍️ Creating customer users...');
+  
+  const customer1Hash = await bcrypt.hash('Customer123!@#', 12);
+  const customer1User = await prisma.user.create({
+    data: {
+      email: 'customer1@example.com',
+      name: 'John Customer',
+      emailVerified: new Date(),
+      passwordHash: customer1Hash,
+    },
+  });
+  console.log(`✅ Created Customer 1: ${customer1User.email}`);
+  
+  const customer2Hash = await bcrypt.hash('Customer123!@#', 12);
+  const customer2User = await prisma.user.create({
+    data: {
+      email: 'customer2@example.com',
+      name: 'Jane Shopper',
+      emailVerified: new Date(),
+      passwordHash: customer2Hash,
+    },
+  });
+  console.log(`✅ Created Customer 2: ${customer2User.email}`);
+  
+  // Assign Store Admin to store
+  console.log('👥 Assigning staff to store...');
+  await prisma.storeStaff.create({
+    data: {
+      userId: storeAdmin.id,
+      storeId: stores[0].id,
+      role: 'STORE_ADMIN',
+      isActive: true,
+    },
+  });
+  console.log('✅ Assigned Store Admin to Demo Store');
+  
+  // Assign Sales Manager
+  await prisma.storeStaff.create({
+    data: {
+      userId: salesManager.id,
+      storeId: stores[0].id,
+      role: 'SALES_MANAGER',
+      isActive: true,
+    },
+  });
+  console.log('✅ Assigned Sales Manager to Demo Store');
+  
+  // Assign Inventory Manager
+  await prisma.storeStaff.create({
+    data: {
+      userId: inventoryManager.id,
+      storeId: stores[0].id,
+      role: 'INVENTORY_MANAGER',
+      isActive: true,
+    },
+  });
+  console.log('✅ Assigned Inventory Manager to Demo Store');
+  
+  // Assign Customer Service
+  await prisma.storeStaff.create({
+    data: {
+      userId: customerService.id,
+      storeId: stores[0].id,
+      role: 'CUSTOMER_SERVICE',
+      isActive: true,
+    },
+  });
+  console.log('✅ Assigned Customer Service to Demo Store');
+  
+  // Assign Content Manager
+  await prisma.storeStaff.create({
+    data: {
+      userId: contentManager.id,
+      storeId: stores[0].id,
+      role: 'CONTENT_MANAGER',
+      isActive: true,
+    },
+  });
+  console.log('✅ Assigned Content Manager to Demo Store');
+  
+  // Assign Marketing Manager
+  await prisma.storeStaff.create({
+    data: {
+      userId: marketingManager.id,
+      storeId: stores[0].id,
+      role: 'MARKETING_MANAGER',
+      isActive: true,
+    },
+  });
+  console.log('✅ Assigned Marketing Manager to Demo Store');
+
+  // Create categories
   console.log('📂 Creating categories...');
   const categories = await Promise.all([
     prisma.category.create({
@@ -496,34 +682,46 @@ async function main() {
 
   // Create 15 customers
   console.log('👨‍👩‍👧‍👦 Creating customers...');
-  const customers = await Promise.all([
+  
+  // Registered customers (linked to user accounts)
+  const customer1Profile = await prisma.customer.create({
+    data: {
+      storeId: stores[0].id,
+      userId: customer1User.id,  // Link to user account
+      email: 'customer1@example.com',
+      firstName: 'John',
+      lastName: 'Customer',
+      phone: '+1-555-0101',
+      acceptsMarketing: true,
+      marketingOptInAt: new Date(),
+      totalOrders: 0,
+      totalSpent: 0,
+    },
+  });
+  
+  const customer2Profile = await prisma.customer.create({
+    data: {
+      storeId: stores[0].id,
+      userId: customer2User.id,  // Link to user account
+      email: 'customer2@example.com',
+      firstName: 'Jane',
+      lastName: 'Shopper',
+      phone: '+1-555-0102',
+      acceptsMarketing: false,
+      totalOrders: 0,
+      totalSpent: 0,
+    },
+  });
+  
+  // Guest customers (no user accounts)
+  const guestCustomers = await Promise.all([
     prisma.customer.create({
       data: {
         storeId: stores[0].id,
+        userId: null,  // Guest checkout
         email: 'john.doe@example.com',
         firstName: 'John',
         lastName: 'Doe',
-        phone: '+1-555-0101',
-        acceptsMarketing: true,
-        marketingOptInAt: new Date(),
-      },
-    }),
-    prisma.customer.create({
-      data: {
-        storeId: stores[0].id,
-        email: 'jane.smith@example.com',
-        firstName: 'Jane',
-        lastName: 'Smith',
-        phone: '+1-555-0102',
-        acceptsMarketing: false,
-      },
-    }),
-    prisma.customer.create({
-      data: {
-        storeId: stores[0].id,
-        email: 'bob.wilson@example.com',
-        firstName: 'Bob',
-        lastName: 'Wilson',
         phone: '+1-555-0103',
         acceptsMarketing: true,
         marketingOptInAt: new Date(),
@@ -532,132 +730,30 @@ async function main() {
     prisma.customer.create({
       data: {
         storeId: stores[0].id,
-        email: 'alice.johnson@example.com',
-        firstName: 'Alice',
-        lastName: 'Johnson',
+        userId: null,  // Guest checkout
+        email: 'jane.smith@example.com',
+        firstName: 'Jane',
+        lastName: 'Smith',
         phone: '+1-555-0104',
-        acceptsMarketing: true,
-        marketingOptInAt: new Date(),
+        acceptsMarketing: false,
       },
     }),
     prisma.customer.create({
       data: {
         storeId: stores[0].id,
-        email: 'charlie.brown@example.com',
-        firstName: 'Charlie',
-        lastName: 'Brown',
+        userId: null,  // Guest checkout
+        email: 'bob.wilson@example.com',
+        firstName: 'Bob',
+        lastName: 'Wilson',
         phone: '+1-555-0105',
-        acceptsMarketing: false,
-      },
-    }),
-    prisma.customer.create({
-      data: {
-        storeId: stores[0].id,
-        email: 'diana.prince@example.com',
-        firstName: 'Diana',
-        lastName: 'Prince',
-        phone: '+1-555-0106',
-        acceptsMarketing: true,
-        marketingOptInAt: new Date(),
-      },
-    }),
-    prisma.customer.create({
-      data: {
-        storeId: stores[0].id,
-        email: 'evan.lee@example.com',
-        firstName: 'Evan',
-        lastName: 'Lee',
-        phone: '+1-555-0107',
-        acceptsMarketing: false,
-      },
-    }),
-    prisma.customer.create({
-      data: {
-        storeId: stores[0].id,
-        email: 'fiona.green@example.com',
-        firstName: 'Fiona',
-        lastName: 'Green',
-        phone: '+1-555-0108',
-        acceptsMarketing: true,
-        marketingOptInAt: new Date(),
-      },
-    }),
-    prisma.customer.create({
-      data: {
-        storeId: stores[0].id,
-        email: 'george.martin@example.com',
-        firstName: 'George',
-        lastName: 'Martin',
-        phone: '+1-555-0109',
-        acceptsMarketing: false,
-      },
-    }),
-    prisma.customer.create({
-      data: {
-        storeId: stores[0].id,
-        email: 'hannah.miller@example.com',
-        firstName: 'Hannah',
-        lastName: 'Miller',
-        phone: '+1-555-0110',
-        acceptsMarketing: true,
-        marketingOptInAt: new Date(),
-      },
-    }),
-    prisma.customer.create({
-      data: {
-        storeId: stores[0].id,
-        email: 'isaac.newton@example.com',
-        firstName: 'Isaac',
-        lastName: 'Newton',
-        phone: '+1-555-0111',
-        acceptsMarketing: false,
-      },
-    }),
-    prisma.customer.create({
-      data: {
-        storeId: stores[0].id,
-        email: 'julia.roberts@example.com',
-        firstName: 'Julia',
-        lastName: 'Roberts',
-        phone: '+1-555-0112',
-        acceptsMarketing: true,
-        marketingOptInAt: new Date(),
-      },
-    }),
-    prisma.customer.create({
-      data: {
-        storeId: stores[0].id,
-        email: 'kevin.hart@example.com',
-        firstName: 'Kevin',
-        lastName: 'Hart',
-        phone: '+1-555-0113',
-        acceptsMarketing: false,
-      },
-    }),
-    prisma.customer.create({
-      data: {
-        storeId: stores[0].id,
-        email: 'laura.palmer@example.com',
-        firstName: 'Laura',
-        lastName: 'Palmer',
-        phone: '+1-555-0114',
-        acceptsMarketing: true,
-        marketingOptInAt: new Date(),
-      },
-    }),
-    prisma.customer.create({
-      data: {
-        storeId: stores[0].id,
-        email: 'michael.scott@example.com',
-        firstName: 'Michael',
-        lastName: 'Scott',
-        phone: '+1-555-0115',
         acceptsMarketing: true,
         marketingOptInAt: new Date(),
       },
     }),
   ]);
-  console.log(`✅ Created ${customers.length} customers`);
+  
+  const customers = [customer1Profile, customer2Profile, ...guestCustomers];
+  console.log(`✅ Created ${customers.length} customers (2 registered + 3 guests)`);
 
   // Create orders with different statuses
   console.log('🛒 Creating orders...');
@@ -1024,22 +1120,68 @@ async function main() {
 
   console.log('\n🎉 Database seeding completed successfully!');
   console.log('\n📊 Summary:');
-  console.log(`   - Users: 3`);
-  console.log(`   - Organizations: 2`);
-  console.log(`   - Stores: 2`);
-  console.log(`   - Categories: 5`);
-  console.log(`   - Brands: 4`);
+  console.log(`   - Users: 10 (1 Owner + 1 Super Admin + 6 Staff + 2 Customers)`);
+  console.log(`   - Organizations: ${organizations.length}`);
+  console.log(`   - Stores: ${stores.length} (ID: ${stores[0].id})`);
+  console.log(`   - Store Staff Assignments: 6`);
+  console.log(`   - Categories: 3`);
+  console.log(`   - Brands: 3`);
   console.log(`   - Products: ${products.length}`);
-  console.log(`   - Customers: ${customers.length}`);
+  console.log(`   - Customers: ${customers.length} (2 registered + 3 guests)`);
   console.log(`   - Orders: ${orders.length}`);
   console.log(`   - Reviews: ${reviews.length}`);
   console.log('\n🔑 Test Credentials:');
+  console.log(`\n   🏢 Organization Owner:`);
   console.log(`   Email: test@example.com`);
   console.log(`   Password: Test123!@#`);
-  console.log(`   Seller Email: seller@example.com`);
-  console.log(`   Buyer Email: buyer@example.com`);
-  console.log(`   Store ID: ${stores[0].id}`);
-  console.log(`   Second Store ID: ${stores[1].id}`);
+  console.log(`   Role: OWNER`);
+  console.log(`   Access: Full organization control`);
+  console.log(`\n   👑 Super Admin (Platform):`);
+  console.log(`   Email: superadmin@example.com`);
+  console.log(`   Password: SuperAdmin123!@#`);
+  console.log(`   Role: SUPER_ADMIN`);
+  console.log(`   Access: ALL (Platform-wide)`);
+  console.log(`\n   🏪 Store Admin:`);
+  console.log(`   Email: storeadmin@example.com`);
+  console.log(`   Password: StoreAdmin123!@#`);
+  console.log(`   Role: STORE_ADMIN`);
+  console.log(`   Access: Full store control`);
+  console.log(`\n   💼 Sales Manager:`);
+  console.log(`   Email: sales@example.com`);
+  console.log(`   Password: Sales123!@#`);
+  console.log(`   Role: SALES_MANAGER`);
+  console.log(`   Access: Orders, customers, sales reports`);
+  console.log(`\n   📦 Inventory Manager:`);
+  console.log(`   Email: inventory@example.com`);
+  console.log(`   Password: Inventory123!@#`);
+  console.log(`   Role: INVENTORY_MANAGER`);
+  console.log(`   Access: Products, inventory, stock management`);
+  console.log(`\n   🎧 Customer Service:`);
+  console.log(`   Email: support@example.com`);
+  console.log(`   Password: Support123!@#`);
+  console.log(`   Role: CUSTOMER_SERVICE`);
+  console.log(`   Access: Customers, support tickets, orders (view)`);
+  console.log(`\n   ✍️  Content Manager:`);
+  console.log(`   Email: content@example.com`);
+  console.log(`   Password: Content123!@#`);
+  console.log(`   Role: CONTENT_MANAGER`);
+  console.log(`   Access: Product content, categories, descriptions`);
+  console.log(`\n   📢 Marketing Manager:`);
+  console.log(`   Email: marketing@example.com`);
+  console.log(`   Password: Marketing123!@#`);
+  console.log(`   Role: MARKETING_MANAGER`);
+  console.log(`   Access: Campaigns, analytics, customer insights`);
+  console.log(`\n   🛍️  Customer (Registered #1):`);
+  console.log(`   Email: customer1@example.com`);
+  console.log(`   Password: Customer123!@#`);
+  console.log(`   Role: CUSTOMER`);
+  console.log(`   Access: Browse, order, manage profile, track orders`);
+  console.log(`\n   🛍️  Customer (Registered #2):`);
+  console.log(`   Email: customer2@example.com`);
+  console.log(`   Password: Customer123!@#`);
+  console.log(`   Role: CUSTOMER`);
+  console.log(`   Access: Browse, order, manage profile, track orders`);
+  console.log(`\n   Store ID: ${stores[0].id}`);
 }
 
 main()

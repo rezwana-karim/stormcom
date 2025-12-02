@@ -21,15 +21,17 @@ interface TopProduct {
 }
 
 interface TopProductsTableProps {
-  timeRange: string;
   storeId: string;
+  timeRange: string;
 }
 
-export function TopProductsTable({ timeRange, storeId }: TopProductsTableProps) {
+export function TopProductsTable({ storeId, timeRange }: TopProductsTableProps) {
   const [products, setProducts] = useState<TopProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!storeId) return;
+    
     const fetchData = async () => {
       if (!storeId) {
         setLoading(false);
@@ -52,7 +54,7 @@ export function TopProductsTable({ timeRange, storeId }: TopProductsTableProps) 
     };
 
     fetchData();
-  }, [timeRange, storeId]);
+  }, [storeId, timeRange]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {

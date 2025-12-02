@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import { checkPermission } from '@/lib/auth-helpers';
 import { CategoryService } from '@/lib/services/category.service';
 import { getCurrentStoreId } from '@/lib/get-current-user';
 import { z } from 'zod';
@@ -11,6 +12,15 @@ import { z } from 'zod';
 // GET /api/categories - List categories
 export async function GET(request: NextRequest) {
   try {
+    // Check permission for reading categories
+    const hasPermission = await checkPermission('categories:read');
+    if (!hasPermission) {
+      return NextResponse.json(
+        { error: 'Access denied. You do not have permission to view categories.' },
+        { status: 403 }
+      );
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -52,6 +62,15 @@ export async function GET(request: NextRequest) {
 // POST /api/categories - Create category
 export async function POST(request: NextRequest) {
   try {
+    // Check permission for creating categories
+    const hasPermission = await checkPermission('categories:create');
+    if (!hasPermission) {
+      return NextResponse.json(
+        { error: 'Access denied. You do not have permission to create categories.' },
+        { status: 403 }
+      );
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

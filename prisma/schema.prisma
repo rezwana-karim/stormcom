@@ -34,19 +34,59 @@ model User {
   emailVerified DateTime?
   image         String?
   passwordHash  String?  // For email/password authentication
+  isSuperAdmin  Boolean  @default(false) // Platform-level administrator
+
+  // Account status for approval workflow
+  accountStatus     AccountStatus @default(PENDING)
+  statusChangedAt   DateTime?
+  statusChangedBy   String?       // SuperAdmin userId who changed status
+  rejectionReason   String?
+  
+  // Store request information (filled during registration)
+  businessName        String?
+  businessDescription String?
+  businessCategory    String?
+  phoneNumber         String?
+  
+  // Approval tracking
+  approvedAt        DateTime?
+  approvedBy        String?       // SuperAdmin userId who approved
 
   // Multi-tenancy relations
   memberships   Membership[]
   projectMembers ProjectMember[]
+  storeStaff    StoreStaff[] // Store-level role assignments
   customer      Customer?     // E-commerce customer profile
   inventoryLogs InventoryLog[] @relation("InventoryUserLogs")
   auditLogs     AuditLog[]     @relation("AuditUserLogs")
+  notifications Notification[] @relation("UserNotifications")
+  
+  // Platform activity relations
+  activitiesPerformed PlatformActivity[] @relation("PlatformActivityActor")
+  activitiesReceived  PlatformActivity[] @relation("PlatformActivityTarget")
+  
+  // Store request relations
+  storeRequests       StoreRequest[]     @relation("UserStoreRequests")
+  reviewedStoreRequests StoreRequest[]   @relation("StoreRequestReviewer")
+  
+  // Custom role request relations
+  customRoleRequests        CustomRoleRequest[]  @relation("UserCustomRoleRequests")
+  reviewedCustomRoleRequests CustomRoleRequest[] @relation("CustomRoleRequestReviewer")
 
   accounts      Account[]
   sessions      Session[]
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+// Account status for user approval workflow
+enum AccountStatus {
+  PENDING     // Awaiting Super Admin review
+  APPROVED    // Can have store created
+  REJECTED    // Application denied
+  SUSPENDED   // Temporarily disabled
+  DELETED     // Soft deleted
 }
 
 model Account {
@@ -116,10 +156,26 @@ model Membership {
 }
 
 enum Role {
+  // Platform level
+  SUPER_ADMIN
+  
+  // Organization level
   OWNER
   ADMIN
   MEMBER
   VIEWER
+  
+  // Store level
+  STORE_ADMIN
+  SALES_MANAGER
+  INVENTORY_MANAGER
+  CUSTOMER_SERVICE
+  CONTENT_MANAGER
+  MARKETING_MANAGER
+  DELIVERY_BOY
+  
+  // Customer level
+  CUSTOMER
 }
 
 // Project management models
@@ -272,6 +328,15 @@ model Store {
   attributes     ProductAttribute[]
   auditLogs      AuditLog[]
   inventoryLogs  InventoryLog[] @relation("StoreInventoryLogs")
+  staff          StoreStaff[] // Store staff assignments
+  
+  // Custom role management
+  customRoles        CustomRole[]
+  customRoleRequests CustomRoleRequest[]
+  
+  // Platform management
+  platformActivities PlatformActivity[]
+  createdFromRequest StoreRequest? @relation("CreatedFromRequest")
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -280,6 +345,124 @@ model Store {
   @@index([slug])
   @@index([subscriptionPlan])
   @@index([subscriptionStatus])
+}
+
+// Store staff role assignments (store-level permissions)
+model StoreStaff {
+  id        String   @id @default(cuid())
+  userId    String
+  storeId   String
+  role      Role?    // Predefined role (null if using custom role)
+  customRoleId String? // Custom role reference (null if using predefined role)
+  isActive  Boolean  @default(true)
+  
+  // Invitation tracking
+  invitedBy String?
+  invitedAt DateTime @default(now())
+  acceptedAt DateTime?
+  
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customRole CustomRole? @relation(fields: [customRoleId], references: [id], onDelete: SetNull)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, storeId])
+  @@index([storeId, isActive])
+  @@index([userId, isActive])
+  @@index([storeId, role])
+  @@index([customRoleId])
+}
+
+// ============================================================================
+// CUSTOM ROLE SYSTEM
+// ============================================================================
+
+// Request status for approval workflows
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  INFO_REQUESTED
+}
+
+// Custom role request (submitted by store owner, approved by super admin)
+model CustomRoleRequest {
+  id          String   @id @default(cuid())
+  
+  // Requester
+  userId      String
+  user        User     @relation("UserCustomRoleRequests", fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Store this role is for
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  // Role details
+  roleName    String
+  roleDescription String?
+  permissions String   // JSON array of permission strings
+  justification String? // Why this role is needed
+  
+  // Request status
+  status      RequestStatus @default(PENDING)
+  
+  // Admin response
+  reviewedBy  String?
+  reviewer    User?    @relation("CustomRoleRequestReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
+  reviewedAt  DateTime?
+  rejectionReason String?
+  adminNotes  String?
+  modifiedPermissions String? // JSON array if admin modified permissions
+  
+  // Created role (after approval)
+  customRoleId String?  @unique
+  customRole   CustomRole? @relation(fields: [customRoleId], references: [id], onDelete: SetNull)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([userId, status])
+  @@index([storeId, status])
+  @@index([status, createdAt])
+  @@index([reviewedBy])
+  @@map("custom_role_requests")
+}
+
+// Custom role (created when request is approved)
+model CustomRole {
+  id          String   @id @default(cuid())
+  
+  // Store this role belongs to
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  // Role details
+  name        String
+  description String?
+  permissions String   // JSON array of permission strings
+  
+  // Status
+  isActive    Boolean  @default(true)
+  
+  // Approval info
+  approvedBy  String?
+  approvedAt  DateTime?
+  
+  // Source request
+  request     CustomRoleRequest?
+  
+  // Staff assigned to this role
+  staffAssignments StoreStaff[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([storeId, name])
+  @@index([storeId, isActive])
+  @@map("custom_roles")
 }
 
 // Product models
@@ -662,17 +845,187 @@ model AuditLog {
   entityType String  // e.g., "Product", "Order", "User"
   entityId  String
   
-  // Change tracking
-  changes   String?  // JSON { "field": { "old": "value", "new": "value" } }
+  // Permission tracking
+  permission String?  // Permission being checked (e.g., "products:create")
+  role       String?  // User's role at time of action
+  allowed    Int?     // Permission check result (1 = allowed, 0 = denied)
   
   // Request metadata
-  ipAddress String?
-  userAgent String?
+  endpoint   String?  // API endpoint called
+  method     String?  // HTTP method (GET, POST, etc.)
+  ipAddress  String?
+  userAgent  String?
+  
+  // Change tracking
+  changes   String?  // JSON { "field": { "old": "value", "new": "value" } }
 
   createdAt DateTime @default(now())
 
   @@index([storeId, createdAt])
   @@index([userId, createdAt])
   @@index([entityType, entityId, createdAt])
+  @@index([permission, allowed, createdAt])
+  @@index([userId, action, createdAt])
   @@map("audit_logs")
+}
+
+// Rate limiting tracking
+model RateLimit {
+  id         String   @id @default(cuid())
+  identifier String   // userId or IP address
+  endpoint   String   // API endpoint pattern
+  role       String?  // User's role (for role-based limits)
+  
+  // Counters
+  requestCount Int     @default(1)
+  windowStart  DateTime @default(now())
+  
+  // Metadata
+  lastRequest  DateTime @default(now())
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([identifier, endpoint, windowStart])
+  @@index([identifier, endpoint, windowStart])
+  @@index([windowStart])
+  @@map("rate_limits")
+}
+
+// ============================================================================
+// NOTIFICATION & PLATFORM MANAGEMENT MODELS
+// ============================================================================
+
+// Notification types enum
+enum NotificationType {
+  ACCOUNT_PENDING        // Account awaiting approval
+  ACCOUNT_APPROVED       // Account approved by admin
+  ACCOUNT_REJECTED       // Account rejected by admin
+  ACCOUNT_SUSPENDED      // Account suspended
+  STORE_CREATED          // Store created for user
+  STORE_ASSIGNED         // User assigned to store
+  STORE_REQUEST_PENDING  // Admin notification: new store request
+  STORE_REQUEST_APPROVED // Store request approved
+  STORE_REQUEST_REJECTED // Store request rejected
+  PASSWORD_RESET         // Password reset requested
+  SECURITY_ALERT         // Security-related notification
+  SYSTEM_ANNOUNCEMENT    // Platform-wide announcement
+  NEW_USER_REGISTERED    // Admin notification: new user signup
+  STORE_REQUEST          // Admin notification: store request
+  
+  // Custom Role Request notifications
+  ROLE_REQUEST_PENDING   // Admin notification: new role request
+  ROLE_REQUEST_APPROVED  // Role request approved
+  ROLE_REQUEST_REJECTED  // Role request rejected
+  ROLE_REQUEST_MODIFIED  // Role approved with modifications
+  
+  // Staff notifications
+  STAFF_INVITED          // Staff member invited
+  STAFF_ROLE_CHANGED     // Staff role changed
+  STAFF_ROLE_UPDATED     // Staff role updated (alias for role changed)
+  STAFF_DEACTIVATED      // Staff member deactivated
+  STAFF_REMOVED          // Staff member removed from store
+  STAFF_JOINED           // Staff member accepted invitation
+  STAFF_DECLINED         // Staff member declined invitation
+}
+
+// User notifications
+model Notification {
+  id        String           @id @default(cuid())
+  
+  userId    String
+  user      User             @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  
+  type      NotificationType
+  title     String
+  message   String
+  data      String?          // JSON data for additional context
+  
+  read      Boolean          @default(false)
+  readAt    DateTime?
+  
+  // Action tracking
+  actionUrl   String?        // URL to navigate when clicked
+  actionLabel String?        // Button label for action
+  
+  createdAt DateTime         @default(now())
+  
+  @@index([userId, read, createdAt])
+  @@index([userId, type, createdAt])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// Platform activity log (Super Admin monitoring)
+model PlatformActivity {
+  id          String   @id @default(cuid())
+  
+  actorId     String?  // User who performed the action (null for system)
+  actor       User?    @relation("PlatformActivityActor", fields: [actorId], references: [id], onDelete: SetNull)
+  
+  targetUserId String? // User affected by the action
+  targetUser   User?   @relation("PlatformActivityTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+  
+  storeId     String?  // Store involved (if any)
+  store       Store?   @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  
+  action      String   // e.g., "USER_REGISTERED", "USER_APPROVED", "STORE_CREATED"
+  entityType  String   // e.g., "User", "Store", "StoreUser"
+  entityId    String?
+  
+  description String   // Human-readable description
+  metadata    String?  // JSON additional data
+  
+  ipAddress   String?
+  userAgent   String?
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([actorId, createdAt])
+  @@index([targetUserId, createdAt])
+  @@index([storeId, createdAt])
+  @@index([action, createdAt])
+  @@index([createdAt])
+  @@map("platform_activities")
+}
+
+// Store creation requests (user-initiated)
+model StoreRequest {
+  id            String   @id @default(cuid())
+  
+  userId        String
+  user          User     @relation("UserStoreRequests", fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Requested store details
+  storeName     String
+  storeSlug     String?
+  storeDescription String?
+  
+  // Business information
+  businessName    String?
+  businessCategory String?
+  businessAddress String?
+  businessPhone   String?
+  businessEmail   String?
+  
+  // Request status
+  status        String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  
+  // Admin response
+  reviewedBy    String?
+  reviewer      User?    @relation("StoreRequestReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
+  reviewedAt    DateTime?
+  rejectionReason String?
+  
+  // If approved, link to created store
+  createdStoreId String?  @unique
+  createdStore   Store?   @relation("CreatedFromRequest", fields: [createdStoreId], references: [id], onDelete: SetNull)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([userId, status])
+  @@index([status, createdAt])
+  @@index([reviewedBy])
+  @@map("store_requests")
 }
