@@ -3,10 +3,11 @@
  * 
  * This module provides helper functions to check user permissions
  * and roles in both client and server contexts.
+ * 
+ * Uses cached session to avoid redundant lookups within the same request.
  */
 
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getCachedSession } from '@/lib/cached-session';
 import { prisma } from '@/lib/prisma';
 import { Role } from '@prisma/client';
 import {
@@ -39,7 +40,7 @@ export interface UserContext {
  * This should be called in server components and API routes
  */
 export async function getUserContext(): Promise<UserContext | null> {
-  const session = await getServerSession(authOptions);
+  const session = await getCachedSession();
   
   if (!session?.user?.id) {
     return null;

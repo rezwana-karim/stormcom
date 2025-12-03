@@ -1,12 +1,13 @@
 /**
  * Multi-Tenancy Utilities
  * Helper functions for organization and membership management
+ * 
+ * Uses cached session to avoid redundant lookups within the same request.
  */
 
 import { Role } from "@prisma/client";
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getCachedSession } from "@/lib/cached-session";
 import prisma from "@/lib/prisma";
 
 export interface OrganizationWithMemberships {
@@ -24,7 +25,7 @@ export interface OrganizationWithMemberships {
  * Get current user's session or redirect to login
  */
 export async function requireAuth() {
-  const session = await getServerSession(authOptions);
+  const session = await getCachedSession();
   if (!session?.user) {
     redirect("/login");
   }
