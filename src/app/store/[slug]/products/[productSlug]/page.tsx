@@ -316,10 +316,9 @@ export default async function StoreProductPage({ params }: StoreProductPageProps
             <TabsContent value="description" className="mt-6">
               <div className="prose prose-sm max-w-none dark:prose-invert">
                 {product.description ? (
-                  <div
-                    className="text-muted-foreground leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: product.description }}
-                  />
+                  <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                    {product.description}
+                  </p>
                 ) : (
                   <p className="text-muted-foreground">
                     No description available for this product.

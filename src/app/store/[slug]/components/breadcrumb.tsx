@@ -24,9 +24,10 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
     >
       {items.map((item, index) => {
         const isLast = index === items.length - 1;
+        const itemKey = item.href || `breadcrumb-${item.label}-${index}`;
 
         return (
-          <div key={index} className="flex items-center space-x-2">
+          <div key={itemKey} className="flex items-center space-x-2">
             {index > 0 && (
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             )}
@@ -45,6 +46,7 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
                     ? "text-foreground font-medium"
                     : "text-muted-foreground"
                 )}
+                aria-current={isLast ? "page" : undefined}
               >
                 {item.label}
               </span>

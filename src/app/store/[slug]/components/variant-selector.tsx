@@ -32,6 +32,11 @@ export function VariantSelector({
   onVariantChange,
   className,
 }: VariantSelectorProps) {
+  // Early return if no variants
+  if (variants.length === 0) {
+    return null;
+  }
+
   const defaultVariant = variants.find((v) => v.isDefault) || variants[0];
   const [selectedVariant, setSelectedVariant] = useState(defaultVariant);
 

@@ -11,6 +11,55 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+/**
+ * Generate pagination page numbers with ellipsis
+ */
+function generatePaginationPages(currentPage: number, totalPages: number): (number | string)[] {
+  const windowSize = 5;
+  const pages: (number | string)[] = [];
+  
+  if (totalPages <= windowSize + 2) {
+    // Show all pages if total is small
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(i);
+    }
+  } else {
+    const halfWindow = Math.floor(windowSize / 2);
+    let start = Math.max(2, currentPage - halfWindow);
+    let end = Math.min(totalPages - 1, start + windowSize - 1);
+    
+    // Adjust start if we're near the end
+    if (end - start + 1 < windowSize) {
+      start = Math.max(2, end - windowSize + 1);
+    }
+    
+    // Always show first page
+    pages.push(1);
+    
+    // Add ellipsis if needed
+    if (start > 2) {
+      pages.push("...");
+    }
+    
+    // Add middle pages
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    
+    // Add ellipsis if needed
+    if (end < totalPages - 1) {
+      pages.push("...");
+    }
+    
+    // Always show last page
+    if (totalPages > 1) {
+      pages.push(totalPages);
+    }
+  }
+  
+  return pages;
+}
+
 interface StoreProductsPageProps {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -305,79 +354,27 @@ export default async function StoreProductsPage({
 
                 {/* Page Numbers */}
                 <div className="flex gap-1">
-                  {(() => {
-                    const windowSize = 5;
-                    const halfWindow = Math.floor(windowSize / 2);
-                    let start = Math.max(1, page - halfWindow);
-                    const end = Math.min(totalPages, start + windowSize - 1);
+                  {generatePaginationPages(page, totalPages).map((pageNum, idx) => {
+                    if (pageNum === "...") {
+                      return (
+                        <span key={`ellipsis-${idx}`} className="px-2 py-1 text-muted-foreground">
+                          ...
+                        </span>
+                      );
+                    }
                     
-                    if (end - start + 1 < windowSize) {
-                      start = Math.max(1, end - windowSize + 1);
-                    }
-
-                    const pages = [];
-                    
-                    // First page
-                    if (start > 1) {
-                      pages.push(
-                        <Link key={1} href={buildFilterUrl({ page: "1" })}>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="min-w-[2.5rem]"
-                          >
-                            1
-                          </Button>
-                        </Link>
-                      );
-                      if (start > 2) {
-                        pages.push(
-                          <span key="ellipsis-start" className="px-2">
-                            ...
-                          </span>
-                        );
-                      }
-                    }
-
-                    // Page window
-                    for (let i = start; i <= end; i++) {
-                      pages.push(
-                        <Link key={i} href={buildFilterUrl({ page: String(i) })}>
-                          <Button
-                            variant={page === i ? "default" : "outline"}
-                            size="sm"
-                            className="min-w-[2.5rem]"
-                          >
-                            {i}
-                          </Button>
-                        </Link>
-                      );
-                    }
-
-                    // Last page
-                    if (end < totalPages) {
-                      if (end < totalPages - 1) {
-                        pages.push(
-                          <span key="ellipsis-end" className="px-2">
-                            ...
-                          </span>
-                        );
-                      }
-                      pages.push(
-                        <Link key={totalPages} href={buildFilterUrl({ page: String(totalPages) })}>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="min-w-[2.5rem]"
-                          >
-                            {totalPages}
-                          </Button>
-                        </Link>
-                      );
-                    }
-
-                    return pages;
-                  })()}
+                    return (
+                      <Link key={pageNum} href={buildFilterUrl({ page: String(pageNum) })}>
+                        <Button
+                          variant={page === pageNum ? "default" : "outline"}
+                          size="sm"
+                          className="min-w-[2.5rem]"
+                        >
+                          {pageNum}
+                        </Button>
+                      </Link>
+                    );
+                  })}
                 </div>
 
                 {page < totalPages && (
