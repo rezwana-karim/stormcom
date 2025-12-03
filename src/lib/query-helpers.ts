@@ -82,6 +82,8 @@ export const getOrganizationById = cache(async (orgId: string) => {
 /**
  * Check if user has access to store
  * Returns true if user is super admin, store staff, or member of owning organization
+ * 
+ * Optimized with parallel queries for better performance
  */
 export const checkStoreAccess = cache(async (storeId: string, userId?: string) => {
   const currentUserId = userId ?? await getCachedUserId();
@@ -90,42 +92,35 @@ export const checkStoreAccess = cache(async (storeId: string, userId?: string) =
     return false;
   }
 
-  // Check if user is super admin
-  const user = await prisma.user.findUnique({
-    where: { id: currentUserId },
-    select: { isSuperAdmin: true },
-  });
-
-  if (user?.isSuperAdmin) {
-    return true;
-  }
-
-  // Check if user is store staff
-  const storeStaff = await prisma.storeStaff.findFirst({
-    where: {
-      userId: currentUserId,
-      storeId,
-      isActive: true,
-    },
-  });
-
-  if (storeStaff) {
-    return true;
-  }
-
-  // Check if user is member of organization that owns this store
-  const membership = await prisma.membership.findFirst({
-    where: {
-      userId: currentUserId,
-      organization: {
-        store: {
-          id: storeId,
+  // Run all checks in parallel for better performance
+  const [user, storeStaff, membership] = await Promise.all([
+    // Check if user is super admin
+    prisma.user.findUnique({
+      where: { id: currentUserId },
+      select: { isSuperAdmin: true },
+    }),
+    // Check if user is store staff
+    prisma.storeStaff.findFirst({
+      where: {
+        userId: currentUserId,
+        storeId,
+        isActive: true,
+      },
+    }),
+    // Check if user is member of organization that owns this store
+    prisma.membership.findFirst({
+      where: {
+        userId: currentUserId,
+        organization: {
+          store: {
+            id: storeId,
+          },
         },
       },
-    },
-  });
+    }),
+  ]);
 
-  return membership !== null;
+  return user?.isSuperAdmin || !!storeStaff || !!membership;
 });
 
 /**

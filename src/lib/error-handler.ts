@@ -148,7 +148,7 @@ export function handleActionError(error: unknown): {
   if (error instanceof ZodError) {
     return {
       success: false,
-      error: error.issues.map((e: any) => e.message).join(', '),
+      error: error.issues.map((e) => e.message).join(', '),
       code: 'VALIDATION_ERROR',
     };
   }
