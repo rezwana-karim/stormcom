@@ -1,11 +1,15 @@
 import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
-import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import Link from "next/link";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Folder } from "lucide-react";
 
-interface StoreCategoriesPageProps {
+interface CategoriesPageProps {
   params: Promise<{ slug: string }>;
 }
 
@@ -13,44 +17,26 @@ export const metadata: Metadata = {
   title: "Categories",
 };
 
-/**
- * Store categories listing page
- * Displays all published categories for a store
- */
-export default async function StoreCategoriesPage({
-  params,
-}: StoreCategoriesPageProps) {
+export default async function CategoriesPage({ params }: CategoriesPageProps) {
   const { slug } = await params;
-
-  // Get store ID from headers (set by proxy) or lookup by slug
   const headersList = await headers();
   const storeId = headersList.get("x-store-id");
 
-  // Get store
   const store = await prisma.store.findFirst({
-    where: storeId
-      ? { id: storeId, deletedAt: null }
-      : { slug, deletedAt: null },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-    },
+    where: storeId ? { id: storeId, deletedAt: null } : { slug, deletedAt: null },
+    select: { id: true, name: true, slug: true },
   });
 
-  if (!store) {
-    notFound();
-  }
+  if (!store) notFound();
 
-  // Fetch all published categories with product counts
   const categories = await prisma.category.findMany({
     where: {
       storeId: store.id,
       isPublished: true,
       deletedAt: null,
-      parentId: null, // Top-level categories only
+      parentId: null,
     },
-    orderBy: { sortOrder: "asc" },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     select: {
       id: true,
       name: true,
@@ -59,138 +45,61 @@ export default async function StoreCategoriesPage({
       image: true,
       _count: {
         select: {
-          products: {
-            where: {
-              status: "ACTIVE",
-              deletedAt: null,
-            },
-          },
-        },
-      },
-      children: {
-        where: {
-          isPublished: true,
-          deletedAt: null,
-        },
-        orderBy: { sortOrder: "asc" },
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          image: true,
-          _count: {
-            select: {
-              products: {
-                where: {
-                  status: "ACTIVE",
-                  deletedAt: null,
-                },
-              },
-            },
-          },
+          products: { where: { status: "ACTIVE", deletedAt: null } },
+          children: true,
         },
       },
     },
   });
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Categories</h1>
-        <p className="text-muted-foreground">
-          Browse our collection by category
-        </p>
-      </div>
-
-      {categories.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
-          <p>No categories available yet. Check back soon!</p>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold mb-2">Shop by Category</h1>
+          <p className="text-muted-foreground">Explore our curated collections</p>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {categories.map((category) => (
-            <div key={category.id} className="space-y-4">
-              {/* Main Category Card */}
-              <Link
-                href={`/store/${store.slug}/categories/${category.slug}`}
-                className="group block rounded-lg border overflow-hidden hover:border-primary transition-colors"
-              >
-                {category.image ? (
-                  <div className="aspect-2/1 bg-muted relative overflow-hidden">
-                    <Image
-                      src={category.image}
-                      alt={category.name}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform"
-                      unoptimized
-                    />
-                    <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-4">
-                      <h2 className="text-white text-xl font-semibold">
-                        {category.name}
-                      </h2>
-                      <p className="text-white/80 text-sm">
-                        {category._count.products} product
-                        {category._count.products !== 1 ? "s" : ""}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="aspect-2/1 bg-muted flex items-center justify-center relative">
-                    <span className="text-6xl">📦</span>
-                    <div className="absolute bottom-0 left-0 right-0 p-4 bg-linear-to-t from-black/60 to-transparent">
-                      <h2 className="text-white text-xl font-semibold">
-                        {category.name}
-                      </h2>
-                      <p className="text-white/80 text-sm">
-                        {category._count.products} product
-                        {category._count.products !== 1 ? "s" : ""}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </Link>
 
-              {/* Subcategories */}
-              {category.children.length > 0 && (
-                <div className="pl-4 space-y-2">
-                  {category.children.map((child) => (
-                    <Link
-                      key={child.id}
-                      href={`/store/${store.slug}/categories/${child.slug}`}
-                      className="flex items-center gap-3 p-2 rounded-md hover:bg-accent transition-colors"
-                    >
-                      {child.image ? (
-                        <div className="w-10 h-10 rounded overflow-hidden shrink-0">
-                          <Image
-                            src={child.image}
-                            alt={child.name}
-                            width={40}
-                            height={40}
-                            className="w-full h-full object-cover"
-                            unoptimized
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-10 h-10 rounded bg-muted flex items-center justify-center shrink-0">
-                          <span className="text-lg">📁</span>
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{child.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {child._count.products} product
-                          {child._count.products !== 1 ? "s" : ""}
-                        </p>
+        {categories.length === 0 ? (
+          <Card className="border-2 border-dashed">
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              <Folder className="h-16 w-16 text-muted-foreground mb-4" />
+              <h3 className="text-xl font-semibold mb-2">No Categories Yet</h3>
+              <Button asChild>
+                <Link href={`/store/${store.slug}/products`}>Browse All Products</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {categories.map((category) => (
+              <Link key={category.id} href={`/store/${store.slug}/categories/${category.slug}`} className="group">
+                <Card className="h-full overflow-hidden border-2 border-transparent hover:border-primary transition-all duration-300 hover:shadow-xl">
+                  <div className="relative aspect-[4/3] bg-gradient-to-br from-muted to-muted/50 overflow-hidden">
+                    {category.image ? (
+                      <Image src={category.image} alt={category.name} fill className="object-cover group-hover:scale-110 transition-transform duration-500" unoptimized sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Folder className="h-16 w-16 text-muted-foreground/30" />
                       </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                    <div className="absolute top-3 right-3">
+                      <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm">
+                        {category._count.products} {category._count.products === 1 ? 'product' : 'products'}
+                      </Badge>
+                    </div>
+                  </div>
+                  <CardContent className="p-5">
+                    <h3 className="font-bold text-lg mb-2 group-hover:text-primary transition-colors line-clamp-1">{category.name}</h3>
+                    {category.description && <p className="text-sm text-muted-foreground line-clamp-2">{category.description}</p>}
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
