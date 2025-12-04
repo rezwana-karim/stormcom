@@ -64,7 +64,7 @@ export function ProductCard({ product, storeSlug, className }: ProductCardProps)
                 sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+              <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-muted to-muted/50">
                 <span className="text-6xl opacity-30">🛍️</span>
               </div>
             )}
@@ -94,7 +94,7 @@ export function ProductCard({ product, storeSlug, className }: ProductCardProps)
             )}
 
             {/* Product Name */}
-            <h3 className="font-semibold line-clamp-2 group-hover:text-primary transition-colors min-h-[2.5rem]">
+            <h3 className="font-semibold line-clamp-2 group-hover:text-primary transition-colors min-h-10">
               {product.name}
             </h3>
 

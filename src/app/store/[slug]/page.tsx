@@ -100,8 +100,8 @@ export default async function StoreHomePage({ params }: StoreHomePageProps) {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-hidden">
-        <div className="absolute inset-0 bg-grid-slate-900/[0.04] bg-[size:40px_40px]" />
+      <section className="relative bg-linear-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-hidden">
+        <div className="absolute inset-0 bg-grid-slate-900/[0.04] bg-size-[40px_40px]" />
         <div className="relative container mx-auto px-4 py-20 sm:py-28 lg:py-32">
           <div className="max-w-3xl mx-auto text-center space-y-8">
             <Badge variant="secondary" className="text-sm">
@@ -110,7 +110,7 @@ export default async function StoreHomePage({ params }: StoreHomePageProps) {
             
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight">
               Discover Amazing
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 {" "}Products{" "}
               </span>
               Today
@@ -200,11 +200,11 @@ export default async function StoreHomePage({ params }: StoreHomePageProps) {
                     />
                   </div>
                 ) : (
-                  <div className="aspect-square bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
+                  <div className="aspect-square bg-linear-to-br from-muted to-muted/50 flex items-center justify-center">
                     <span className="text-5xl opacity-30">📦</span>
                   </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-4">
                   <h3 className="text-white font-bold text-lg mb-1">
                     {category.name}

@@ -230,7 +230,7 @@ export default async function StoreProductsPage({
 
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Filters Sidebar - Desktop */}
-          <div className="hidden lg:block lg:w-72 flex-shrink-0">
+          <div className="hidden lg:block lg:w-72 shrink-0">
             <div className="sticky top-24">
               <ProductFilters
                 categories={categories}
@@ -368,7 +368,7 @@ export default async function StoreProductsPage({
                         <Button
                           variant={page === pageNum ? "default" : "outline"}
                           size="sm"
-                          className="min-w-[2.5rem]"
+                          className="min-w-10"
                         >
                           {pageNum}
                         </Button>

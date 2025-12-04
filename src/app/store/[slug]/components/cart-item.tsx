@@ -54,7 +54,7 @@ export function CartItemComponent({
       {/* Product Image */}
       <Link
         href={`/store/${storeSlug}/products/${item.productSlug}`}
-        className="flex-shrink-0"
+        className="shrink-0"
       >
         <div className="relative w-20 h-20 sm:w-24 sm:h-24 bg-muted rounded-md overflow-hidden">
           {item.thumbnailUrl ? (
@@ -67,7 +67,7 @@ export function CartItemComponent({
               sizes="96px"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+            <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-muted to-muted/50">
               <span className="text-2xl opacity-30">🛍️</span>
             </div>
           )}
@@ -106,7 +106,7 @@ export function CartItemComponent({
               <Minus className="h-3 w-3" />
             </Button>
 
-            <div className="px-3 py-1 min-w-[2.5rem] text-center text-sm font-medium">
+            <div className="px-3 py-1 min-w-10 text-center text-sm font-medium">
               {item.quantity}
             </div>
 
@@ -145,7 +145,7 @@ export function CartItemComponent({
             <Minus className="h-4 w-4" />
           </Button>
 
-          <div className="px-4 py-2 min-w-[3rem] text-center font-medium">
+          <div className="px-4 py-2 min-w-12 text-center font-medium">
             {item.quantity}
           </div>
 
@@ -160,7 +160,7 @@ export function CartItemComponent({
         </div>
 
         {/* Item Total */}
-        <div className="text-right min-w-[5rem]">
+        <div className="text-right min-w-20">
           <p className="font-bold">${itemTotal.toFixed(2)}</p>
         </div>
 

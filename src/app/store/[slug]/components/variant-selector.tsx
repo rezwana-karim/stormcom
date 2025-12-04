@@ -109,7 +109,7 @@ export function VariantSelector({
                   disabled={isOutOfStock}
                   onClick={() => handleVariantSelect(matchingVariant)}
                   className={cn(
-                    "min-w-[3rem]",
+                    "min-w-12",
                     isOutOfStock && "opacity-50 cursor-not-allowed line-through"
                   )}
                 >

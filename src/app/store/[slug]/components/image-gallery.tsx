@@ -38,7 +38,7 @@ export function ImageGallery({
   if (images.length === 0) {
     return (
       <div className={cn("space-y-4", className)}>
-        <div className="aspect-square bg-gradient-to-br from-muted to-muted/50 rounded-lg flex items-center justify-center">
+        <div className="aspect-square bg-linear-to-br from-muted to-muted/50 rounded-lg flex items-center justify-center">
           <span className="text-8xl opacity-30">🛍️</span>
         </div>
       </div>
