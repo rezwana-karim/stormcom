@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { OrderStatus, PaymentStatus } from '@prisma/client';
 import { InventoryService } from '@/lib/services/inventory.service';
 import { sendOrderConfirmationEmail } from '@/lib/email-service';
+import { randomBytes } from 'crypto';
 
 // ============================================================================
 // VALIDATION SCHEMAS
@@ -57,11 +58,11 @@ function generateOrderNumber(): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
-  const random = Math.floor(Math.random() * 10000)
-    .toString()
-    .padStart(4, '0');
+  // Use crypto.randomBytes for cryptographically secure random numbers
+  const random = randomBytes(2).readUInt16BE(0) % 10000;
+  const randomStr = random.toString().padStart(4, '0');
 
-  return `ORD-${year}${month}${day}-${random}`;
+  return `ORD-${year}${month}${day}-${randomStr}`;
 }
 
 /**

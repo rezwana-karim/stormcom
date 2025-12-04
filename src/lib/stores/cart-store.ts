@@ -45,6 +45,16 @@ type CartStore = CartState & CartActions;
 const getStorageKey = (slug: string) => `cart_${slug}`;
 
 /**
+ * Generate unique cart item key
+ * @param productId - Product ID
+ * @param variantId - Optional variant ID
+ * @returns Unique cart item key
+ */
+export function generateCartItemKey(productId: string, variantId?: string): string {
+  return variantId ? `variant_${variantId}` : `product_${productId}`;
+}
+
+/**
  * Global cart store with per-store isolation
  * Automatically syncs with localStorage based on current storeSlug
  */
@@ -86,10 +96,8 @@ export const useCart = create<CartStore>()(
 
       addItem: (item) => {
         set((state) => {
-          // Generate unique key for cart item
-          const key = item.variantId
-            ? `variant_${item.variantId}`
-            : `product_${item.productId}`;
+          // Generate unique key for cart item using utility function
+          const key = generateCartItemKey(item.productId, item.variantId);
 
           const existingItemIndex = state.items.findIndex((i) => i.key === key);
 

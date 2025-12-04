@@ -141,11 +141,11 @@ export default function CheckoutPage() {
                 country: data.shippingCountry,
               }
             : {
-                address: data.billingAddress!,
-                city: data.billingCity!,
-                state: data.billingState!,
-                postalCode: data.billingPostalCode!,
-                country: data.billingCountry!,
+                address: data.billingAddress || data.shippingAddress,
+                city: data.billingCity || data.shippingCity,
+                state: data.billingState || data.shippingState,
+                postalCode: data.billingPostalCode || data.shippingPostalCode,
+                country: data.billingCountry || data.shippingCountry,
               },
           items: items.map((item) => ({
             productId: item.productId,
