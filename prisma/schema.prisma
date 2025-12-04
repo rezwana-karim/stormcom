@@ -701,8 +701,16 @@ model Order {
   customerId String?
   customer   Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
   
+  // Guest checkout fields (optional if customerId is null)
+  customerEmail String?
+  customerName  String?
+  customerPhone String?
+  
   orderNumber String
   status      OrderStatus @default(PENDING)
+  
+  // Idempotency support for duplicate prevention
+  idempotencyKey String? @unique
   
   subtotal        Float
   taxAmount       Float @default(0)
@@ -715,6 +723,7 @@ model Order {
   paymentMethod  PaymentMethod?
   paymentGateway PaymentGateway?
   paymentStatus  PaymentStatus @default(PENDING)
+  stripePaymentIntentId String? // For Stripe refunds
   
   shippingMethod String? // Pathao, manual, pickup, etc.
   trackingNumber String?
@@ -725,8 +734,13 @@ model Order {
   billingAddress  String? // JSON object
   
   fulfilledAt DateTime?
+  deliveredAt DateTime? // Delivered timestamp
   canceledAt  DateTime?
   cancelReason String?
+  
+  // Refund tracking
+  refundedAmount Float?
+  refundReason   String?
   
   customerNote String?
   adminNote    String? // Internal notes for staff
@@ -744,6 +758,7 @@ model Order {
   @@index([storeId, customerId])
   @@index([storeId, status])
   @@index([storeId, createdAt])
+  @@index([storeId, idempotencyKey]) // Fast lookup for duplicate detection
   // Note: Removed @@index([orderNumber]) to prevent cross-tenant queries
   // Note: Removed @@index([paymentStatus]) to prevent cross-tenant queries
   @@index([storeId, customerId, createdAt]) // Customer order history (tenant-isolated)
