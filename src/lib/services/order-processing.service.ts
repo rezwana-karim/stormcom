@@ -188,7 +188,7 @@ export class OrderProcessingService {
           taxAmount: tax,
           totalAmount,
           paymentMethod: paymentMethodEnum,
-          paymentStatus: input.paymentMethod === 'CASH_ON_DELIVERY' ? PaymentStatus.PENDING : PaymentStatus.PENDING,
+          paymentStatus: PaymentStatus.PENDING,
           status: OrderStatus.PENDING,
           shippingMethod: input.shippingMethod,
           notes: input.notes,
@@ -220,6 +220,11 @@ export class OrderProcessingService {
       });
 
       // 6. Decrement inventory atomically using InventoryService
+      // NOTE: InventoryService.deductStockForOrder uses its own transaction.
+      // This follows the specification pattern from the issue. While nested transactions
+      // are not ideal, this allows InventoryService to be used independently.
+      // If order creation fails, the outer transaction rolls back. If inventory deduction
+      // fails, it throws an error that rolls back the outer transaction.
       const inventoryService = InventoryService.getInstance();
       const inventoryItems = input.items.map((item) => ({
         productId: item.productId,
