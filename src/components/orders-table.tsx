@@ -117,7 +117,7 @@ export function OrdersTable({ storeId }: OrdersTableProps) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [pagination, setPagination] = useState({
     page: 1,
-    perPage: 50,
+    perPage: 20,
     total: 0,
     totalPages: 0,
   });
@@ -149,7 +149,7 @@ export function OrdersTable({ storeId }: OrdersTableProps) {
       const params = new URLSearchParams({
         storeId,
         page: searchParams.get('page') || '1',
-        perPage: '50',
+        perPage: '20',
       });
 
       if (searchQuery) {
@@ -188,9 +188,12 @@ export function OrdersTable({ storeId }: OrdersTableProps) {
       }
     } finally {
       if (!silent) setLoading(false);
-      if (isInitialLoad) setIsInitialLoad(false);
+      setIsInitialLoad(false);
     }
-  }, [storeId, searchParams, searchQuery, statusFilter, paymentStatusFilter, dateFrom, dateTo, isInitialLoad]);
+  }, [storeId, searchQuery, statusFilter, paymentStatusFilter, dateFrom, dateTo]);
+  
+  // Get current page from URL
+  const currentPage = searchParams.get('page') || '1';
 
   // Polling for real-time updates
   useEffect(() => {
@@ -208,7 +211,8 @@ export function OrdersTable({ storeId }: OrdersTableProps) {
     if (storeId) {
       fetchOrders();
     }
-  }, [storeId, fetchOrders]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeId, currentPage, searchQuery, statusFilter, paymentStatusFilter, dateFrom, dateTo]);
 
   // Update URL with filters
   const updateFilters = useCallback((filters: Record<string, string>) => {
@@ -222,7 +226,7 @@ export function OrdersTable({ storeId }: OrdersTableProps) {
       }
     });
 
-    router.push(`/dashboard/orders?${params.toString()}`);
+    router.replace(`/dashboard/orders?${params.toString()}`);
   }, [router, searchParams]);
 
   // Handle filter changes
@@ -557,7 +561,7 @@ export function OrdersTable({ storeId }: OrdersTableProps) {
               </div>
             ) : (
               <>
-                <div className="rounded-md border">
+                <div className="rounded-md border overflow-x-auto">
                   <Table>
                     <TableHeader>
                       {table.getHeaderGroups().map((headerGroup) => (
