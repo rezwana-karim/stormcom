@@ -1,26 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Minus, Plus, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-
-interface CartItem {
-  key: string;
-  productId: string;
-  productName: string;
-  productSlug: string;
-  variantId?: string;
-  variantSku?: string;
-  price: number;
-  quantity: number;
-  thumbnailUrl?: string | null;
-}
-
-interface Cart {
-  items: CartItem[];
-}
+import { useCart } from "@/lib/stores/cart-store";
 
 interface AddToCartButtonProps {
   product: {
@@ -53,6 +38,12 @@ export function AddToCartButton({
 }: AddToCartButtonProps) {
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
+  const { addItem, setStoreSlug } = useCart();
+
+  // Initialize store slug
+  useEffect(() => {
+    setStoreSlug(storeSlug);
+  }, [storeSlug, setStoreSlug]);
 
   const maxQuantity = variant?.inventoryQty || product.inventoryQty;
   const isOutOfStock = maxQuantity === 0;
@@ -69,40 +60,17 @@ export function AddToCartButton({
     setIsAdding(true);
 
     try {
-      // Get existing cart from localStorage
-      const cartKey = `cart_${storeSlug}`;
-      const existingCart = localStorage.getItem(cartKey);
-      const cart: Cart = existingCart ? JSON.parse(existingCart) : { items: [] };
-
-      // Check if item already exists in cart
-      const itemKey = variant ? `variant_${variant.id}` : `product_${product.id}`;
-      const existingItemIndex = cart.items.findIndex(
-        (item: CartItem) => item.key === itemKey
-      );
-
-      if (existingItemIndex >= 0) {
-        // Update quantity
-        cart.items[existingItemIndex].quantity += quantity;
-      } else {
-        // Add new item
-        cart.items.push({
-          key: itemKey,
-          productId: product.id,
-          productName: product.name,
-          productSlug: product.slug,
-          variantId: variant?.id,
-          variantSku: variant?.sku,
-          price,
-          quantity,
-          thumbnailUrl: product.thumbnailUrl,
-        });
-      }
-
-      // Save to localStorage
-      localStorage.setItem(cartKey, JSON.stringify(cart));
-
-      // Dispatch event for cart update
-      window.dispatchEvent(new CustomEvent("cartUpdated"));
+      // Add item to Zustand cart store
+      addItem({
+        productId: product.id,
+        productName: product.name,
+        productSlug: product.slug,
+        variantId: variant?.id,
+        variantSku: variant?.sku,
+        price,
+        quantity,
+        thumbnailUrl: product.thumbnailUrl,
+      });
 
       toast.success("Added to cart", {
         description: `${quantity}x ${product.name} added to your cart.`,

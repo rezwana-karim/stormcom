@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -9,22 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { CartItemComponent } from "../components/cart-item";
 import { EmptyState } from "../components/empty-state";
 import { ShoppingBag, ArrowRight } from "lucide-react";
-
-interface CartItem {
-  key: string;
-  productId: string;
-  productName: string;
-  productSlug: string;
-  variantId?: string;
-  variantSku?: string;
-  price: number;
-  quantity: number;
-  thumbnailUrl?: string | null;
-}
-
-interface Cart {
-  items: CartItem[];
-}
+import { useCart } from "@/lib/stores/cart-store";
 
 /**
  * Shopping cart page with totals and checkout CTA
@@ -33,79 +18,48 @@ interface Cart {
 export default function CartPage() {
   const params = useParams<{ slug: string }>();
   const storeSlug = params.slug;
+  
+  const {
+    items,
+    setStoreSlug,
+    updateQuantity,
+    removeItem,
+    clearCart,
+    getSubtotal,
+    getEstimatedTax,
+    getEstimatedShipping,
+    getTotal,
+  } = useCart();
 
-  const [cart, setCart] = useState<Cart>({ items: [] });
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Load cart from localStorage
+  // Initialize store slug
   useEffect(() => {
-    const loadCart = () => {
-      const cartKey = `cart_${storeSlug}`;
-      const savedCart = localStorage.getItem(cartKey);
-      if (savedCart) {
-        try {
-          setCart(JSON.parse(savedCart));
-        } catch (error) {
-          console.error("Failed to parse cart:", error);
-        }
-      }
-      setIsLoading(false);
-    };
-
-    loadCart();
-
-    // Listen for cart updates
-    const handleCartUpdate = () => {
-      loadCart();
-    };
-
-    window.addEventListener("cartUpdated", handleCartUpdate);
-    return () => window.removeEventListener("cartUpdated", handleCartUpdate);
-  }, [storeSlug]);
-
-  // Save cart to localStorage
-  const saveCart = (updatedCart: Cart) => {
-    const cartKey = `cart_${storeSlug}`;
-    localStorage.setItem(cartKey, JSON.stringify(updatedCart));
-    setCart(updatedCart);
-    window.dispatchEvent(new CustomEvent("cartUpdated"));
-  };
+    setStoreSlug(storeSlug);
+  }, [storeSlug, setStoreSlug]);
 
   // Handle quantity change
   const handleQuantityChange = (key: string, quantity: number) => {
-    const updatedItems = cart.items.map((item) =>
-      item.key === key ? { ...item, quantity } : item
-    );
-    saveCart({ items: updatedItems });
+    updateQuantity(key, quantity);
   };
 
   // Handle remove item
   const handleRemove = (key: string) => {
-    const updatedItems = cart.items.filter((item) => item.key !== key);
-    saveCart({ items: updatedItems });
+    removeItem(key);
+  };
+
+  // Handle clear cart
+  const handleClearCart = () => {
+    if (window.confirm("Are you sure you want to clear your cart?")) {
+      clearCart();
+    }
   };
 
   // Calculate totals
-  const subtotal = cart.items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
-  const estimatedTax = subtotal * 0.1; // 10% tax estimate
-  const estimatedShipping = subtotal > 50 ? 0 : 10; // Free shipping over $50
-  const total = subtotal + estimatedTax + estimatedShipping;
+  const subtotal = getSubtotal();
+  const estimatedTax = getEstimatedTax();
+  const estimatedShipping = getEstimatedShipping();
+  const total = getTotal();
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-muted rounded w-48" />
-          <div className="h-64 bg-muted rounded" />
-        </div>
-      </div>
-    );
-  }
-
-  if (cart.items.length === 0) {
+  if (items.length === 0) {
     return (
       <div className="container mx-auto px-4 py-16">
         <EmptyState
@@ -126,7 +80,7 @@ export default function CartPage() {
         <div className="mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold mb-2">Shopping Cart</h1>
           <p className="text-muted-foreground">
-            {cart.items.length} {cart.items.length === 1 ? "item" : "items"} in your cart
+            {items.length} {items.length === 1 ? "item" : "items"} in your cart
           </p>
         </div>
 
@@ -139,7 +93,7 @@ export default function CartPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-0">
-                  {cart.items.map((item) => (
+                  {items.map((item) => (
                     <CartItemComponent
                       key={item.key}
                       item={item}
@@ -152,12 +106,15 @@ export default function CartPage() {
               </CardContent>
             </Card>
 
-            {/* Continue Shopping */}
-            <div className="mt-6">
+            {/* Continue Shopping & Clear Cart */}
+            <div className="mt-6 flex gap-4">
               <Button variant="outline" asChild>
                 <Link href={`/store/${storeSlug}/products`}>
                   ← Continue Shopping
                 </Link>
+              </Button>
+              <Button variant="outline" onClick={handleClearCart}>
+                Clear Cart
               </Button>
             </div>
           </div>

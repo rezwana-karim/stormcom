@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ShoppingCart, Search, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/navigation-menu";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useCart } from "@/lib/stores/cart-store";
 
 interface Category {
   id: string;
@@ -42,6 +43,13 @@ interface StoreHeaderProps {
 export function StoreHeader({ store, categories = [] }: StoreHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const { getItemCount, setStoreSlug } = useCart();
+  const cartCount = getItemCount();
+
+  // Initialize store slug
+  useEffect(() => {
+    setStoreSlug(store.slug);
+  }, [store.slug, setStoreSlug]);
 
   return (
     <header className="border-b bg-background sticky top-0 z-50">
@@ -153,11 +161,16 @@ export function StoreHeader({ store, categories = [] }: StoreHeaderProps) {
               <span className="sr-only">Search</span>
             </Button>
 
-            {/* Cart Button */}
-            <Button variant="ghost" size="icon" asChild>
-              <Link href="/checkout">
+            {/* Cart Button with Badge */}
+            <Button variant="ghost" size="icon" asChild className="relative">
+              <Link href={`/store/${store.slug}/cart`}>
                 <ShoppingCart className="h-5 w-5" />
-                <span className="sr-only">Cart</span>
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium">
+                    {cartCount > 9 ? "9+" : cartCount}
+                  </span>
+                )}
+                <span className="sr-only">Cart ({cartCount} items)</span>
               </Link>
             </Button>
 
