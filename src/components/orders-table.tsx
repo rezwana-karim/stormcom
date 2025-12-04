@@ -122,6 +122,7 @@ export function OrdersTable({ storeId }: OrdersTableProps) {
     totalPages: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [sorting, setSorting] = useState<SortingState>([]);
   
   // Filter state
@@ -140,19 +141,8 @@ export function OrdersTable({ storeId }: OrdersTableProps) {
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
   const [canceling, setCanceling] = useState(false);
 
-  // Polling for real-time updates
-  useEffect(() => {
-    if (!storeId) return;
-
-    const intervalId = setInterval(() => {
-      fetchOrders(true); // Silent refresh
-    }, 30000); // 30 seconds
-
-    return () => clearInterval(intervalId);
-  }, [storeId, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
-
   // Fetch orders
-  const fetchOrders = async (silent = false) => {
+  const fetchOrders = useCallback(async (silent = false) => {
     try {
       if (!silent) setLoading(true);
       
@@ -168,6 +158,10 @@ export function OrdersTable({ storeId }: OrdersTableProps) {
 
       if (statusFilter && statusFilter !== 'all') {
         params.set('status', statusFilter);
+      }
+
+      if (paymentStatusFilter && paymentStatusFilter !== 'all') {
+        params.set('paymentStatus', paymentStatusFilter);
       }
 
       if (dateFrom) {
@@ -194,16 +188,27 @@ export function OrdersTable({ storeId }: OrdersTableProps) {
       }
     } finally {
       if (!silent) setLoading(false);
+      if (isInitialLoad) setIsInitialLoad(false);
     }
-  };
+  }, [storeId, searchParams, searchQuery, statusFilter, paymentStatusFilter, dateFrom, dateTo, isInitialLoad]);
+
+  // Polling for real-time updates
+  useEffect(() => {
+    if (!storeId) return;
+
+    const intervalId = setInterval(() => {
+      fetchOrders(true); // Silent refresh
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(intervalId);
+  }, [storeId, fetchOrders]);
 
   // Fetch on mount and when dependencies change
   useEffect(() => {
     if (storeId) {
       fetchOrders();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storeId, searchParams]);
+  }, [storeId, fetchOrders]);
 
   // Update URL with filters
   const updateFilters = useCallback((filters: Record<string, string>) => {
@@ -491,7 +496,7 @@ export function OrdersTable({ storeId }: OrdersTableProps) {
     pageCount: pagination.totalPages,
   });
 
-  if (loading) {
+  if (isInitialLoad && loading) {
     return <OrdersTableSkeleton />;
   }
 
@@ -500,8 +505,14 @@ export function OrdersTable({ storeId }: OrdersTableProps) {
       <div className="flex flex-col gap-6">
         {/* Header Actions */}
         <div className="flex items-center justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={() => fetchOrders()}>
-            <RefreshCw className="h-4 w-4 mr-2" />
+          {loading && !isInitialLoad && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <RefreshCw className="h-3 w-3 animate-spin" />
+              <span>Updating...</span>
+            </div>
+          )}
+          <Button variant="outline" size="sm" onClick={() => fetchOrders()} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
           <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={orders.length === 0}>
