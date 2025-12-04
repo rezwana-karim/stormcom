@@ -65,15 +65,15 @@ export default function CheckoutPage() {
   const router = useRouter();
   const storeSlug = params.slug;
   
-  const {
-    items,
-    setStoreSlug,
-    clearCart,
-    getSubtotal,
-    getEstimatedTax,
-    getEstimatedShipping,
-    getTotal,
-  } = useCart();
+  // Use Zustand selectors for proper reactive subscriptions
+  // (destructuring pattern doesn't create reactive subscriptions in Next.js)
+  const items = useCart((state) => state.items);
+  const setStoreSlug = useCart((state) => state.setStoreSlug);
+  const clearCart = useCart((state) => state.clearCart);
+  const getSubtotal = useCart((state) => state.getSubtotal);
+  const getEstimatedTax = useCart((state) => state.getEstimatedTax);
+  const getEstimatedShipping = useCart((state) => state.getEstimatedShipping);
+  const getTotal = useCart((state) => state.getTotal);
   
   const [isProcessing, setIsProcessing] = useState(false);
 

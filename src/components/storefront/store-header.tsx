@@ -43,10 +43,14 @@ interface StoreHeaderProps {
 export function StoreHeader({ store, categories = [] }: StoreHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const { getItemCount, setStoreSlug } = useCart();
-  const cartCount = getItemCount();
+  
+  // Use proper Zustand selectors for reactive updates
+  // Subscribe to items array directly to trigger re-renders on cart changes
+  const items = useCart((state) => state.items);
+  const setStoreSlug = useCart((state) => state.setStoreSlug);
+  const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
-  // Initialize store slug
+  // Initialize store slug - loads cart from localStorage for this store
   useEffect(() => {
     setStoreSlug(store.slug);
   }, [store.slug, setStoreSlug]);

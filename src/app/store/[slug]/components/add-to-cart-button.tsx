@@ -38,7 +38,10 @@ export function AddToCartButton({
 }: AddToCartButtonProps) {
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
-  const { addItem, setStoreSlug } = useCart();
+  
+  // Use Zustand selectors for proper reactive subscriptions
+  const addItem = useCart((state) => state.addItem);
+  const setStoreSlug = useCart((state) => state.setStoreSlug);
 
   // Initialize store slug
   useEffect(() => {

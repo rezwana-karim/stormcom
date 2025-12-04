@@ -26,7 +26,7 @@ function generatePaginationPages(currentPage: number, totalPages: number): (numb
   } else {
     const halfWindow = Math.floor(windowSize / 2);
     let start = Math.max(2, currentPage - halfWindow);
-    let end = Math.min(totalPages - 1, start + windowSize - 1);
+    const end = Math.min(totalPages - 1, start + windowSize - 1);
     
     // Adjust start if we're near the end
     if (end - start + 1 < windowSize) {

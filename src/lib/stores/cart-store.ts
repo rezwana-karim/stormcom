@@ -66,30 +66,38 @@ export const useCart = create<CartStore>()(
 
       setStoreSlug: (slug) => {
         const currentSlug = get().storeSlug;
+        const currentItems = get().items;
         
-        // If changing stores, load the cart for the new store
-        if (currentSlug !== slug) {
-          // Save current cart if we have one
-          if (currentSlug && typeof window !== 'undefined') {
-            const currentCart = { items: get().items };
-            localStorage.setItem(getStorageKey(currentSlug), JSON.stringify(currentCart));
-          }
+        // If changing stores, save current cart before switching
+        if (currentSlug && currentSlug !== slug && typeof window !== 'undefined') {
+          const currentCart = { items: currentItems };
+          localStorage.setItem(getStorageKey(currentSlug), JSON.stringify(currentCart));
+        }
 
-          // Load cart for new store
-          if (typeof window !== 'undefined') {
-            const savedCart = localStorage.getItem(getStorageKey(slug));
-            if (savedCart) {
-              try {
-                const parsed = JSON.parse(savedCart);
-                set({ items: parsed.items || [], storeSlug: slug });
+        // Always load cart from localStorage if items are empty OR slug changed
+        // This handles Zustand hydration race condition where storeSlug is restored
+        // but items array is empty (since items aren't in persist partialize)
+        const shouldLoadCart = currentSlug !== slug || currentItems.length === 0;
+        
+        if (shouldLoadCart && typeof window !== 'undefined') {
+          const savedCart = localStorage.getItem(getStorageKey(slug));
+          if (savedCart) {
+            try {
+              const parsed = JSON.parse(savedCart);
+              const savedItems = parsed.items || [];
+              // Only update if there's actual data to load
+              if (savedItems.length > 0 || currentSlug !== slug) {
+                set({ items: savedItems, storeSlug: slug });
                 return;
-              } catch (e) {
-                console.error('Failed to parse cart:', e);
               }
+            } catch (e) {
+              console.error('[Cart] Failed to parse cart:', e);
             }
           }
+        }
 
-          // No saved cart, start with empty
+        // Only update storeSlug if it changed
+        if (currentSlug !== slug) {
           set({ items: [], storeSlug: slug });
         }
       },

@@ -4,8 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import { OrderStatus, PaymentStatus } from '@prisma/client';
-import { InventoryService } from '@/lib/services/inventory.service';
+import { InventoryStatus, OrderStatus, PaymentStatus } from '@prisma/client';
 import { sendOrderConfirmationEmail } from '@/lib/email-service';
 import { randomBytes } from 'crypto';
 
@@ -316,79 +315,160 @@ export async function POST(
     }
 
     // Step 7: Create order with items in a transaction
-    const order = await prisma.$transaction(async (tx) => {
-      // Create order
-      const newOrder = await tx.order.create({
-        data: {
-          storeId: store.id,
-          customerId: customer!.id,
-          orderNumber: orderNumber!,
-          status: OrderStatus.PENDING,
-          paymentStatus: PaymentStatus.PENDING,
-          subtotal: validatedData.subtotal,
-          taxAmount: validatedData.taxAmount,
-          shippingAmount: validatedData.shippingAmount,
-          discountAmount: 0,
-          totalAmount: validatedData.totalAmount,
-          shippingAddress: JSON.stringify(validatedData.shippingAddress),
-          billingAddress: JSON.stringify(validatedData.billingAddress),
-          ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
-          items: {
-            create: validatedData.items.map((item) => {
-              const product = productMap.get(item.productId)!;
-              const variant = item.variantId ? variantMap.get(item.variantId) : undefined;
+    // Note: Using longer timeout (30s) to accommodate inventory deduction for multiple items
+    const order = await prisma.$transaction(
+      async (tx) => {
+        // Create order
+        const newOrder = await tx.order.create({
+          data: {
+            storeId: store.id,
+            customerId: customer!.id,
+            orderNumber: orderNumber!,
+            status: OrderStatus.PENDING,
+            paymentStatus: PaymentStatus.PENDING,
+            subtotal: validatedData.subtotal,
+            taxAmount: validatedData.taxAmount,
+            shippingAmount: validatedData.shippingAmount,
+            discountAmount: 0,
+            totalAmount: validatedData.totalAmount,
+            shippingAddress: JSON.stringify(validatedData.shippingAddress),
+            billingAddress: JSON.stringify(validatedData.billingAddress),
+            ipAddress:
+              request.headers.get('x-forwarded-for') ||
+              request.headers.get('x-real-ip') ||
+              undefined,
+            items: {
+              create: validatedData.items.map((item) => {
+                const product = productMap.get(item.productId)!;
+                const variant = item.variantId
+                  ? variantMap.get(item.variantId)
+                  : undefined;
 
-              return {
-                productId: item.productId,
-                variantId: item.variantId || null,
-                productName: product.name,
-                variantName: variant?.name || null,
-                sku: variant?.sku || product.sku,
-                image: product.thumbnailUrl || null,
-                price: item.price,
-                quantity: item.quantity,
-                subtotal: item.price * item.quantity,
-                taxAmount: 0, // Tax is calculated at order level
-                discountAmount: 0,
-                totalAmount: item.price * item.quantity,
-              };
-            }),
+                return {
+                  productId: item.productId,
+                  variantId: item.variantId || null,
+                  productName: product.name,
+                  variantName: variant?.name || null,
+                  sku: variant?.sku || product.sku,
+                  image: product.thumbnailUrl || null,
+                  price: item.price,
+                  quantity: item.quantity,
+                  subtotal: item.price * item.quantity,
+                  taxAmount: 0, // Tax is calculated at order level
+                  discountAmount: 0,
+                  totalAmount: item.price * item.quantity,
+                };
+              }),
+            },
           },
-        },
-        include: {
-          items: true,
-          customer: true,
-        },
-      });
+          include: {
+            items: true,
+            customer: true,
+          },
+        });
 
-      // Step 8: Deduct inventory using InventoryService
-      const inventoryService = InventoryService.getInstance();
-      const inventoryItems = validatedData.items.map((item) => ({
-        productId: item.productId,
-        variantId: item.variantId,
-        quantity: item.quantity,
-      }));
+        // Step 8: Deduct inventory inline (avoiding nested transaction from InventoryService)
+        // This prevents transaction timeout by keeping all operations in the same transaction
+        for (const item of validatedData.items) {
+          const product = productMap.get(item.productId)!;
 
-      await inventoryService.deductStockForOrder(
-        store.id,
-        inventoryItems,
-        newOrder.id
-      );
+          if (item.variantId) {
+            // Variant-level deduction
+            const variant = await tx.productVariant.findUnique({
+              where: { id: item.variantId },
+              select: {
+                inventoryQty: true,
+                lowStockThreshold: true,
+                name: true,
+              },
+            });
 
-      // Update customer stats
-      await tx.customer.update({
-        where: { id: customer!.id },
-        data: {
-          totalOrders: { increment: 1 },
-          totalSpent: { increment: validatedData.totalAmount },
-          averageOrderValue:
-            (customer!.totalSpent + validatedData.totalAmount) / (customer!.totalOrders + 1),
-          lastOrderAt: new Date(),
-        },
-      });
+            if (variant) {
+              const newQty = variant.inventoryQty - item.quantity;
 
-      return newOrder;
-    });
+              await tx.productVariant.update({
+                where: { id: item.variantId },
+                data: { inventoryQty: newQty },
+              });
+
+              await tx.inventoryLog.create({
+                data: {
+                  storeId: store.id,
+                  productId: item.productId,
+                  variantId: item.variantId,
+                  orderId: newOrder.id,
+                  previousQty: variant.inventoryQty,
+                  newQty,
+                  changeQty: -item.quantity,
+                  reason: 'order_created',
+                  note: `Order ${newOrder.orderNumber}`,
+                },
+              });
+            }
+          } else {
+            // Product-level deduction
+            const currentProduct = await tx.product.findUnique({
+              where: { id: item.productId },
+              select: {
+                inventoryQty: true,
+                lowStockThreshold: true,
+                inventoryStatus: true,
+              },
+            });
+
+            if (currentProduct && product.trackInventory) {
+              const newQty = currentProduct.inventoryQty - item.quantity;
+              const newStatus =
+                newQty === 0
+                  ? 'OUT_OF_STOCK'
+                  : newQty <= currentProduct.lowStockThreshold
+                    ? 'LOW_STOCK'
+                    : 'IN_STOCK';
+
+              await tx.product.update({
+                where: { id: item.productId },
+                data: {
+                  inventoryQty: newQty,
+                  inventoryStatus: newStatus,
+                },
+              });
+
+              await tx.inventoryLog.create({
+                data: {
+                  storeId: store.id,
+                  productId: item.productId,
+                  orderId: newOrder.id,
+                  previousQty: currentProduct.inventoryQty,
+                  newQty,
+                  changeQty: -item.quantity,
+                  reason: 'order_created',
+                  note: `Order ${newOrder.orderNumber}`,
+                },
+              });
+            }
+          }
+        }
+
+        // Update customer stats
+        await tx.customer.update({
+          where: { id: customer!.id },
+          data: {
+            totalOrders: { increment: 1 },
+            totalSpent: { increment: validatedData.totalAmount },
+            averageOrderValue:
+              (customer!.totalSpent + validatedData.totalAmount) /
+              (customer!.totalOrders + 1),
+            lastOrderAt: new Date(),
+          },
+        });
+
+        return newOrder;
+      },
+      {
+        timeout: 30000, // 30 second timeout for complex orders
+        maxWait: 10000, // 10 second max wait for transaction to start
+      }
+    );
 
     // Step 9: Send order confirmation email (non-blocking)
     sendOrderConfirmationEmail(validatedData.customer.email, {

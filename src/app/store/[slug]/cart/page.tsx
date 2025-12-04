@@ -19,19 +19,19 @@ export default function CartPage() {
   const params = useParams<{ slug: string }>();
   const storeSlug = params.slug;
   
-  const {
-    items,
-    setStoreSlug,
-    updateQuantity,
-    removeItem,
-    clearCart,
-    getSubtotal,
-    getEstimatedTax,
-    getEstimatedShipping,
-    getTotal,
-  } = useCart();
+  // Use proper Zustand selectors for reactive updates
+  // Subscribe to items array directly to trigger re-renders on cart changes
+  const items = useCart((state) => state.items);
+  const setStoreSlug = useCart((state) => state.setStoreSlug);
+  const updateQuantity = useCart((state) => state.updateQuantity);
+  const removeItem = useCart((state) => state.removeItem);
+  const clearCart = useCart((state) => state.clearCart);
+  const getSubtotal = useCart((state) => state.getSubtotal);
+  const getEstimatedTax = useCart((state) => state.getEstimatedTax);
+  const getEstimatedShipping = useCart((state) => state.getEstimatedShipping);
+  const getTotal = useCart((state) => state.getTotal);
 
-  // Initialize store slug
+  // Initialize store slug - loads cart from localStorage for this store
   useEffect(() => {
     setStoreSlug(storeSlug);
   }, [storeSlug, setStoreSlug]);

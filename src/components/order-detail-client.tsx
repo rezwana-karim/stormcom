@@ -70,6 +70,14 @@ interface Address {
   country: string;
 }
 
+interface Customer {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string | null;
+}
+
 interface Order {
   id: string;
   orderNumber: string;
@@ -89,6 +97,7 @@ interface Order {
   createdAt: string;
   updatedAt: string;
   items: OrderItem[];
+  customer?: Customer | null;
 }
 
 interface OrderDetailClientProps {
@@ -264,18 +273,23 @@ export function OrderDetailClient({ orderId, storeId }: OrderDetailClientProps) 
   };
 
   // Format address
-  const formatAddress = (address: Address | string) => {
+  const formatAddress = (address: Address | string, fallbackName?: string) => {
     const addr: Address = typeof address === 'string' ? JSON.parse(address) : address;
+    
+    // Build name from address fields, fallback to provided name, or show nothing
+    const firstName = addr.firstName || '';
+    const lastName = addr.lastName || '';
+    const addressName = [firstName, lastName].filter(Boolean).join(' ') || fallbackName || '';
     
     return (
       <div className="text-sm">
-        <p className="font-medium">{`${addr.firstName} ${addr.lastName}`}</p>
+        {addressName && <p className="font-medium">{addressName}</p>}
         <p>{addr.address}</p>
         {addr.address2 && <p>{addr.address2}</p>}
         <p>{`${addr.city}, ${addr.state} ${addr.postalCode}`}</p>
         <p>{addr.country}</p>
         {addr.email && <p className="mt-2 text-muted-foreground">{addr.email}</p>}
-        <p className="text-muted-foreground">{addr.phone}</p>
+        {addr.phone && <p className="text-muted-foreground">{addr.phone}</p>}
       </div>
     );
   };
@@ -424,7 +438,12 @@ export function OrderDetailClient({ orderId, storeId }: OrderDetailClientProps) 
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {formatAddress(order.shippingAddress)}
+                {formatAddress(
+                  order.shippingAddress, 
+                  order.customer 
+                    ? `${order.customer.firstName} ${order.customer.lastName}`.trim() 
+                    : undefined
+                )}
               </CardContent>
             </Card>
 
@@ -436,7 +455,12 @@ export function OrderDetailClient({ orderId, storeId }: OrderDetailClientProps) 
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {formatAddress(order.billingAddress)}
+                {formatAddress(
+                  order.billingAddress,
+                  order.customer 
+                    ? `${order.customer.firstName} ${order.customer.lastName}`.trim() 
+                    : undefined
+                )}
               </CardContent>
             </Card>
           </div>
