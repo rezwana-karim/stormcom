@@ -135,7 +135,7 @@ export function AddToCartButton({
             <span className="sr-only">Decrease quantity</span>
           </Button>
 
-          <div className="px-4 py-2 min-w-[3rem] text-center font-medium">
+          <div className="px-4 py-2 min-w-12 text-center font-medium">
             {quantity}
           </div>
 

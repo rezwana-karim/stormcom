@@ -256,7 +256,7 @@ export default async function StoreProductPage({ params }: StoreProductPageProps
             {/* Product Features */}
             <div className="grid grid-cols-2 gap-4 pt-6 border-t">
               <div className="flex items-start gap-3">
-                <TruckIcon className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                <TruckIcon className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                 <div>
                   <p className="font-medium text-sm">Free Shipping</p>
                   <p className="text-xs text-muted-foreground">
@@ -265,7 +265,7 @@ export default async function StoreProductPage({ params }: StoreProductPageProps
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <RefreshCw className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                <RefreshCw className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                 <div>
                   <p className="font-medium text-sm">Easy Returns</p>
                   <p className="text-xs text-muted-foreground">
@@ -274,7 +274,7 @@ export default async function StoreProductPage({ params }: StoreProductPageProps
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <ShieldCheck className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                <ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                 <div>
                   <p className="font-medium text-sm">Secure Payment</p>
                   <p className="text-xs text-muted-foreground">
@@ -283,7 +283,7 @@ export default async function StoreProductPage({ params }: StoreProductPageProps
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <Package className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                <Package className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                 <div>
                   <p className="font-medium text-sm">Quality Guarantee</p>
                   <p className="text-xs text-muted-foreground">

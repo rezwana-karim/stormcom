@@ -75,7 +75,7 @@ export default async function CategoriesPage({ params }: CategoriesPageProps) {
             {categories.map((category) => (
               <Link key={category.id} href={`/store/${store.slug}/categories/${category.slug}`} className="group">
                 <Card className="h-full overflow-hidden border-2 border-transparent hover:border-primary transition-all duration-300 hover:shadow-xl">
-                  <div className="relative aspect-[4/3] bg-gradient-to-br from-muted to-muted/50 overflow-hidden">
+                  <div className="relative aspect-4/3 bg-linear-to-br from-muted to-muted/50 overflow-hidden">
                     {category.image ? (
                       <Image src={category.image} alt={category.name} fill className="object-cover group-hover:scale-110 transition-transform duration-500" unoptimized sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw" />
                     ) : (
@@ -83,7 +83,7 @@ export default async function CategoriesPage({ params }: CategoriesPageProps) {
                         <Folder className="h-16 w-16 text-muted-foreground/30" />
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                    <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/20 to-transparent" />
                     <div className="absolute top-3 right-3">
                       <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm">
                         {category._count.products} {category._count.products === 1 ? 'product' : 'products'}
