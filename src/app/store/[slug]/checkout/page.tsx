@@ -76,7 +76,6 @@ export default function CheckoutPage() {
   } = useCart();
   
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showBillingAddress, setShowBillingAddress] = useState(false);
 
   // Initialize store slug
   useEffect(() => {
@@ -96,6 +95,7 @@ export default function CheckoutPage() {
     watch,
     formState: { errors },
   } = useForm<CheckoutFormData>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(checkoutSchema) as any,
     defaultValues: {
       billingSameAsShipping: true,
@@ -224,7 +224,7 @@ export default function CheckoutPage() {
                     Contact Information
                   </CardTitle>
                   <CardDescription>
-                    We'll use this to send you order updates
+                    We&apos;ll use this to send you order updates
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -389,7 +389,6 @@ export default function CheckoutPage() {
                       id="billingSameAsShipping"
                       className="rounded border-gray-300"
                       {...register("billingSameAsShipping")}
-                      onChange={(e) => setShowBillingAddress(!e.target.checked)}
                     />
                     <Label htmlFor="billingSameAsShipping" className="text-sm font-normal cursor-pointer">
                       Billing address same as shipping

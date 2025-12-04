@@ -65,7 +65,7 @@ export default function CheckoutSuccessPage() {
                 <div>
                   <p className="font-medium">Order Confirmation Email</p>
                   <p className="text-sm text-muted-foreground">
-                    We've sent a confirmation email with your order details
+                    We&apos;ve sent a confirmation email with your order details
                   </p>
                 </div>
               </div>
