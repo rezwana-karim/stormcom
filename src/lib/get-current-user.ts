@@ -1,10 +1,11 @@
 /**
  * Current User Utilities
  * Helper functions to get authenticated user and their store context
+ * 
+ * Uses cached session to avoid redundant lookups within the same request.
  */
 
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getCachedSession } from "@/lib/cached-session";
 import prisma from "@/lib/prisma";
 
 /**
@@ -12,7 +13,7 @@ import prisma from "@/lib/prisma";
  * @returns User with id and email, or null if not authenticated
  */
 export async function getCurrentUser() {
-  const session = await getServerSession(authOptions);
+  const session = await getCachedSession();
   
   if (!session?.user?.id) {
     return null;
@@ -33,7 +34,7 @@ export async function getCurrentUser() {
  * @returns Store ID or null if user has no store
  */
 export async function getCurrentStoreId(): Promise<string | null> {
-  const session = await getServerSession(authOptions);
+  const session = await getCachedSession();
   
   if (!session?.user?.id) {
     return null;
@@ -65,7 +66,7 @@ export async function getCurrentStoreId(): Promise<string | null> {
  * @returns Store object or null if user has no store
  */
 export async function getCurrentStore() {
-  const session = await getServerSession(authOptions);
+  const session = await getCachedSession();
   
   if (!session?.user?.id) {
     return null;
@@ -131,7 +132,7 @@ export async function requireStoreId(): Promise<string> {
  * @returns True if user has access, false otherwise
  */
 export async function verifyStoreAccess(storeId: string): Promise<boolean> {
-  const session = await getServerSession(authOptions);
+  const session = await getCachedSession();
   
   if (!session?.user?.id) {
     return false;
@@ -198,7 +199,7 @@ export async function requireVerifiedStoreAccess(storeId: string): Promise<strin
  * @returns Organization ID or null if user has no memberships
  */
 export async function getCurrentOrganizationId(): Promise<string | null> {
-  const session = await getServerSession(authOptions);
+  const session = await getCachedSession();
   
   if (!session?.user?.id) {
     return null;
