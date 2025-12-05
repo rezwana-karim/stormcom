@@ -331,6 +331,8 @@ model Store {
   auditLogs      AuditLog[]
   inventoryLogs  InventoryLog[] @relation("StoreInventoryLogs")
   staff          StoreStaff[] // Store staff assignments
+  discountCodes  DiscountCode[] // Discount/coupon codes
+  webhooks       Webhook[] // External integrations
   
   // Custom role management
   customRoles        CustomRole[]
@@ -692,6 +694,47 @@ model Customer {
   // Removed redundant @@index([storeId, email]) and @@index([email, storeId])
 }
 
+// Discount/Coupon codes
+model DiscountCode {
+  id        String   @id @default(cuid())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  code      String   // The actual coupon code (e.g., "SAVE10", "FREESHIP")
+  name      String   // Friendly name for admin display
+  description String?
+  
+  type      DiscountType @default(PERCENTAGE)
+  value     Float       // Discount value (percentage or fixed amount)
+  
+  // Usage limits
+  minOrderAmount    Float?  // Minimum order amount to use this code
+  maxDiscountAmount Float?  // Maximum discount cap (for percentage discounts)
+  maxUses           Int?    // Total uses allowed (null = unlimited)
+  maxUsesPerCustomer Int @default(1) // Uses per customer
+  currentUses       Int @default(0) // Track usage count
+  
+  // Validity period
+  startsAt  DateTime @default(now())
+  expiresAt DateTime?
+  
+  // Targeting
+  applicableCategories String? // JSON array of category IDs (null = all)
+  applicableProducts   String? // JSON array of product IDs (null = all)
+  customerEmails       String? // JSON array of specific customer emails (null = all)
+  
+  // Status
+  isActive  Boolean @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  
+  @@unique([storeId, code])
+  @@index([storeId, isActive])
+  @@index([storeId, expiresAt])
+}
+
 // Order models
 model Order {
   id        String      @id @default(cuid())
@@ -777,6 +820,59 @@ model OrderItem {
   
   @@index([orderId])
   @@index([productId])
+}
+
+// Webhook configuration for external integrations
+model Webhook {
+  id        String   @id @default(cuid())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  name      String   // Friendly name (e.g., "Order notifications")
+  url       String   // Endpoint URL to send events to
+  secret    String?  // Optional secret for signing payloads (HMAC-SHA256)
+  
+  // Events to trigger
+  events    String   // JSON array of event types (e.g., ["order.created", "order.shipped"])
+  
+  // Health & monitoring
+  isActive    Boolean @default(true)
+  lastTriggeredAt DateTime?
+  lastSuccessAt   DateTime?
+  lastErrorAt     DateTime?
+  lastError       String? // Last error message
+  failureCount    Int @default(0) // Consecutive failures
+  
+  // Headers (JSON object for custom headers)
+  customHeaders String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  
+  @@index([storeId, isActive])
+}
+
+// Webhook delivery log for debugging
+model WebhookDelivery {
+  id        String   @id @default(cuid())
+  webhookId String
+  
+  event     String   // Event type (e.g., "order.created")
+  payload   String   // JSON payload sent
+  
+  // Response details
+  statusCode Int?
+  responseBody String? // Response (truncated if too large)
+  responseTime Int?   // Response time in ms
+  
+  success   Boolean
+  error     String?
+  
+  createdAt DateTime @default(now())
+  
+  @@index([webhookId, createdAt])
+  @@index([webhookId, success])
 }
 
 // Review model

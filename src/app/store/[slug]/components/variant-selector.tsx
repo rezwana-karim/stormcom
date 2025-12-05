@@ -32,13 +32,13 @@ export function VariantSelector({
   onVariantChange,
   className,
 }: VariantSelectorProps) {
+  const defaultVariant = variants.find((v) => v.isDefault) || variants[0] || null;
+  const [selectedVariant, setSelectedVariant] = useState<Variant | null>(defaultVariant);
+
   // Early return if no variants
-  if (variants.length === 0) {
+  if (variants.length === 0 || !selectedVariant) {
     return null;
   }
-
-  const defaultVariant = variants.find((v) => v.isDefault) || variants[0];
-  const [selectedVariant, setSelectedVariant] = useState(defaultVariant);
 
   // Parse variant options from all variants to get available option types
   const optionTypes = new Map<string, Set<string>>();
