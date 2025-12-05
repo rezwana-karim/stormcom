@@ -10,10 +10,47 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Check, CreditCard, Loader2 } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ArrowLeft, Check, CreditCard, Loader2, Banknote, Smartphone, Building2 } from "lucide-react";
 import Link from "next/link";
 import { useCart } from "@/lib/stores/cart-store";
 import { toast } from "sonner";
+
+// Payment method options
+const PAYMENT_METHODS = [
+  {
+    id: "CASH_ON_DELIVERY",
+    label: "Cash on Delivery",
+    description: "Pay when you receive your order",
+    icon: Banknote,
+    available: true,
+    placeholder: false,
+  },
+  {
+    id: "CREDIT_CARD",
+    label: "Credit/Debit Card",
+    description: "Stripe payment gateway",
+    icon: CreditCard,
+    available: false, // Placeholder - not yet implemented
+    placeholder: true,
+  },
+  {
+    id: "MOBILE_BANKING",
+    label: "Mobile Banking",
+    description: "bKash, Nagad, Rocket",
+    icon: Smartphone,
+    available: false, // Placeholder - not yet implemented
+    placeholder: true,
+  },
+  {
+    id: "BANK_TRANSFER",
+    label: "Bank Transfer",
+    description: "Direct bank transfer",
+    icon: Building2,
+    available: false, // Placeholder - not yet implemented
+    placeholder: true,
+  },
+] as const;
 
 // Checkout form validation schema
 const checkoutSchema = z.object({
@@ -39,6 +76,12 @@ const checkoutSchema = z.object({
   billingState: z.string().optional(),
   billingPostalCode: z.string().optional(),
   billingCountry: z.string().optional(),
+  
+  // Payment method
+  paymentMethod: z.enum(["CASH_ON_DELIVERY", "CREDIT_CARD", "MOBILE_BANKING", "BANK_TRANSFER"]).default("CASH_ON_DELIVERY"),
+  
+  // Discount code (optional)
+  discountCode: z.string().optional(),
 }).refine((data) => {
   // If billing is different, require billing fields
   if (!data.billingSameAsShipping) {
@@ -94,6 +137,7 @@ export default function CheckoutPage() {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<CheckoutFormData>({
     // Type cast needed due to version mismatch between @hookform/resolvers v5 and react-hook-form
@@ -101,10 +145,12 @@ export default function CheckoutPage() {
     resolver: zodResolver(checkoutSchema) as Resolver<CheckoutFormData>,
     defaultValues: {
       billingSameAsShipping: true,
+      paymentMethod: "CASH_ON_DELIVERY",
     },
   });
 
   const billingSameAsShipping = watch("billingSameAsShipping");
+  const selectedPaymentMethod = watch("paymentMethod");
 
   // Calculate totals
   const subtotal = getSubtotal();
@@ -159,6 +205,8 @@ export default function CheckoutPage() {
           taxAmount: tax,
           shippingAmount: shipping,
           totalAmount: total,
+          paymentMethod: data.paymentMethod,
+          discountCode: data.discountCode,
         }),
       });
 
@@ -487,6 +535,83 @@ export default function CheckoutPage() {
                   </CardContent>
                 </Card>
               )}
+
+              {/* Payment Method Selection */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                      3
+                    </span>
+                    Payment Method
+                  </CardTitle>
+                  <CardDescription>
+                    Select how you&apos;d like to pay
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <RadioGroup
+                    value={selectedPaymentMethod}
+                    onValueChange={(value) => setValue("paymentMethod", value as CheckoutFormData["paymentMethod"])}
+                    className="space-y-3"
+                  >
+                    {PAYMENT_METHODS.map((method) => {
+                      const Icon = method.icon;
+                      const isDisabled = !method.available;
+                      
+                      return (
+                        <div
+                          key={method.id}
+                          className={`flex items-center space-x-3 p-4 border rounded-lg transition-colors ${
+                            isDisabled 
+                              ? "opacity-50 cursor-not-allowed bg-muted" 
+                              : selectedPaymentMethod === method.id
+                                ? "border-primary bg-primary/5"
+                                : "hover:border-primary/50"
+                          }`}
+                        >
+                          <RadioGroupItem
+                            value={method.id}
+                            id={method.id}
+                            disabled={isDisabled}
+                          />
+                          <Label
+                            htmlFor={method.id}
+                            className={`flex-1 cursor-pointer ${isDisabled ? "cursor-not-allowed" : ""}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <Icon className="h-5 w-5 text-muted-foreground" />
+                              <div>
+                                <p className="font-medium">
+                                  {method.label}
+                                  {method.placeholder && (
+                                    <span className="ml-2 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                                      Coming Soon
+                                    </span>
+                                  )}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {method.description}
+                                </p>
+                              </div>
+                            </div>
+                          </Label>
+                        </div>
+                      );
+                    })}
+                  </RadioGroup>
+                  
+                  {/* COD Notice */}
+                  {selectedPaymentMethod === "CASH_ON_DELIVERY" && (
+                    <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                      <p className="text-sm text-amber-800 dark:text-amber-200">
+                        <strong>Note:</strong> Payment will be collected upon delivery. 
+                        Please keep exact change ready for the delivery agent.
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
 
             {/* Order Summary */}

@@ -4,9 +4,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import { InventoryStatus, OrderStatus, PaymentStatus } from '@prisma/client';
+import { InventoryStatus, OrderStatus, PaymentStatus, PaymentMethod } from '@prisma/client';
 import { sendOrderConfirmationEmail } from '@/lib/email-service';
 import { randomBytes } from 'crypto';
+import { withRateLimit } from '@/middleware/rate-limit';
+import { webhookService, WEBHOOK_EVENTS } from '@/lib/services/webhook.service';
+import { discountService } from '@/lib/services/discount.service';
 
 // ============================================================================
 // VALIDATION SCHEMAS
@@ -44,6 +47,11 @@ const createOrderSchema = z.object({
   taxAmount: z.number().min(0, 'Tax amount must be non-negative'),
   shippingAmount: z.number().min(0, 'Shipping amount must be non-negative'),
   totalAmount: z.number().min(0, 'Total amount must be non-negative'),
+  // Payment method selection
+  paymentMethod: z.enum(['CASH_ON_DELIVERY', 'CREDIT_CARD', 'DEBIT_CARD', 'MOBILE_BANKING', 'BANK_TRANSFER']).optional(),
+  // Discount code (optional)
+  discountCode: z.string().optional(),
+  discountAmount: z.number().min(0).optional().default(0),
 });
 
 // ============================================================================
@@ -82,8 +90,12 @@ function formatCurrency(amount: number, currency: string = 'USD'): string {
 /**
  * POST /api/store/[slug]/orders
  * Create a new order (guest checkout)
+ * 
+ * Rate limited to prevent checkout abuse:
+ * - Anonymous: 10 requests per minute
+ * - Authenticated: Uses role-based limits
  */
-export async function POST(
+async function createOrderHandler(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
@@ -241,13 +253,38 @@ export async function POST(
       );
     }
 
-    // Step 4: Validate order totals
+    // Step 4: Validate and apply discount code (if provided)
+    let discountAmount = 0;
+    if (validatedData.discountCode) {
+      const discountResult = await discountService.applyCode(
+        store.id,
+        validatedData.discountCode,
+        validatedData.subtotal,
+        validatedData.shippingAmount,
+        validatedData.customer.email
+      );
+
+      if (!discountResult.valid) {
+        return NextResponse.json(
+          {
+            error: 'Invalid discount code',
+            details: discountResult.error || 'The discount code is not valid',
+          },
+          { status: 400 }
+        );
+      }
+
+      // Use the server-calculated discount amount
+      discountAmount = discountResult.discountAmount;
+    }
+
+    // Step 5: Validate order totals
     const calculatedSubtotal = validatedData.items.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
     );
     const calculatedTotal =
-      validatedData.subtotal + validatedData.taxAmount + validatedData.shippingAmount;
+      validatedData.subtotal + validatedData.taxAmount + validatedData.shippingAmount - discountAmount;
 
     if (Math.abs(calculatedSubtotal - validatedData.subtotal) > 0.01) {
       return NextResponse.json(
@@ -269,7 +306,7 @@ export async function POST(
       );
     }
 
-    // Step 5: Create or get customer
+    // Step 6: Create or get customer
     let customer = await prisma.customer.findUnique({
       where: {
         storeId_email: {
@@ -291,7 +328,7 @@ export async function POST(
       });
     }
 
-    // Step 6: Generate unique order number
+    // Step 7: Generate unique order number
     let orderNumber: string;
     let isUnique = false;
     let attempts = 0;
@@ -319,7 +356,7 @@ export async function POST(
       );
     }
 
-    // Step 7: Create order with items in a transaction
+    // Step 8: Create order with items in a transaction
     // Note: Using longer timeout (30s) to accommodate inventory deduction for multiple items
     const order = await prisma.$transaction(
       async (tx) => {
@@ -330,12 +367,19 @@ export async function POST(
             customerId: customer!.id,
             orderNumber: orderNumber!,
             status: OrderStatus.PENDING,
-            paymentStatus: PaymentStatus.PENDING,
+            paymentStatus: validatedData.paymentMethod === 'CASH_ON_DELIVERY' 
+              ? PaymentStatus.PENDING 
+              : PaymentStatus.PENDING,
+            paymentMethod: validatedData.paymentMethod 
+              ? (validatedData.paymentMethod as PaymentMethod) 
+              : PaymentMethod.CASH_ON_DELIVERY, // Default to COD
             subtotal: validatedData.subtotal,
             taxAmount: validatedData.taxAmount,
             shippingAmount: validatedData.shippingAmount,
-            discountAmount: 0,
-            totalAmount: validatedData.totalAmount,
+            // Use server-validated discount amount, not client-provided value
+            discountAmount: discountAmount,
+            discountCode: validatedData.discountCode ?? null,
+            totalAmount: calculatedTotal,
             shippingAddress: JSON.stringify(validatedData.shippingAddress),
             billingAddress: JSON.stringify(validatedData.billingAddress),
             ipAddress:
@@ -372,7 +416,7 @@ export async function POST(
           },
         });
 
-        // Step 8: Deduct inventory inline (avoiding nested transaction from InventoryService)
+        // Step 9: Deduct inventory inline (avoiding nested transaction from InventoryService)
         // This prevents transaction timeout by keeping all operations in the same transaction
         for (const item of validatedData.items) {
           const product = productMap.get(item.productId)!;
@@ -476,7 +520,14 @@ export async function POST(
       }
     );
 
-    // Step 9: Send order confirmation email (non-blocking)
+    // Step 9: Increment discount code usage (if used)
+    if (validatedData.discountCode) {
+      discountService.incrementUsage(store.id, validatedData.discountCode).catch((error) => {
+        console.error('Failed to increment discount code usage:', error);
+      });
+    }
+
+    // Step 10: Send order confirmation email (non-blocking)
     sendOrderConfirmationEmail(validatedData.customer.email, {
       customerName: `${validatedData.customer.firstName} ${validatedData.customer.lastName}`,
       orderNumber: orderNumber!,
@@ -499,7 +550,33 @@ export async function POST(
       // Don't fail the order creation if email fails
     });
 
-    // Step 10: Return success response
+    // Step 11: Dispatch webhook event (non-blocking)
+    webhookService.dispatch(store.id, WEBHOOK_EVENTS.ORDER_CREATED, {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      status: order.status,
+      paymentStatus: order.paymentStatus,
+      paymentMethod: order.paymentMethod,
+      customer: {
+        email: validatedData.customer.email,
+        firstName: validatedData.customer.firstName,
+        lastName: validatedData.customer.lastName,
+        phone: validatedData.customer.phone,
+      },
+      amounts: {
+        subtotal: order.subtotal,
+        tax: order.taxAmount,
+        shipping: order.shippingAmount,
+        discount: order.discountAmount,
+        total: order.totalAmount,
+      },
+      itemCount: order.items.length,
+      createdAt: order.createdAt.toISOString(),
+    }).catch((error) => {
+      console.error('Failed to dispatch webhook:', error);
+    });
+
+    // Step 12: Return success response
     return NextResponse.json(
       {
         success: true,
@@ -563,3 +640,12 @@ export async function POST(
     );
   }
 }
+
+// Export with rate limiting middleware
+// Stricter limits for checkout to prevent abuse (10 orders per minute for anonymous)
+export const POST = withRateLimit(createOrderHandler, {
+  // Custom rate limit for checkout: 10 requests per minute for anonymous users
+  // Authenticated users will use their role-based limits
+  maxRequests: 10,
+  windowMs: 60000,
+});

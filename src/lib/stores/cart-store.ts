@@ -45,6 +45,21 @@ type CartStore = CartState & CartActions;
 const getStorageKey = (slug: string) => `cart_${slug}`;
 
 /**
+ * Safely parse saved cart data from localStorage
+ * @param cartJson - JSON string from localStorage
+ * @returns Array of cart items or empty array on error
+ */
+function parseSavedCart(cartJson: string): CartItem[] {
+  try {
+    const parsed = JSON.parse(cartJson);
+    return Array.isArray(parsed.items) ? parsed.items : [];
+  } catch (e) {
+    console.error('[Cart] Failed to parse saved cart:', e);
+    return [];
+  }
+}
+
+/**
  * Generate unique cart item key
  * @param productId - Product ID
  * @param variantId - Optional variant ID
@@ -65,41 +80,30 @@ export const useCart = create<CartStore>()(
       storeSlug: null,
 
       setStoreSlug: (slug) => {
-        const currentSlug = get().storeSlug;
-        const currentItems = get().items;
+        const { storeSlug: currentSlug, items: currentItems } = get();
         
-        // If changing stores, save current cart before switching
-        if (currentSlug && currentSlug !== slug && typeof window !== 'undefined') {
-          const currentCart = { items: currentItems };
-          localStorage.setItem(getStorageKey(currentSlug), JSON.stringify(currentCart));
+        // Skip if already on this store and items are loaded
+        if (currentSlug === slug && currentItems.length > 0) {
+          return;
         }
 
-        // Always load cart from localStorage if items are empty OR slug changed
-        // This handles Zustand hydration race condition where storeSlug is restored
-        // but items array is empty (since items aren't in persist partialize)
-        const shouldLoadCart = currentSlug !== slug || currentItems.length === 0;
-        
-        if (shouldLoadCart && typeof window !== 'undefined') {
-          const savedCart = localStorage.getItem(getStorageKey(slug));
-          if (savedCart) {
-            try {
-              const parsed = JSON.parse(savedCart);
-              const savedItems = parsed.items || [];
-              // Only update if there's actual data to load
-              if (savedItems.length > 0 || currentSlug !== slug) {
-                set({ items: savedItems, storeSlug: slug });
-                return;
-              }
-            } catch (e) {
-              console.error('[Cart] Failed to parse cart:', e);
-            }
-          }
-        }
-
-        // Only update storeSlug if it changed
-        if (currentSlug !== slug) {
+        // Ensure we're in browser environment for localStorage access
+        if (typeof window === 'undefined') {
           set({ items: [], storeSlug: slug });
+          return;
         }
+
+        // Save current cart before switching stores (if we have items to save)
+        if (currentSlug && currentSlug !== slug && currentItems.length > 0) {
+          localStorage.setItem(getStorageKey(currentSlug), JSON.stringify({ items: currentItems }));
+        }
+
+        // Load cart for the new store from localStorage
+        // This handles Zustand hydration where storeSlug may be restored but items array is empty
+        const savedCart = localStorage.getItem(getStorageKey(slug));
+        const items = savedCart ? parseSavedCart(savedCart) : [];
+        
+        set({ items, storeSlug: slug });
       },
 
       addItem: (item) => {
