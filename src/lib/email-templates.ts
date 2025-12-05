@@ -5,6 +5,21 @@
  * These can be used with any email provider (Resend, SendGrid, etc.)
  */
 
+/**
+ * Escape HTML special characters to prevent XSS attacks
+ * Use this for all user-provided content in email templates
+ */
+function escapeHtml(str: string): string {
+  const htmlEscapes: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  };
+  return str.replace(/[&<>"']/g, (char) => htmlEscapes[char] || char);
+}
+
 const baseStyles = `
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; }
   .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -685,13 +700,25 @@ export function orderConfirmationEmail({
   storeName: string;
   appUrl?: string;
 }): string {
+  // Escape user-provided content to prevent XSS attacks
+  const safeCustomerName = escapeHtml(customerName);
+  const safeOrderNumber = escapeHtml(orderNumber);
+  const safeStoreName = escapeHtml(storeName);
+  const safeAddress = {
+    address: escapeHtml(shippingAddress.address),
+    city: escapeHtml(shippingAddress.city),
+    state: shippingAddress.state ? escapeHtml(shippingAddress.state) : undefined,
+    postalCode: escapeHtml(shippingAddress.postalCode),
+    country: escapeHtml(shippingAddress.country),
+  };
+
   const itemsHtml = orderItems
     .map(
       (item) => `
     <tr>
-      <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.name}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #eee;">${escapeHtml(item.name)}</td>
       <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
-      <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">${item.price}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">${escapeHtml(item.price)}</td>
     </tr>
   `
     )
@@ -703,22 +730,22 @@ export function orderConfirmationEmail({
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Order Confirmation - ${storeName}</title>
+  <title>Order Confirmation - ${safeStoreName}</title>
   <style>${baseStyles}</style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <div class="logo">${storeName}</div>
+      <div class="logo">${safeStoreName}</div>
     </div>
     <div class="content">
       <h1>Thank You for Your Order! 🎉</h1>
-      <p>Hi ${customerName},</p>
+      <p>Hi ${safeCustomerName},</p>
       <p>We've received your order and it's being processed. Here are the details:</p>
       
       <div class="info-box">
         <h3 style="margin-top: 0;">Order Details</h3>
-        <p><strong>Order Number:</strong> ${orderNumber}</p>
+        <p><strong>Order Number:</strong> ${safeOrderNumber}</p>
         <p style="margin-bottom: 0;"><strong>Total:</strong> ${orderTotal}</p>
       </div>
 
@@ -739,9 +766,9 @@ export function orderConfirmationEmail({
       <h3>Shipping Address</h3>
       <div class="info-box">
         <p style="margin: 0;">
-          ${shippingAddress.address}<br>
-          ${shippingAddress.city}${shippingAddress.state ? `, ${shippingAddress.state}` : ''} ${shippingAddress.postalCode}<br>
-          ${shippingAddress.country}
+          ${safeAddress.address}<br>
+          ${safeAddress.city}${safeAddress.state ? `, ${safeAddress.state}` : ''} ${safeAddress.postalCode}<br>
+          ${safeAddress.country}
         </p>
       </div>
       
@@ -752,7 +779,7 @@ export function orderConfirmationEmail({
       </p>
     </div>
     <div class="footer">
-      <p>© ${new Date().getFullYear()} ${storeName}. All rights reserved.</p>
+      <p>© ${new Date().getFullYear()} ${safeStoreName}. All rights reserved.</p>
       <p>You're receiving this email because you placed an order with us.</p>
     </div>
   </div>

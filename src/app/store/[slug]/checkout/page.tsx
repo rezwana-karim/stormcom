@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,8 @@ const checkoutSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
-  phone: z.string().min(10, "Please enter a valid phone number"),
+  // Phone validation: at least 10 digits, allows +, spaces, dashes, parentheses
+  phone: z.string().regex(/^\+?[\d\s\-()]{10,}$/, "Please enter a valid phone number (e.g., +1 555-123-4567)"),
   
   // Shipping Address
   shippingAddress: z.string().min(5, "Address is required"),
@@ -95,8 +96,9 @@ export default function CheckoutPage() {
     watch,
     formState: { errors },
   } = useForm<CheckoutFormData>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(checkoutSchema) as any,
+    // Type cast needed due to version mismatch between @hookform/resolvers v5 and react-hook-form
+    // See: https://github.com/react-hook-form/resolvers/issues/713
+    resolver: zodResolver(checkoutSchema) as Resolver<CheckoutFormData>,
     defaultValues: {
       billingSameAsShipping: true,
     },

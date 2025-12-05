@@ -24,7 +24,8 @@ const customerSchema = z.object({
   email: z.string().email('Invalid email address'),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  phone: z.string().min(1, 'Phone number is required'),
+  // Phone validation: at least 10 digits, allows +, spaces, dashes, parentheses
+  phone: z.string().regex(/^\+?[\d\s\-()]{10,}$/, 'Please enter a valid phone number'),
 });
 
 const orderItemSchema = z.object({
@@ -149,6 +150,10 @@ export async function POST(
         ? prisma.productVariant.findMany({
             where: {
               id: { in: variantIds },
+              // SECURITY: Filter variants by storeId to enforce multi-tenant isolation
+              product: {
+                storeId: store.id,
+              },
             },
             select: {
               id: true,
@@ -418,12 +423,13 @@ export async function POST(
 
             if (currentProduct && product.trackInventory) {
               const newQty = currentProduct.inventoryQty - item.quantity;
+              // Use InventoryStatus enum instead of hardcoded strings
               const newStatus =
                 newQty === 0
-                  ? 'OUT_OF_STOCK'
+                  ? InventoryStatus.OUT_OF_STOCK
                   : newQty <= currentProduct.lowStockThreshold
-                    ? 'LOW_STOCK'
-                    : 'IN_STOCK';
+                    ? InventoryStatus.LOW_STOCK
+                    : InventoryStatus.IN_STOCK;
 
               await tx.product.update({
                 where: { id: item.productId },

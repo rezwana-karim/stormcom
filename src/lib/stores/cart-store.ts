@@ -217,11 +217,11 @@ export const useCart = create<CartStore>()(
         freeShippingThreshold = 50,
         shippingCost = 10
       ) => {
-        return (
-          get().getSubtotal() +
-          get().getEstimatedTax(taxRate) +
-          get().getEstimatedShipping(freeShippingThreshold, shippingCost)
-        );
+        // Cache subtotal to avoid redundant calculations
+        const subtotal = get().getSubtotal();
+        const tax = subtotal * taxRate;
+        const shipping = subtotal >= freeShippingThreshold ? 0 : shippingCost;
+        return subtotal + tax + shipping;
       },
     }),
     {
