@@ -82,11 +82,6 @@ export const useCart = create<CartStore>()(
       setStoreSlug: (slug) => {
         const { storeSlug: currentSlug, items: currentItems } = get();
         
-        // Skip if already on this store and items are loaded
-        if (currentSlug === slug && currentItems.length > 0) {
-          return;
-        }
-
         // Ensure we're in browser environment for localStorage access
         if (typeof window === 'undefined') {
           set({ items: [], storeSlug: slug });
@@ -98,12 +93,17 @@ export const useCart = create<CartStore>()(
           localStorage.setItem(getStorageKey(currentSlug), JSON.stringify({ items: currentItems }));
         }
 
-        // Load cart for the new store from localStorage
-        // This handles Zustand hydration where storeSlug may be restored but items array is empty
+        // Always load cart for the store from localStorage (handles hydration and refresh)
         const savedCart = localStorage.getItem(getStorageKey(slug));
         const items = savedCart ? parseSavedCart(savedCart) : [];
         
-        set({ items, storeSlug: slug });
+        // Update state if:
+        // 1. Slug has changed (switching stores)
+        // 2. Current items length doesn't match saved items length (hydration/refresh case)
+        // 3. Current items is empty but saved items exist (handles initial hydration)
+        if (currentSlug !== slug || currentItems.length !== items.length || (currentItems.length === 0 && items.length > 0)) {
+          set({ items, storeSlug: slug });
+        }
       },
 
       addItem: (item) => {

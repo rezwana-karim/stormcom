@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 import { PriceDisplay } from "./price-display";
 
 interface ProductCardProps {
@@ -30,6 +32,8 @@ interface ProductCardProps {
  * Features: image, price, sale badge, category tag, hover effects
  */
 export function ProductCard({ product, storeSlug, className }: ProductCardProps) {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  
   // Parse images JSON
   const images = (() => {
     try {
@@ -55,14 +59,26 @@ export function ProductCard({ product, storeSlug, className }: ProductCardProps)
           {/* Image */}
           <div className="relative aspect-square bg-muted overflow-hidden">
             {imageUrl ? (
-              <Image
-                src={imageUrl}
-                alt={product.name}
-                fill
-                className="object-cover group-hover:scale-110 transition-transform duration-500"
-                unoptimized
-                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-              />
+              <>
+                {/* Loading Indicator */}
+                {!imageLoaded && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-muted/50 backdrop-blur-sm">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground/60" />
+                  </div>
+                )}
+                <Image
+                  src={imageUrl}
+                  alt={product.name}
+                  fill
+                  className={cn(
+                    "object-cover group-hover:scale-110 transition-all duration-500",
+                    imageLoaded ? "opacity-100" : "opacity-0"
+                  )}
+                  onLoad={() => setImageLoaded(true)}
+                  unoptimized
+                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                />
+              </>
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-muted to-muted/50">
                 <span className="text-6xl opacity-30">🛍️</span>

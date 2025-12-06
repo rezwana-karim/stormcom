@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ShoppingCart, Search, Menu, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -43,6 +43,9 @@ interface StoreHeaderProps {
 export function StoreHeader({ store, categories = [] }: StoreHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [cartBadgeKey, setCartBadgeKey] = useState(0);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const prevCartCountRef = useRef(0);
   
   // Use proper Zustand selectors for reactive updates
   // Subscribe to items array directly to trigger re-renders on cart changes
@@ -54,6 +57,45 @@ export function StoreHeader({ store, categories = [] }: StoreHeaderProps) {
   useEffect(() => {
     setStoreSlug(store.slug);
   }, [store.slug, setStoreSlug]);
+  
+  // Animate cart badge only on actual count change
+  useEffect(() => {
+    if (cartCount !== prevCartCountRef.current && cartCount > 0) {
+      setCartBadgeKey(prev => prev + 1);
+      prevCartCountRef.current = cartCount;
+    } else if (cartCount === 0) {
+      prevCartCountRef.current = 0;
+    }
+  }, [cartCount]);
+  
+  // Close mobile menu on ESC key and handle outside click
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMobileMenuOpen(false);
+      }
+    };
+    
+    const handleClickOutside = (e: MouseEvent) => {
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target as Node)) {
+        setMobileMenuOpen(false);
+      }
+    };
+    
+    document.addEventListener('keydown', handleEscape);
+    document.addEventListener('mousedown', handleClickOutside);
+    
+    // Prevent body scroll when menu is open
+    document.body.classList.add('overflow-hidden');
+    
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.body.classList.remove('overflow-hidden');
+    };
+  }, [mobileMenuOpen]);
 
   return (
     <header className="border-b bg-background sticky top-0 z-50">
@@ -167,14 +209,17 @@ export function StoreHeader({ store, categories = [] }: StoreHeaderProps) {
 
             {/* Cart Button with Badge */}
             <Button variant="ghost" size="icon" asChild className="relative">
-              <Link href={`/store/${store.slug}/cart`}>
+              <Link href={`/store/${store.slug}/cart`} aria-label={`Shopping cart, ${cartCount} ${cartCount === 1 ? 'item' : 'items'}`}>
                 <ShoppingCart className="h-5 w-5" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium">
+                  <span 
+                    key={cartBadgeKey}
+                    className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium animate-in zoom-in-50 duration-300"
+                  >
                     {cartCount > 9 ? "9+" : cartCount}
                   </span>
                 )}
-                <span className="sr-only">Cart ({cartCount} items)</span>
+                <span className="sr-only">Cart ({cartCount} {cartCount === 1 ? 'item' : 'items'})</span>
               </Link>
             </Button>
 
@@ -217,7 +262,12 @@ export function StoreHeader({ store, categories = [] }: StoreHeaderProps) {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <nav className="lg:hidden py-4 border-t">
+          <nav 
+            ref={mobileMenuRef}
+            className="lg:hidden py-4 border-t"
+            role="navigation"
+            aria-label="Mobile navigation"
+          >
             <ul className="space-y-2">
               <li>
                 <Link

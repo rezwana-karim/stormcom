@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,6 +50,39 @@ export function ProductFilters({
   const selectedBrand = searchParams.get("brand");
   const currentQuery = searchParams.get("q");
 
+  // Debounced search - waits 300ms after user stops typing
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  
+  const debouncedSearch = useCallback((value: string) => {
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+    
+    const timeout = setTimeout(() => {
+      const params = new URLSearchParams(searchParams);
+      if (value) {
+        params.set("q", value);
+      } else {
+        params.delete("q");
+      }
+      params.delete("page"); // Reset to page 1
+      
+      const query = params.toString();
+      router.push(`/store/${storeSlug}/products${query ? `?${query}` : ""}`);
+    }, 300);
+    
+    setSearchTimeout(timeout);
+  }, [searchParams, storeSlug, router]);
+  
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+    };
+  }, [searchTimeout]);
+
   // Build filter URL
   const buildUrl = (updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams);
@@ -71,7 +104,17 @@ export function ProductFilters({
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    // Immediate search on form submit
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+      setSearchTimeout(null);
+    }
     router.push(buildUrl({ q: searchQuery || null }));
+  };
+  
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    debouncedSearch(value);
   };
 
   const clearFilters = () => {
@@ -153,12 +196,13 @@ export function ProductFilters({
           <Input
             id="search"
             type="text"
-            placeholder="Search..."
+            placeholder="Search... (auto-searches as you type)"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="flex-1"
+            aria-label="Search products"
           />
-          <Button type="submit" size="icon">
+          <Button type="submit" size="icon" aria-label="Search products">
             <Search className="h-4 w-4" />
             <span className="sr-only">Search</span>
           </Button>
