@@ -4,8 +4,12 @@
  */
 
 import { getServerSession } from "next-auth";
+import { cookies } from 'next/headers';
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+
+// Cookie name for storing selected store ID
+export const SELECTED_STORE_COOKIE = 'selected_store_id';
 
 /**
  * Get current authenticated user from session
@@ -29,7 +33,8 @@ export async function getCurrentUser() {
 
 /**
  * Get current user's default store ID
- * Looks up user's first organization membership and returns its store
+ * First checks for a cookie with selected store ID (for multi-store users),
+ * then falls back to user's first organization membership store
  * @returns Store ID or null if user has no store
  */
 export async function getCurrentStoreId(): Promise<string | null> {
@@ -37,6 +42,19 @@ export async function getCurrentStoreId(): Promise<string | null> {
   
   if (!session?.user?.id) {
     return null;
+  }
+
+  // First, check if user has a selected store in cookie
+  const cookieStore = await cookies();
+  const selectedStoreId = cookieStore.get(SELECTED_STORE_COOKIE)?.value;
+  
+  if (selectedStoreId) {
+    // Verify user has access to this store before using it
+    const hasAccess = await verifyStoreAccessInternal(session.user.id, selectedStoreId);
+    if (hasAccess) {
+      return selectedStoreId;
+    }
+    // If no access, fall through to default behavior
   }
 
   // Find user's first membership
@@ -58,6 +76,51 @@ export async function getCurrentStoreId(): Promise<string | null> {
 
   // Return store ID if organization has a store
   return membership?.organization?.store?.id || null;
+}
+
+/**
+ * Internal helper to verify store access without checking session again
+ * @param userId - User ID
+ * @param storeId - Store ID to check
+ * @returns True if user has access
+ */
+async function verifyStoreAccessInternal(userId: string, storeId: string): Promise<boolean> {
+  // Check if user is super admin
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { isSuperAdmin: true },
+  });
+
+  if (user?.isSuperAdmin) {
+    return true;
+  }
+
+  // Check if user is store staff (direct assignment)
+  const storeStaff = await prisma.storeStaff.findFirst({
+    where: {
+      userId: userId,
+      storeId: storeId,
+      isActive: true,
+    },
+  });
+
+  if (storeStaff) {
+    return true;
+  }
+
+  // Check if user is member of organization that owns this store
+  const membership = await prisma.membership.findFirst({
+    where: {
+      userId: userId,
+      organization: {
+        store: {
+          id: storeId,
+        },
+      },
+    },
+  });
+
+  return membership !== null;
 }
 
 /**

@@ -30,6 +30,15 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# debug scripts (temporary development utilities)
+list-stores.mjs
+check-order.mjs
+check-store-requests.js
+check-user-roles.js
+fix-user-roles.js
+list-all-users.js
+list-all-users.mjs
+
 # env files (can opt-in for committing if needed)
 .env*
 
