@@ -5,6 +5,132 @@ import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 
 /**
+ * Private/internal IP ranges to block (SSRF protection)
+ */
+const BLOCKED_IP_PATTERNS = [
+  /^127\./,                          // Loopback (127.0.0.0/8)
+  /^10\./,                           // Private (10.0.0.0/8)
+  /^172\.(1[6-9]|2[0-9]|3[01])\./,  // Private (172.16.0.0/12)
+  /^192\.168\./,                     // Private (192.168.0.0/16)
+  /^169\.254\./,                     // Link-local (169.254.0.0/16)
+  /^0\./,                            // Current network (0.0.0.0/8)
+  /^100\.(6[4-9]|[7-9][0-9]|1[0-1][0-9]|12[0-7])\./, // Shared (100.64.0.0/10)
+  /^198\.51\.100\./,                 // Documentation (TEST-NET-2)
+  /^203\.0\.113\./,                  // Documentation (TEST-NET-3)
+  /^192\.0\.2\./,                    // Documentation (TEST-NET-1)
+  /^224\./,                          // Multicast
+  /^240\./,                          // Reserved
+];
+
+/**
+ * Blocked hostnames (SSRF protection)
+ */
+const BLOCKED_HOSTNAMES = [
+  'localhost',
+  '127.0.0.1',
+  '0.0.0.0',
+  '::1',
+  '[::1]',
+  'metadata.google.internal',        // GCP metadata
+  '169.254.169.254',                 // AWS/Azure/GCP metadata
+  'metadata.azure.internal',         // Azure metadata
+  'kubernetes.default.svc',          // Kubernetes
+];
+
+/**
+ * Allowed custom headers (safe headers only)
+ * Block headers that could be used for SSRF or security bypass
+ */
+const ALLOWED_CUSTOM_HEADERS = new Set([
+  'authorization',
+  'x-api-key',
+  'x-auth-token',
+  'x-request-id',
+  'x-correlation-id',
+  'x-custom-header',
+  'accept',
+  'accept-language',
+]);
+
+/**
+ * Validate webhook URL to prevent SSRF attacks
+ * @param urlString - URL to validate
+ * @returns Object with isValid flag and optional error message
+ */
+function validateWebhookUrl(urlString: string): { isValid: boolean; error?: string } {
+  try {
+    const url = new URL(urlString);
+
+    // Only allow HTTPS (enforce encrypted transport)
+    if (url.protocol !== 'https:') {
+      return { isValid: false, error: 'Only HTTPS URLs are allowed for webhooks' };
+    }
+
+    // Check for blocked hostnames
+    const hostname = url.hostname.toLowerCase();
+    if (BLOCKED_HOSTNAMES.includes(hostname)) {
+      return { isValid: false, error: 'URL hostname is not allowed' };
+    }
+
+    // Check for blocked IP patterns
+    for (const pattern of BLOCKED_IP_PATTERNS) {
+      if (pattern.test(hostname)) {
+        return { isValid: false, error: 'Internal/private IP addresses are not allowed' };
+      }
+    }
+
+    // Block any URL with credentials embedded
+    if (url.username || url.password) {
+      return { isValid: false, error: 'URLs with embedded credentials are not allowed' };
+    }
+
+    // Block file:// and other non-HTTP protocols
+    if (!['https:'].includes(url.protocol)) {
+      return { isValid: false, error: 'Only HTTPS protocol is allowed' };
+    }
+
+    return { isValid: true };
+  } catch {
+    return { isValid: false, error: 'Invalid URL format' };
+  }
+}
+
+/**
+ * Filter custom headers to only allow safe headers
+ * @param customHeaders - JSON string or object of custom headers
+ * @returns Filtered headers object
+ */
+function filterCustomHeaders(customHeaders: string | null): Record<string, string> {
+  if (!customHeaders) return {};
+
+  try {
+    const parsed = typeof customHeaders === 'string' ? JSON.parse(customHeaders) : customHeaders;
+    const filtered: Record<string, string> = {};
+
+    for (const [key, value] of Object.entries(parsed)) {
+      const lowerKey = key.toLowerCase();
+      // Only allow specific safe headers and block any Host, Origin, or internal headers
+      if (
+        ALLOWED_CUSTOM_HEADERS.has(lowerKey) &&
+        typeof value === 'string' &&
+        !lowerKey.startsWith('x-forwarded-') &&
+        !lowerKey.startsWith('x-real-') &&
+        lowerKey !== 'host' &&
+        lowerKey !== 'origin' &&
+        lowerKey !== 'cookie' &&
+        lowerKey !== 'set-cookie'
+      ) {
+        filtered[key] = value;
+      }
+    }
+
+    return filtered;
+  } catch {
+    return {};
+  }
+}
+
+/**
  * Supported webhook event types
  */
 export const WEBHOOK_EVENTS = {
@@ -143,6 +269,29 @@ export class WebhookService {
   ): Promise<DeliveryResult> {
     const startTime = Date.now();
 
+    // SECURITY: Validate webhook URL to prevent SSRF attacks
+    const urlValidation = validateWebhookUrl(url);
+    if (!urlValidation.isValid) {
+      const errorMessage = urlValidation.error || 'Invalid webhook URL';
+      
+      // Log the failed delivery due to URL validation
+      await this.logDelivery(webhookId, payload.event, JSON.stringify(payload), {
+        success: false,
+        error: `SSRF Protection: ${errorMessage}`,
+        responseTime: Date.now() - startTime,
+      });
+
+      // Update webhook status with security error
+      await this.updateWebhookStatus(webhookId, false, `Security: ${errorMessage}`);
+
+      return {
+        webhookId,
+        success: false,
+        responseTime: Date.now() - startTime,
+        error: errorMessage,
+      };
+    }
+
     try {
       // Prepare headers
       const headers: Record<string, string> = {
@@ -154,15 +303,9 @@ export class WebhookService {
         'X-Delivery-Attempt': (attempt + 1).toString(),
       };
 
-      // Add custom headers
-      if (customHeaders) {
-        try {
-          const custom = JSON.parse(customHeaders);
-          Object.assign(headers, custom);
-        } catch {
-          // Ignore invalid custom headers
-        }
-      }
+      // SECURITY: Filter custom headers to only allow safe headers
+      const filteredHeaders = filterCustomHeaders(customHeaders);
+      Object.assign(headers, filteredHeaders);
 
       // Add signature if secret is set
       const payloadString = JSON.stringify(payload);
@@ -349,6 +492,7 @@ export class WebhookService {
 
   /**
    * Create a new webhook
+   * Validates URL to prevent SSRF attacks before storing
    */
   async createWebhook(data: {
     storeId: string;
@@ -358,6 +502,17 @@ export class WebhookService {
     events: WebhookEventType[];
     customHeaders?: Record<string, string>;
   }) {
+    // SECURITY: Validate URL before storing to prevent SSRF attacks
+    const urlValidation = validateWebhookUrl(data.url);
+    if (!urlValidation.isValid) {
+      throw new Error(`Invalid webhook URL: ${urlValidation.error}`);
+    }
+
+    // SECURITY: Filter custom headers to only allow safe headers
+    const filteredHeaders = data.customHeaders 
+      ? filterCustomHeaders(JSON.stringify(data.customHeaders))
+      : null;
+
     return prisma.webhook.create({
       data: {
         storeId: data.storeId,
@@ -365,7 +520,7 @@ export class WebhookService {
         url: data.url,
         secret: data.secret,
         events: JSON.stringify(data.events),
-        customHeaders: data.customHeaders ? JSON.stringify(data.customHeaders) : null,
+        customHeaders: filteredHeaders ? JSON.stringify(filteredHeaders) : null,
       },
     });
   }
@@ -396,6 +551,7 @@ export class WebhookService {
 
   /**
    * Test webhook by sending a test event
+   * Validates URL before sending to prevent SSRF attacks
    */
   async testWebhook(webhookId: string): Promise<DeliveryResult> {
     const webhook = await prisma.webhook.findUnique({
@@ -404,6 +560,16 @@ export class WebhookService {
 
     if (!webhook) {
       throw new Error('Webhook not found');
+    }
+
+    // SECURITY: Validate URL before testing to prevent SSRF attacks
+    const urlValidation = validateWebhookUrl(webhook.url);
+    if (!urlValidation.isValid) {
+      return {
+        webhookId,
+        success: false,
+        error: `Security: ${urlValidation.error}`,
+      };
     }
 
     const testPayload: WebhookPayload = {

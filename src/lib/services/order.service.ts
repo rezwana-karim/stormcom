@@ -327,7 +327,8 @@ export class OrderService {
         shippingAmount: validatedData.shippingAmount,
         discountAmount: validatedData.discountAmount,
         totalAmount: validatedData.totalAmount,
-        discountCode: validatedData.discountCode,
+        // SECURITY: Normalize discount code to uppercase for consistent comparison
+        discountCode: validatedData.discountCode?.trim().toUpperCase() ?? null,
         shippingMethod: validatedData.shippingMethod,
         trackingNumber: validatedData.trackingNumber,
         trackingUrl: validatedData.trackingUrl,

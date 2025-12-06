@@ -306,12 +306,15 @@ async function createOrderHandler(
       );
     }
 
+    // SECURITY: Normalize customer email to lowercase for consistent comparison
+    const normalizedCustomerEmail = validatedData.customer.email.trim().toLowerCase();
+
     // Step 6: Create or get customer
     let customer = await prisma.customer.findUnique({
       where: {
         storeId_email: {
           storeId: store.id,
-          email: validatedData.customer.email,
+          email: normalizedCustomerEmail,
         },
       },
     });
@@ -320,7 +323,7 @@ async function createOrderHandler(
       customer = await prisma.customer.create({
         data: {
           storeId: store.id,
-          email: validatedData.customer.email,
+          email: normalizedCustomerEmail,
           firstName: validatedData.customer.firstName,
           lastName: validatedData.customer.lastName,
           phone: validatedData.customer.phone,
@@ -378,7 +381,8 @@ async function createOrderHandler(
             shippingAmount: validatedData.shippingAmount,
             // Use server-validated discount amount, not client-provided value
             discountAmount: discountAmount,
-            discountCode: validatedData.discountCode ?? null,
+            // SECURITY: Normalize discount code to uppercase for consistent comparison
+            discountCode: validatedData.discountCode?.trim().toUpperCase() ?? null,
             totalAmount: calculatedTotal,
             shippingAddress: JSON.stringify(validatedData.shippingAddress),
             billingAddress: JSON.stringify(validatedData.billingAddress),
@@ -558,7 +562,7 @@ async function createOrderHandler(
       paymentStatus: order.paymentStatus,
       paymentMethod: order.paymentMethod,
       customer: {
-        email: validatedData.customer.email,
+        email: normalizedCustomerEmail,
         firstName: validatedData.customer.firstName,
         lastName: validatedData.customer.lastName,
         phone: validatedData.customer.phone,

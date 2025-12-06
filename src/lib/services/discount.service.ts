@@ -69,7 +69,10 @@ export class DiscountService {
     orderSubtotal: number,
     customerEmail?: string
   ): Promise<DiscountValidationResult> {
+    // SECURITY: Normalize code to uppercase for consistent comparison
     const normalizedCode = code.trim().toUpperCase();
+    // SECURITY: Normalize email to lowercase for consistent comparison
+    const normalizedEmail = customerEmail?.trim().toLowerCase();
 
     // Find the discount code
     const discount = await prisma.discountCode.findUnique({
@@ -134,7 +137,9 @@ export class DiscountService {
       try {
         const targetedEmails: string[] = JSON.parse(discount.customerEmails);
         if (targetedEmails.length > 0) {
-          if (!customerEmail || !targetedEmails.includes(customerEmail.toLowerCase())) {
+          // SECURITY: Use normalized (lowercase) email for comparison
+          const normalizedTargetedEmails = targetedEmails.map(e => e.toLowerCase());
+          if (!normalizedEmail || !normalizedTargetedEmails.includes(normalizedEmail)) {
             return {
               valid: false,
               error: 'This discount code is not valid for your account',
@@ -147,11 +152,11 @@ export class DiscountService {
     }
 
     // Check per-customer usage limit
-    if (customerEmail && discount.maxUsesPerCustomer > 0) {
+    if (normalizedEmail && discount.maxUsesPerCustomer > 0) {
       const customerUsageCount = await this.getCustomerUsageCount(
         storeId,
         normalizedCode,
-        customerEmail
+        normalizedEmail
       );
       
       if (customerUsageCount >= discount.maxUsesPerCustomer) {
@@ -278,22 +283,48 @@ export class DiscountService {
   /**
    * Get customer usage count for a discount code
    * This counts orders where the customer used this discount code
+   * 
+   * SECURITY: Uses case-insensitive comparison for both discount code and email
+   * to prevent bypass via case variations
+   * 
+   * Note: Since we now normalize emails at storage time (lowercase), the customer
+   * lookup will match correctly. Discount codes are also stored normalized (uppercase).
    */
   private async getCustomerUsageCount(
     storeId: string,
-    code: string,
-    customerEmail: string
+    normalizedCode: string,
+    normalizedEmail: string
   ): Promise<number> {
-    const count = await prisma.order.count({
+    // Query using normalized values
+    // Since customer emails are now stored as lowercase and discount codes
+    // are stored as uppercase, we can do direct equality matching.
+    // For backward compatibility with old data, we also filter in application code.
+    
+    const orders = await prisma.order.findMany({
       where: {
         storeId,
-        discountCode: code,
-        customer: {
-          email: customerEmail,
-        },
         deletedAt: null,
+        customer: {
+          // Customer emails are now stored lowercase
+          // Use direct match (works for new data)
+          email: normalizedEmail,
+        },
+      },
+      select: {
+        discountCode: true,
+        customer: {
+          select: { email: true }
+        },
       },
     });
+
+    // Count orders where the discount code matches (case-insensitive for backward compatibility)
+    // and customer email matches (case-insensitive for backward compatibility with old data)
+    const count = orders.filter(order => {
+      const emailMatches = order.customer?.email.toLowerCase() === normalizedEmail;
+      const codeMatches = order.discountCode && order.discountCode.toUpperCase() === normalizedCode;
+      return emailMatches && codeMatches;
+    }).length;
 
     return count;
   }
