@@ -312,6 +312,11 @@ model Store {
   timezone       String   @default("UTC")
   locale         String   @default("en")
   
+  // Payment Integration (Stripe Connect)
+  stripeAccountId       String? // Stripe Connect account ID for multi-tenant payments
+  stripeSecretKey       String? // Encrypted Stripe secret key (use for API calls)
+  stripePublishableKey  String? // Stripe publishable key (safe for client-side)
+  
   // Subscription
   subscriptionPlan   SubscriptionPlan   @default(FREE)
   subscriptionStatus SubscriptionStatus @default(TRIAL)
@@ -333,6 +338,8 @@ model Store {
   staff          StoreStaff[] // Store staff assignments
   discountCodes  DiscountCode[] // Discount/coupon codes
   webhooks       Webhook[] // External integrations
+  paymentAttempts PaymentAttempt[] // Payment tracking
+  refunds        Refund[] // Refund tracking
   
   // Custom role management
   customRoles        CustomRole[]
@@ -778,6 +785,7 @@ model Order {
   
   fulfilledAt DateTime?
   deliveredAt DateTime? // Delivered timestamp
+  paidAt      DateTime? // Payment completion timestamp
   canceledAt  DateTime?
   cancelReason String?
   
@@ -791,7 +799,9 @@ model Order {
   
   ipAddress   String?
   
-  items    OrderItem[]
+  items           OrderItem[]
+  paymentAttempts PaymentAttempt[] // Payment tracking
+  refunds         Refund[] // Refund tracking
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -835,6 +845,64 @@ model OrderItem {
   
   @@index([orderId])
   @@index([productId])
+}
+
+// Payment tracking model
+model PaymentAttempt {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  provider  String   // STRIPE, SSLCOMMERZ, etc.
+  amount    Float    // Amount in base currency
+  currency  String   @default("USD")
+  status    String   @default("PENDING") // PENDING, SUCCESS, FAILED
+  
+  externalId String? // Payment intent ID from provider (e.g., Stripe payment intent)
+  
+  errorCode    String?
+  errorMessage String?
+  
+  metadata     String? // JSON metadata (sessionId, sessionUrl, etc.)
+  
+  processedAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  refunds      Refund[] // Refunds associated with this payment
+  
+  @@index([orderId])
+  @@index([storeId, status])
+  @@index([externalId])
+  @@index([storeId, createdAt])
+}
+
+// Refund tracking model
+model Refund {
+  id               String   @id @default(cuid())
+  orderId          String
+  order            Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  storeId          String
+  store            Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  paymentAttemptId String
+  paymentAttempt   PaymentAttempt @relation(fields: [paymentAttemptId], references: [id], onDelete: Cascade)
+  
+  amount       Float    // Refund amount
+  status       String   @default("PENDING") // PENDING, COMPLETED, FAILED
+  
+  externalId   String?  // Refund ID from payment provider
+  reason       String?  // Reason for refund
+  
+  processedAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@index([orderId])
+  @@index([storeId, status])
+  @@index([paymentAttemptId])
+  @@index([storeId, createdAt])
 }
 
 // Webhook configuration for external integrations
