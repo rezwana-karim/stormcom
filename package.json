@@ -88,6 +88,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@tanstack/react-query": "^5.90.12",
     "@types/node": "^20",
     "@types/papaparse": "^5.5.0",
     "@types/react": "^19",

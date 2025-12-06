@@ -21,6 +21,7 @@ import {
   RefreshCw,
   Edit,
   Check,
+  DollarSign,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -45,6 +46,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
+import { OrderStatusTimeline } from '@/components/orders/order-status-timeline';
+import { RefundDialog } from '@/components/orders/refund-dialog';
+import { OrderStatus } from '@prisma/client';
 
 // Types
 interface OrderItem {
@@ -81,21 +85,28 @@ interface Customer {
 interface Order {
   id: string;
   orderNumber: string;
-  status: string;
+  status: OrderStatus;
   paymentStatus: string;
   subtotal: number;
   taxAmount: number;
   shippingAmount: number;
   discountAmount: number;
   totalAmount: number;
+  refundedAmount?: number;
   shippingAddress: Address | string;
   billingAddress: Address | string;
   shippingMethod: string;
   trackingNumber: string | null;
   trackingUrl: string | null;
   customerNote: string | null;
+  adminNote?: string | null;
   createdAt: string;
   updatedAt: string;
+  fulfilledAt?: string | null;
+  deliveredAt?: string | null;
+  canceledAt?: string | null;
+  cancelReason?: string | null;
+  refundReason?: string | null;
   items: OrderItem[];
   customer?: Customer | null;
 }
@@ -134,6 +145,8 @@ export function OrderDetailClient({ orderId, storeId }: OrderDetailClientProps) 
   const [trackingNumber, setTrackingNumber] = useState('');
   const [trackingUrl, setTrackingUrl] = useState('');
   const [isEditingTracking, setIsEditingTracking] = useState(false);
+  const [isRefundDialogOpen, setIsRefundDialogOpen] = useState(false);
+  const [adminNote, setAdminNote] = useState('');
 
   // Fetch order details
   const fetchOrder = async () => {
@@ -264,6 +277,40 @@ export function OrderDetailClient({ orderId, storeId }: OrderDetailClientProps) 
     }
   };
 
+  // Handle refund
+  const handleRefund = async (amount: number, reason: string) => {
+    if (!order) return;
+
+    try {
+      setUpdating(true);
+
+      const response = await fetch(`/api/orders/${order.id}/refund`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storeId,
+          refundAmount: amount,
+          reason,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to process refund');
+      }
+
+      toast.success(`Refund of ${formatCurrency(amount)} processed successfully`);
+      
+      // Refresh order data
+      await fetchOrder();
+    } catch (error) {
+      console.error('Error processing refund:', error);
+      throw error; // Let RefundDialog handle the error
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   // Format currency
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -346,6 +393,16 @@ export function OrderDetailClient({ orderId, storeId }: OrderDetailClientProps) 
           </Badge>
         </div>
       </div>
+
+      {/* Status Timeline */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Order Status Timeline</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <OrderStatusTimeline currentStatus={order.status} />
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 md:grid-cols-3">
         {/* Left Column - Order Details */}
@@ -609,6 +666,52 @@ export function OrderDetailClient({ orderId, storeId }: OrderDetailClientProps) 
             </CardContent>
           </Card>
 
+          {/* Refund Management */}
+          {(order.status === 'DELIVERED' || order.status === 'PAID') && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Refund Management
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="rounded-lg border p-3 bg-muted/50">
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Order Total:</span>
+                      <span className="font-medium">{formatCurrency(order.totalAmount)}</span>
+                    </div>
+                    {order.refundedAmount && order.refundedAmount > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Already Refunded:</span>
+                        <span className="font-medium text-orange-600">
+                          -{formatCurrency(order.refundedAmount)}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between pt-1 border-t">
+                      <span className="font-semibold">Refundable Balance:</span>
+                      <span className="font-semibold">
+                        {formatCurrency(order.totalAmount - (order.refundedAmount || 0))}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => setIsRefundDialogOpen(true)}
+                  disabled={updating || (order.totalAmount - (order.refundedAmount || 0)) <= 0}
+                  className="w-full"
+                  variant="destructive"
+                >
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Issue Refund
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Customer Note */}
           {order.customerNote && (
             <Card>
@@ -627,6 +730,19 @@ export function OrderDetailClient({ orderId, storeId }: OrderDetailClientProps) 
           )}
         </div>
       </div>
+
+      {/* Refund Dialog */}
+      {order && (
+        <RefundDialog
+          open={isRefundDialogOpen}
+          onOpenChange={setIsRefundDialogOpen}
+          onRefund={handleRefund}
+          totalAmount={order.totalAmount}
+          refundedAmount={order.refundedAmount || 0}
+          orderNumber={order.orderNumber}
+          loading={updating}
+        />
+      )}
     </div>
   );
 }

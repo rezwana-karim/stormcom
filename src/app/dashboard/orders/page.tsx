@@ -36,22 +36,18 @@ export default async function OrdersPage() {
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <div className="px-4 lg:px-6">
-                <div className="mb-8 flex items-center justify-between">
-                  <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Orders</h1>
-                    <p className="text-muted-foreground">
-                      Manage and track all your orders across stores.
-                    </p>
-                  </div>
-                </div>
-
-                <OrdersPageClient />
+        <div className="flex flex-1 flex-col min-h-0 overflow-auto">
+          <div className="@container/main flex flex-col gap-2 p-4 pb-8 md:p-6 md:pb-12">
+            <div className="mb-8 flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight">Orders</h1>
+                <p className="text-muted-foreground">
+                  Manage and track all your orders across stores.
+                </p>
               </div>
             </div>
+
+            <OrdersPageClient />
           </div>
         </div>
       </SidebarInset>

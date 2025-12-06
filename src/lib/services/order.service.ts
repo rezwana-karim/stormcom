@@ -424,8 +424,37 @@ export class OrderService {
       where: { id: orderId },
       data: updateData,
       include: {
-        items: true,
         customer: true,
+        items: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                thumbnailUrl: true,
+                price: true,
+                sku: true,
+              },
+            },
+            variant: {
+              select: {
+                id: true,
+                name: true,
+                sku: true,
+                price: true,
+              },
+            },
+          },
+        },
+        store: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            email: true,
+          },
+        },
       },
     });
 
