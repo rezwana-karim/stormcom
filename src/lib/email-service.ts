@@ -19,6 +19,7 @@ import {
   roleApprovedEmail,
   roleRejectedEmail,
   roleModificationRequestedEmail,
+  orderConfirmationEmail,
 } from './email-templates';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -371,6 +372,46 @@ export async function sendRoleModificationRequestedEmail(
 
     if (error) {
       console.error('Failed to send modification requested email:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, id: data?.id };
+  } catch (error) {
+    console.error('Email service error:', error);
+    return { success: false, error: 'Failed to send email' };
+  }
+}
+
+/**
+ * Send order confirmation email to customer
+ */
+export async function sendOrderConfirmationEmail(
+  to: string,
+  orderData: {
+    customerName: string;
+    orderNumber: string;
+    orderTotal: string;
+    orderItems: Array<{ name: string; quantity: number; price: string }>;
+    shippingAddress: {
+      address: string;
+      city: string;
+      state?: string;
+      postalCode: string;
+      country: string;
+    };
+    storeName: string;
+  }
+): Promise<SendEmailResult> {
+  try {
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: `Order Confirmation - ${orderData.orderNumber}`,
+      html: orderConfirmationEmail({ ...orderData, appUrl: APP_URL }),
+    });
+
+    if (error) {
+      console.error('Failed to send order confirmation email:', error);
       return { success: false, error: error.message };
     }
 

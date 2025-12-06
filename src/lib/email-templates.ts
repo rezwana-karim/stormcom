@@ -5,6 +5,21 @@
  * These can be used with any email provider (Resend, SendGrid, etc.)
  */
 
+/**
+ * Escape HTML special characters to prevent XSS attacks
+ * Use this for all user-provided content in email templates
+ */
+function escapeHtml(str: string): string {
+  const htmlEscapes: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  };
+  return str.replace(/[&<>"']/g, (char) => htmlEscapes[char] || char);
+}
+
 const baseStyles = `
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; }
   .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -658,6 +673,114 @@ export function adminNewUserEmail({ userName, userEmail, businessName, businessC
     </div>
     <div class="footer">
       <p>© ${new Date().getFullYear()} StormCom Admin Notification</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+/**
+ * Order confirmation email template
+ */
+export function orderConfirmationEmail({
+  customerName,
+  orderNumber,
+  orderTotal,
+  orderItems,
+  shippingAddress,
+  storeName,
+  appUrl = 'https://stormcom.app',
+}: {
+  customerName: string;
+  orderNumber: string;
+  orderTotal: string;
+  orderItems: Array<{ name: string; quantity: number; price: string }>;
+  shippingAddress: { address: string; city: string; state?: string; postalCode: string; country: string };
+  storeName: string;
+  appUrl?: string;
+}): string {
+  // Escape user-provided content to prevent XSS attacks
+  const safeCustomerName = escapeHtml(customerName);
+  const safeOrderNumber = escapeHtml(orderNumber);
+  const safeStoreName = escapeHtml(storeName);
+  const safeAddress = {
+    address: escapeHtml(shippingAddress.address),
+    city: escapeHtml(shippingAddress.city),
+    state: shippingAddress.state ? escapeHtml(shippingAddress.state) : undefined,
+    postalCode: escapeHtml(shippingAddress.postalCode),
+    country: escapeHtml(shippingAddress.country),
+  };
+
+  const itemsHtml = orderItems
+    .map(
+      (item) => `
+    <tr>
+      <td style="padding: 8px; border-bottom: 1px solid #eee;">${escapeHtml(item.name)}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">${escapeHtml(item.price)}</td>
+    </tr>
+  `
+    )
+    .join('');
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Confirmation - ${safeStoreName}</title>
+  <style>${baseStyles}</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">${safeStoreName}</div>
+    </div>
+    <div class="content">
+      <h1>Thank You for Your Order! 🎉</h1>
+      <p>Hi ${safeCustomerName},</p>
+      <p>We've received your order and it's being processed. Here are the details:</p>
+      
+      <div class="info-box">
+        <h3 style="margin-top: 0;">Order Details</h3>
+        <p><strong>Order Number:</strong> ${safeOrderNumber}</p>
+        <p style="margin-bottom: 0;"><strong>Total:</strong> ${orderTotal}</p>
+      </div>
+
+      <h3>Order Items</h3>
+      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <thead>
+          <tr style="background-color: #f8fafc;">
+            <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e2e8f0;">Product</th>
+            <th style="padding: 8px; text-align: center; border-bottom: 2px solid #e2e8f0;">Quantity</th>
+            <th style="padding: 8px; text-align: right; border-bottom: 2px solid #e2e8f0;">Price</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsHtml}
+        </tbody>
+      </table>
+
+      <h3>Shipping Address</h3>
+      <div class="info-box">
+        <p style="margin: 0;">
+          ${safeAddress.address}<br>
+          ${safeAddress.city}${safeAddress.state ? `, ${safeAddress.state}` : ''} ${safeAddress.postalCode}<br>
+          ${safeAddress.country}
+        </p>
+      </div>
+      
+      <p>We'll send you another email when your order ships. If you have any questions, please contact our support team.</p>
+      
+      <p style="text-align: center; margin-top: 30px;">
+        <a href="${appUrl}" class="button">Visit Store</a>
+      </p>
+    </div>
+    <div class="footer">
+      <p>© ${new Date().getFullYear()} ${safeStoreName}. All rights reserved.</p>
+      <p>You're receiving this email because you placed an order with us.</p>
     </div>
   </div>
 </body>
