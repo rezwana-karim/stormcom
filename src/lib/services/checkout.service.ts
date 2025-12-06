@@ -366,7 +366,8 @@ export class CheckoutService {
           shippingAmount,
           discountAmount,
           totalAmount,
-          discountCode: input.discountCode,
+          // SECURITY: Normalize discount code to uppercase for consistent comparison
+          discountCode: input.discountCode?.trim().toUpperCase() ?? null,
           paymentStatus: PaymentStatus.PENDING,
           paymentMethod: input.paymentMethod ? (input.paymentMethod as PaymentMethod) : null,
           paymentGateway: input.paymentGateway ? (input.paymentGateway as PaymentGateway) : null,

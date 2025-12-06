@@ -3,7 +3,7 @@
 // src/components/store-selector.tsx
 // Component to select/create store for organization
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import {
   Select,
@@ -14,6 +14,9 @@ import {
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 
+// Cookie name - must match the server-side constant
+const SELECTED_STORE_COOKIE = 'selected_store_id';
+
 interface Store {
   id: string;
   name: string;
@@ -22,6 +25,31 @@ interface Store {
 
 interface StoreSelectorProps {
   onStoreChange?: (storeId: string) => void;
+}
+
+/**
+ * Set a cookie with the selected store ID
+ * Uses path=/ to ensure cookie is available across all pages
+ */
+function setStoreCookie(storeId: string) {
+  // Set cookie to expire in 30 days
+  const expires = new Date();
+  expires.setDate(expires.getDate() + 30);
+  document.cookie = `${SELECTED_STORE_COOKIE}=${storeId}; path=/; expires=${expires.toUTCString()}; SameSite=Lax`;
+}
+
+/**
+ * Get the stored store ID from cookie
+ */
+function getStoreCookie(): string | null {
+  const cookies = document.cookie.split(';');
+  for (const cookie of cookies) {
+    const [name, value] = cookie.trim().split('=');
+    if (name === SELECTED_STORE_COOKIE) {
+      return value;
+    }
+  }
+  return null;
 }
 
 export function StoreSelector({ onStoreChange }: StoreSelectorProps) {
@@ -36,6 +64,13 @@ export function StoreSelector({ onStoreChange }: StoreSelectorProps) {
   useEffect(() => {
     onStoreChangeRef.current = onStoreChange;
   }, [onStoreChange]);
+
+  // Handle store selection change
+  const handleStoreChange = useCallback((storeId: string) => {
+    setSelectedStore(storeId);
+    setStoreCookie(storeId); // Persist to cookie
+    onStoreChangeRef.current?.(storeId);
+  }, []);
 
   useEffect(() => {
     async function fetchStores() {
@@ -56,11 +91,16 @@ export function StoreSelector({ onStoreChange }: StoreSelectorProps) {
         
         setStores(storeList);
         
-        // Auto-select first store if available
+        // Check for previously selected store in cookie
+        const savedStoreId = getStoreCookie();
+        const savedStoreValid = savedStoreId && storeList.some(s => s.id === savedStoreId);
+        
+        // Use saved store if valid, otherwise default to first store
         if (storeList.length > 0 && !selectedStore) {
-          const firstStoreId = storeList[0].id;
-          setSelectedStore(firstStoreId);
-          onStoreChangeRef.current?.(firstStoreId);
+          const storeIdToSelect = savedStoreValid ? savedStoreId : storeList[0].id;
+          setSelectedStore(storeIdToSelect);
+          setStoreCookie(storeIdToSelect); // Ensure cookie is set
+          onStoreChangeRef.current?.(storeIdToSelect);
         }
       } catch (err) {
         console.error('Failed to fetch stores:', err);
@@ -100,10 +140,7 @@ export function StoreSelector({ onStoreChange }: StoreSelectorProps) {
   }
 
   return (
-    <Select value={selectedStore} onValueChange={(value) => {
-      setSelectedStore(value);
-      onStoreChangeRef.current?.(value);
-    }}>
+    <Select value={selectedStore} onValueChange={handleStoreChange}>
       <SelectTrigger className="w-[200px]">
         <SelectValue placeholder="Select store" />
       </SelectTrigger>
