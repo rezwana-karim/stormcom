@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { OrderService } from '@/lib/services/order.service';
+import { OrderProcessingService } from '@/lib/services/order-processing.service';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
@@ -67,12 +68,33 @@ export async function POST(
 
     const { storeId, refundAmount, reason } = validationResult.data;
 
+    // Use OrderProcessingService for Stripe integration
+    const orderProcessingService = OrderProcessingService.getInstance();
     const orderService = OrderService.getInstance();
-    const order = await orderService.refundOrder(params.id, storeId, refundAmount, reason);
+    
+    // Get order to determine refund amount
+    const order = await orderService.getOrderById(params.id, storeId);
+    if (!order) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    }
+
+    const actualRefundAmount = refundAmount || order.totalAmount;
+    
+    // Process refund with Stripe integration
+    await orderProcessingService.processRefund(
+      params.id,
+      storeId,
+      actualRefundAmount,
+      reason || 'Refund requested',
+      session.user.id
+    );
+    
+    // Get updated order
+    const updatedOrder = await orderService.getOrderById(params.id, storeId);
 
     return NextResponse.json(
       {
-        data: order,
+        data: updatedOrder,
         message: 'Order refunded successfully',
       },
       { status: 200 }
