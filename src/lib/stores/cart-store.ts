@@ -100,7 +100,8 @@ export const useCart = create<CartStore>()(
         // Update state if:
         // 1. Slug has changed (switching stores)
         // 2. Current items length doesn't match saved items length (hydration/refresh case)
-        if (currentSlug !== slug || currentItems.length !== items.length) {
+        // 3. Current items is empty but saved items exist (handles initial hydration)
+        if (currentSlug !== slug || currentItems.length !== items.length || (currentItems.length === 0 && items.length > 0)) {
           set({ items, storeSlug: slug });
         }
       },

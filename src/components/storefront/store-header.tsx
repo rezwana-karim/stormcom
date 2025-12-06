@@ -45,6 +45,7 @@ export function StoreHeader({ store, categories = [] }: StoreHeaderProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [cartBadgeKey, setCartBadgeKey] = useState(0);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const prevCartCountRef = useRef(0);
   
   // Use proper Zustand selectors for reactive updates
   // Subscribe to items array directly to trigger re-renders on cart changes
@@ -57,10 +58,13 @@ export function StoreHeader({ store, categories = [] }: StoreHeaderProps) {
     setStoreSlug(store.slug);
   }, [store.slug, setStoreSlug]);
   
-  // Animate cart badge on count change
+  // Animate cart badge only on actual count change
   useEffect(() => {
-    if (cartCount > 0) {
+    if (cartCount !== prevCartCountRef.current && cartCount > 0) {
       setCartBadgeKey(prev => prev + 1);
+      prevCartCountRef.current = cartCount;
+    } else if (cartCount === 0) {
+      prevCartCountRef.current = 0;
     }
   }, [cartCount]);
   
@@ -84,12 +88,12 @@ export function StoreHeader({ store, categories = [] }: StoreHeaderProps) {
     document.addEventListener('mousedown', handleClickOutside);
     
     // Prevent body scroll when menu is open
-    document.body.style.overflow = 'hidden';
+    document.body.classList.add('overflow-hidden');
     
     return () => {
       document.removeEventListener('keydown', handleEscape);
       document.removeEventListener('mousedown', handleClickOutside);
-      document.body.style.overflow = 'unset';
+      document.body.classList.remove('overflow-hidden');
     };
   }, [mobileMenuOpen]);
 
@@ -205,7 +209,7 @@ export function StoreHeader({ store, categories = [] }: StoreHeaderProps) {
 
             {/* Cart Button with Badge */}
             <Button variant="ghost" size="icon" asChild className="relative">
-              <Link href={`/store/${store.slug}/cart`} aria-label={`Shopping cart, ${cartCount} items`}>
+              <Link href={`/store/${store.slug}/cart`} aria-label={`Shopping cart, ${cartCount} ${cartCount === 1 ? 'item' : 'items'}`}>
                 <ShoppingCart className="h-5 w-5" />
                 {cartCount > 0 && (
                   <span 
@@ -215,7 +219,7 @@ export function StoreHeader({ store, categories = [] }: StoreHeaderProps) {
                     {cartCount > 9 ? "9+" : cartCount}
                   </span>
                 )}
-                <span className="sr-only">Cart ({cartCount} items)</span>
+                <span className="sr-only">Cart ({cartCount} {cartCount === 1 ? 'item' : 'items'})</span>
               </Link>
             </Button>
 

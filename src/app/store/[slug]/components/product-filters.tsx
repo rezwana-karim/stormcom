@@ -72,7 +72,7 @@ export function ProductFilters({
     }, 300);
     
     setSearchTimeout(timeout);
-  }, [searchParams, storeSlug, router, searchTimeout]);
+  }, [searchParams, storeSlug, router]);
   
   // Cleanup timeout on unmount
   useEffect(() => {
